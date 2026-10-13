@@ -1,6 +1,6 @@
 # Testing
 
-AuthKit has test layers across the backend and the web app. All of them pass
+Overex has test layers across the backend and the web app. All of them pass
 out of the box.
 
 | Layer | Tool | Location | What it proves |

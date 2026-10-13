@@ -1,6 +1,6 @@
-# Customizing AuthKit for your project
+# Customizing Overex for your project
 
-AuthKit is meant to be a starting point. Here are the changes you'll most likely
+Overex is meant to be a starting point. Here are the changes you'll most likely
 make.
 
 ---
@@ -10,7 +10,7 @@ make.
 The roles are deliberately generic (`USER`, `ADMIN`). To use your own:
 
 1. **Backend** — edit the enum in
-   `apps/backend/src/main/java/com/authkit/backend/common/entities/Role.java`:
+   `apps/backend/src/main/java/com/overex/backend/common/entities/Role.java`:
    ```java
    public enum Role { OWNER, DRIVER, ACCOUNTANT }
    ```
@@ -117,7 +117,7 @@ pages if you prefer a single-column layout.
 
 ## Rename the project / package
 
-- Backend Java package `com.authkit.backend` → your package (rename folders +
+- Backend Java package `com.overex.backend` → your package (rename folders +
   the `package`/`import` statements; `groupId` in `pom.xml`).
 - Database name, container names and the JWT key locations
   (`JWT_PRIVATE_KEY_LOCATION`, `JWT_PUBLIC_KEY_LOCATION`) live in

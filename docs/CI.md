@@ -41,7 +41,7 @@ GitHub Actions cache. A run with unchanged dependencies downloads nothing.
 The backend image is published to the GitHub Container Registry:
 
 ```
-ghcr.io/umex10/authkit-backend
+ghcr.io/umex10/overex-backend
 ```
 
 | Tag | Points to |

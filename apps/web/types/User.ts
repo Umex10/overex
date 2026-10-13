@@ -1,5 +1,5 @@
 /**
- * The roles AuthKit ships with. Mirrors the backend `Role` enum.
+ * The roles Overex ships with. Mirrors the backend `Role` enum.
  * Extend this (and the backend enum + the sign-up select) for your project.
  */
 export type Role = "USER" | "ADMIN";

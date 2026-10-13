@@ -1,6 +1,6 @@
 # Architecture & flow diagrams
 
-This document explains how AuthKit's pieces fit together and — most importantly —
+This document explains how Overex's pieces fit together and — most importantly —
 **which service calls which, and in what order**. All diagrams are Mermaid, so
 GitHub renders them automatically.
 
@@ -20,7 +20,7 @@ flowchart TB
         ACTIONS["Server Actions<br/>auth-action.ts"]
     end
 
-    subgraph "Spring Boot — AuthKit API (/api/v1)"
+    subgraph "Spring Boot — Overex API (/api/v1)"
         SEC["SecurityConfig<br/>OAuth2 resource server (JwtDecoder)"]
         AUTH["AuthController /auth/**"]
         ME["MeController /me, /admin/**"]
@@ -154,7 +154,7 @@ The same cookie check works the other way around. If you **already** have a
 `proxy.ts` sends you **straight to `/dashboard`** — no reason to show the
 marketing or auth pages again. The landing-page redirect adds a `?redirected=1`
 flag, and the dashboard shows a short "you're already signed in" note so the
-convenience redirect is visible rather than magic. (The AuthKit logo in the
+convenience redirect is visible rather than magic. (The Overex logo in the
 header intentionally links to `/`, so clicking it from the dashboard demonstrates
 this exact bounce.)
 
@@ -209,9 +209,9 @@ minutes.
 
 ---
 
-## 7. Verifying AuthKit tokens in another service (JWKS)
+## 7. Verifying Overex tokens in another service (JWKS)
 
-Other services never receive the private key and never ask AuthKit whether a
+Other services never receive the private key and never ask Overex whether a
 token is valid. They fetch the **public** key once and verify every token
 locally.
 
@@ -219,7 +219,7 @@ locally.
 sequenceDiagram
     autonumber
     participant U as Client
-    participant A as AuthKit
+    participant A as Overex
     participant S as Other service
 
     S->>A: GET /api/v1/.well-known/jwks.json (on first use, then cached)

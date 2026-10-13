@@ -3,10 +3,10 @@ import { API_BASE_URL } from "@/lib/config";
 /**
  * The right-hand "how this works" panel shown next to the auth forms.
  *
- * It's genuinely useful documentation for anyone who just cloned AuthKit: it
+ * It's genuinely useful documentation for anyone who just cloned Overex: it
  * explains, in-place, what happens when you submit the form and where to look
  * next. Feel free to replace it with your own product marketing once you build
- * on top of AuthKit.
+ * on top of Overex.
  */
 export function AuthTips({
   variant,
@@ -33,7 +33,7 @@ export function AuthTips({
       <div className="flex flex-col gap-3">
         <div className="flex items-center gap-2">
           <span className="text-2xl">🔐</span>
-          <span className="text-lg font-semibold tracking-tight">AuthKit</span>
+          <span className="text-lg font-semibold tracking-tight">Overex</span>
         </div>
         <h2 className="text-2xl font-bold leading-tight">
           {variant === "sign-up"

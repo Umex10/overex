@@ -8,9 +8,9 @@ import { Toaster } from "@/components/ui/sonner";
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
 export const metadata: Metadata = {
-  title: "AuthKit — drop-in authentication for your next project",
+  title: "Overex — tickets for high-demand events",
   description:
-    "A reusable JWT authentication microservice: Spring Boot backend + Next.js frontend with sign-up, sign-in, refresh tokens, roles, Swagger and tests.",
+    "Overex is a ticketing platform for high-demand events: Spring Boot backend + Next.js frontend.",
 };
 
 export default function RootLayout({

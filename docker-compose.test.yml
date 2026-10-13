@@ -1,5 +1,5 @@
 # =============================================================================
-# AuthKit — throwaway test database
+# Overex — throwaway test database
 #
 #   docker compose -f docker-compose.test.yml up -d
 #
@@ -13,11 +13,11 @@
 services:
   db-test:
     image: postgres:17.7
-    container_name: authkit-test-db
+    container_name: overex-test-db
     environment:
       POSTGRES_USER: testuser
       POSTGRES_PASSWORD: testpass
-      POSTGRES_DB: authkit-test
+      POSTGRES_DB: overex-test
     ports:
       - "5433:5432"
     # No named volume: the data is meant to be disposable.

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # =============================================================================
-# AuthKit — generate the RSA key pair that signs and verifies the JWTs (RS256)
+# Overex — generate the RSA key pair that signs and verifies the JWTs (RS256)
 #
 # Usage:
 #   scripts/generate-jwt-keys.sh              -> writes to apps/backend/keys/
@@ -50,7 +50,7 @@ openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 -out "$private_key"
 openssl pkey -in "$private_key" -pubout -out "$public_key"
 
 # Readable for everyone on purpose: in Docker the backend runs as another user
-# (authkit, uid 1001) and must read the mounted dev keys. For production keys,
+# (overex, uid 1001) and must read the mounted dev keys. For production keys,
 # restrict access to the user that runs the backend instead.
 chmod 644 "$private_key" "$public_key"
 

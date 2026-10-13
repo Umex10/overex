@@ -5,7 +5,7 @@
 @custom-variant dark (&:is(.dark *));
 
 /* ═══════════════════════════════════════════════════════════════
-   AuthKit design tokens (shadcn/ui CSS variables, violet theme)
+   Overex design tokens (shadcn/ui CSS variables, violet theme)
    ═══════════════════════════════════════════════════════════════ */
 
 :root {

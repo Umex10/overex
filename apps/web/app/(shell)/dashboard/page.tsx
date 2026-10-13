@@ -81,7 +81,7 @@ export default function DashboardPage() {
         <ul className="mt-2 flex list-disc flex-col gap-1.5 pl-5">
           <li>Build your features under <code>app/(shell)/</code> — they’re protected automatically.</li>
           <li>Add new API calls as RTK Query endpoints next to <code>me.ts</code>.</li>
-          <li>Roles/logic live in the backend under <code>com.authkit.backend</code>.</li>
+          <li>Roles/logic live in the backend under <code>com.overex.backend</code>.</li>
         </ul>
       </div>
     </div>
