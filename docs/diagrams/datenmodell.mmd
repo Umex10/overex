@@ -1,0 +1,89 @@
+erDiagram
+    direction LR
+    %% ===== Monolith (Schema core) =====
+    users {
+        uuid id PK
+        string name
+        string email UK
+        string phone UK
+        string password "BCrypt-Hash"
+        enum role "USER | ADMIN"
+    }
+    events {
+        uuid id PK
+        string title
+        string slug UK "URL: /events/{slug}"
+        text description
+        string venue "Ort, z. B. Gasometer"
+        string city
+        timestamptz starts_at "Beginn des Events"
+        timestamptz sale_starts_at "Verkaufsstart (Countdown)"
+        string image_url
+        enum status "DRAFT | PUBLISHED | CANCELLED"
+        timestamptz created_at
+        timestamptz updated_at
+    }
+    ticket_categories {
+        uuid id PK
+        uuid event_id FK
+        string name "Stehplatz, VIP"
+        text description
+        int price_cents "Preis in Cent"
+        string currency "EUR"
+        int capacity "Kontingent gesamt"
+        int max_per_order "z. B. 4"
+        int sort_order "Reihenfolge in der UI"
+        timestamptz created_at
+    }
+    orders {
+        uuid id PK
+        string order_number UK "OVX-2026-000123"
+        uuid user_id FK
+        uuid ticket_category_id FK
+        uuid reservation_id UK "logisch, kein FK"
+        int quantity
+        int unit_price_cents "Preis beim Kauf"
+        int total_cents
+        string currency
+        string buyer_name
+        string buyer_email
+        string payment_reference "simulierte Zahlung"
+        enum status "PENDING | CONFIRMED | FAILED"
+        timestamptz created_at
+        timestamptz confirmed_at
+    }
+    tickets {
+        uuid id PK
+        uuid order_id FK
+        string code UK "Ticketcode / QR"
+        enum status "VALID | CANCELLED"
+        timestamptz issued_at
+    }
+
+    %% ===== Reservierungs-Service (Schema reservation) =====
+    ticket_inventory {
+        uuid ticket_category_id PK "gleiche ID wie im Monolith"
+        uuid event_id "logisch, kein FK"
+        int total
+        int available "CHECK 0 <= available <= total"
+        timestamptz updated_at
+    }
+    reservations {
+        uuid id PK
+        uuid ticket_category_id FK
+        uuid user_id "logisch, kein FK"
+        int quantity
+        enum status "HELD | CONFIRMED | RELEASED | EXPIRED"
+        string idempotency_key UK "gegen doppelte gRPC-Aufrufe"
+        timestamptz expires_at "created_at + 10 Min."
+        timestamptz created_at
+        timestamptz updated_at
+    }
+
+    users ||--o{ orders : "kauft"
+    events ||--|{ ticket_categories : "hat"
+    ticket_categories ||--o{ orders : "wird bestellt in"
+    orders ||--o{ tickets : "erzeugt"
+    ticket_inventory ||--o{ reservations : "hält fest"
+    ticket_categories ||..|| ticket_inventory : "gleiche ID (über gRPC)"
+    reservations ||..o| orders : "reservation_id (über gRPC)"
