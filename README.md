@@ -6,101 +6,101 @@
 [![web e2e](https://github.com/Umex10/overex/actions/workflows/web-e2e-ci.yml/badge.svg?branch=main)](https://github.com/Umex10/overex/actions/workflows/web-e2e-ci.yml)
 [![docker image](https://github.com/Umex10/overex/actions/workflows/docker-publish.yml/badge.svg)](https://github.com/Umex10/overex/pkgs/container/overex-backend)
 
-> Eine Ticketplattform für Events mit hohem Andrang: Wenn tausende Käufer gleichzeitig auf wenige Tickets zugreifen, darf **nie mehr verkauft werden, als es gibt**, und das System muss **unter Last erreichbar bleiben**.
+> A ticketing platform for high-demand events: when thousands of buyers go for a handful of tickets at the same moment, the system must **never sell more tickets than exist** and must **stay available under load**.
 
-Overex ist meine **Projektarbeit** (12.10.2026 – 26.01.2027, Betreuung: Herr Schwab) und die Grundlage für meine **Bachelorarbeit**.
-
----
-
-## 🎯 Problem und Ziel
-
-Beim Vorverkauf beliebter Events greifen sehr viele Käufer im selben Moment auf ein kleines Ticketkontingent zu. Daraus entstehen zwei Probleme:
-
-1. **Overselling:** Ohne saubere Synchronisation verkauft das System mehr Tickets, als es gibt.
-2. **Lastspitzen:** Der Ansturm trifft den Teil, der Tickets zählt und reserviert. Andere Funktionen wie der Login sollen davon nicht mitgerissen werden.
-
-Die Projektarbeit vergleicht drei Lösungsansätze (nur Monolith, nur Microservices, Monolith + ein ausgelagerter Service) und setzt den dritten um. Der Monolith enthält den Kern, und nur die Reservierung, die den Ansturm abbekommt, wird ein eigener, skalierbarer Service.
-
-**Nachweise am Ende:**
-- Concurrency-Test: 200 gleichzeitige Käufer auf 50 Tickets, genau 50 kommen durch
-- Lasttest mit k6: 1.000 Käufer auf 100 Tickets, nie zu viel verkauft, Autoscaling greift, Login bleibt erreichbar
+Overex is my **project work** (Oct 12, 2026 – Jan 26, 2027, supervised by Mr. Schwab) and the foundation for my **bachelor's thesis**.
 
 ---
 
-## 🏗️ Architektur
+## 🎯 Issue and goal
+
+When tickets for a popular event go on sale, a large number of buyers hit a small ticket contingent at the same moment. This causes two issues:
+
+1. **Overselling:** without proper synchronization, the system sells more tickets than exist.
+2. **Load spikes:** the rush hits the part that counts and reserves tickets. Other features, such as sign-in, must not be dragged down with it.
+
+The project work compares three approaches (monolith only, microservices only, monolith + one extracted service) and implements the third. The monolith holds the core, and only the reservation part, which takes the rush, becomes its own scalable service.
+
+**Proof at the end:**
+- Concurrency test: 200 simultaneous buyers for 50 tickets, exactly 50 succeed
+- Load test with k6: 1,000 buyers for 100 tickets, never oversold, autoscaling kicks in, sign-in stays available
+
+---
+
+## 🏗️ Architecture
 
 ```mermaid
 flowchart LR
     B["Browser"] --> F["Frontend<br/>Next.js"]
-    F -->|"REST"| M["Monolith<br/>Spring Boot<br/>Auth · Events · Bestellungen · Meine Tickets"]
-    M -->|"gRPC<br/>reservieren · bestätigen · freigeben"| R["Reservierungs-Service<br/>Spring Boot<br/>Ticketzähler · Locking"]
-    M --> DB1[("PostgreSQL<br/>Schema Monolith")]
-    R --> DB2[("PostgreSQL<br/>Schema Reservierung")]
+    F -->|"REST"| M["Monolith<br/>Spring Boot<br/>Auth · Events · Orders · My tickets"]
+    M -->|"gRPC<br/>reserve · confirm · release"| R["Reservation service<br/>Spring Boot<br/>Ticket counter · Locking"]
+    M --> DB1[("PostgreSQL<br/>monolith schema")]
+    R --> DB2[("PostgreSQL<br/>reservation schema")]
 ```
 
-| Bestandteil | Wo | Aufgabe |
+| Component | Where | Responsibility |
 |---|---|---|
-| **Frontend** | Next.js | Events ansehen, Ticket kaufen, Login, Meine Tickets. Spricht nur mit dem Monolithen. |
-| **Auth** | Monolith | Registrieren, Login, JWT (RS256) mit JWKS-Endpoint. Übernommen aus AuthKit. |
-| **Events** | Monolith | Veranstaltungen und Ticketkategorien mit Preis, Datum, Ort und Verkaufsstart. |
-| **Bestellungen** | Monolith | Schließt einen Kauf ab (simulierte Zahlung, Bestellnummer). Nur mit gültiger Reservierung. |
-| **Meine Tickets** | Monolith | Zeigt dem User seine gekauften Tickets. |
-| **Reservierung** | eigener Service | Zählt freie Tickets, hält ein Ticket 10 Minuten fest und verhindert Overselling mit pessimistischem Locking. |
-| **gRPC** | Monolith ↔ Reservierung | Reservieren, Bestätigen, Freigeben, jeweils mit Zeitlimit. |
-| **Datenbank** | PostgreSQL | Ein Schema pro Service, jeder greift nur auf sein eigenes zu. |
-| **Kubernetes** | lokaler Cluster | Monolith mit 2 festen Kopien, Reservierung mit 1–10 Kopien je nach Last (HPA). |
-| **CI/CD** | GitHub Actions | Baut und testet bei jedem Push, legt Docker-Images in ghcr.io ab. |
+| **Frontend** | Next.js | Browse events, buy tickets, sign in, my tickets. Talks only to the monolith. |
+| **Auth** | Monolith | Sign-up, sign-in, JWT (RS256) with a JWKS endpoint. Taken over from AuthKit. |
+| **Events** | Monolith | Events and their ticket categories with price, date, venue and sale start. |
+| **Orders** | Monolith | Completes a purchase (simulated payment, order number). Only with a valid reservation. |
+| **My tickets** | Monolith | Shows users the tickets they bought. |
+| **Reservation** | separate service | Counts free tickets, holds a ticket for 10 minutes and prevents overselling with pessimistic locking. |
+| **gRPC** | Monolith ↔ Reservation | Reserve, confirm, release, each with a timeout. |
+| **Database** | PostgreSQL | One schema per service; each service only accesses its own. |
+| **Kubernetes** | local cluster | Monolith with 2 fixed replicas, reservation service with 1–10 replicas depending on load (HPA). |
+| **CI/CD** | GitHub Actions | Builds and tests on every push, publishes Docker images to ghcr.io. |
 
-**Ablauf eines Kaufs:** Ticket kaufen klicken → Monolith fragt per gRPC die Reservierung → Reservierung sperrt kurz den Ticketzähler, zieht 1 ab und hält das Ticket 10 Minuten fest → Käufer füllt die Bezahlseite aus → Monolith legt die Bestellung an und bestätigt die Reservierung → Ticket erscheint in „Meine Tickets". Wird nicht rechtzeitig bezahlt, gibt die Reservierung das Ticket wieder frei.
+**How a purchase works:** click "buy ticket" → the monolith asks the reservation service via gRPC → the reservation service briefly locks the ticket counter, subtracts 1 and holds the ticket for 10 minutes → the buyer fills in the payment page → the monolith creates the order and confirms the reservation → the ticket shows up in "My tickets". If payment does not happen in time, the reservation service releases the ticket again.
 
 ---
 
-## 📍 Aktueller Stand
+## 📍 Current status
 
-Overex startet auf der Basis von **AuthKit** (Release v1.0.0), meinem eigenen Auth-Service. Davon ist bereits fertig:
+Overex starts from **AuthKit** (release v1.0.0), my own auth service. Already done:
 
-- ✅ Registrierung und Login, Access-Token (15 Min.) + Refresh-Token im HTTP-only-Cookie
-- ✅ JWT mit **RS256**, öffentlicher Schlüssel über **JWKS-Endpoint**, Prüfung per OAuth2 Resource Server
-- ✅ Schlüsselverwaltung (Dev-Key-Generator, Skript für Produktionsschlüssel)
-- ✅ Tests in drei Ebenen (Unit, Slice, Integration) mit JaCoCo, Web-Unit- und Playwright-E2E-Tests
-- ✅ GitHub Actions für Backend, Web-Build/Unit/E2E, Docker-Build und Image-Publish nach ghcr.io
+- ✅ Sign-up and sign-in, access token (15 min) + refresh token in an HTTP-only cookie
+- ✅ JWT signed with **RS256**, public key via a **JWKS endpoint**, verified by the OAuth2 Resource Server
+- ✅ Key management (dev key generator, script for production keys)
+- ✅ Tests on three levels (unit, slice, integration) with JaCoCo, web unit tests and Playwright e2e tests
+- ✅ GitHub Actions for the backend, web build/unit/e2e, Docker build and image publish to ghcr.io
 
-Als Nächstes kommen Events, Reservierungs-Service, gRPC, Bestellungen und Kubernetes (siehe Roadmap).
+Next up: events, the reservation service, gRPC, orders and Kubernetes (see roadmap).
 
 ---
 
 ## 🗓️ Roadmap
 
-| Phase | Zeitraum | Ziel |
+| Phase | Period | Goal |
 |---|---|---|
-| 0 · Start | 12.10. – 20.10. | Monorepo, Domänenmodell, Konzept |
-| 1 · Core + Frontend | 21.10. – 08.11. | Events im Monolithen, erste Screens, gRPC- und Kubernetes-Spike |
-| 2 · Reservierung + gRPC | 10.11. – 13.12. | Reservierungs-Service, pessimistisches Locking, gRPC, kompletter Kaufablauf |
-| 3 · Kubernetes | 14.12. – 10.01. | Gesamtsystem auf Kubernetes, Autoscaling, Lasttest mit k6 |
-| 4 · Abschluss | 11.01. – 26.01. | Dokumentation, Präsentation, Puffer |
+| 0 · Start | Oct 12 – Oct 20 | Monorepo, domain model, concept |
+| 1 · Core + frontend | Oct 21 – Nov 8 | Events in the monolith, first screens, gRPC and Kubernetes spike |
+| 2 · Reservation + gRPC | Nov 10 – Dec 13 | Reservation service, pessimistic locking, gRPC, complete purchase flow |
+| 3 · Kubernetes | Dec 14 – Jan 10 | Whole system on Kubernetes, autoscaling, load test with k6 |
+| 4 · Wrap-up | Jan 11 – Jan 26 | Documentation, presentation, buffer |
 
-**Nicht Teil der Projektarbeit (Ausblick Bachelorarbeit):** Warteraum, Rate Limiting und Load Shedding.
+**Not part of the project work (outlook for the bachelor's thesis):** waiting room, rate limiting and load shedding.
 
-Der Fortschritt ist pro Meilenstein in [docs/meilenstein-doku](docs/meilenstein-doku/README.md) dokumentiert.
+Progress is documented per milestone in [docs/meilenstein-doku](docs/meilenstein-doku/README.md).
 
 ---
 
-## 🚀 Schnellstart
+## 🚀 Quick start
 
 ```bash
-# 0. JWT-Schlüssel erzeugen (einmal nach dem Klonen, überschreibt nichts)
+# 0. Create the JWT keys (once after cloning; never overwrites)
 scripts/generate-jwt-keys.sh
 
-# 1. Datenbank + Backend (+ Swagger UI) starten
+# 1. Start the database + backend (+ Swagger UI)
 docker compose up -d
 
-# 2. Frontend starten
+# 2. Start the frontend
 cd apps/web
 npm install
 npm run dev          # → http://localhost:3000
 ```
 
-Swagger UI: **http://localhost:8080/api/v1/swagger-ui.html**. Alle Varianten (komplett in Docker, manuell, einzelne Services) stehen in [docs/RUNNING.md](docs/RUNNING.md).
+Swagger UI: **http://localhost:8080/api/v1/swagger-ui.html**. All variants (fully in Docker, manual, individual services) are described in [docs/RUNNING.md](docs/RUNNING.md).
 
 ---
 
@@ -111,38 +111,38 @@ overex/
 ├── apps/
 │   ├── backend/        Monolith: Spring Boot 4 · Java 21 · Spring Security · JPA · springdoc
 │   └── web/            Frontend: Next.js 16 · React 19 · Redux Toolkit Query · Tailwind v4 · shadcn/ui
-├── .github/workflows/         CI: Backend- und Web-Tests, Docker-Build/Publish
-├── docker-compose.yml         Postgres + Backend + Swagger UI
-├── docker-compose.test.yml    Wegwerf-Postgres für die E2E-Tests
+├── .github/workflows/         CI: backend and web tests, Docker build/publish
+├── docker-compose.yml         Postgres + backend + Swagger UI
+├── docker-compose.test.yml    Throwaway Postgres for the e2e tests
 ├── scripts/                   generate-jwt-keys.sh
-└── docs/                      Technische Doku und Meilenstein-Doku
+└── docs/                      Technical docs and milestone docs
 ```
 
 ---
 
-## 📚 Dokumentation
+## 📚 Documentation
 
-| Dokument | Inhalt |
+| Document | What it covers |
 |---|---|
-| [docs/DATA_MODEL.md](docs/DATA_MODEL.md) | ER-Modell: Entities, Felder, Beziehungen, Statuswechsel |
-| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Zusammenspiel der Teile mit Ablaufdiagrammen |
-| [docs/BACKEND_FLOW.md](docs/BACKEND_FLOW.md) | Aufrufkette im Backend pro Endpoint, inkl. Security-Filter |
-| [docs/RUNNING.md](docs/RUNNING.md) | Starten, Docker-Container, Ports, Umgebungsvariablen |
-| [docs/SWAGGER.md](docs/SWAGGER.md) | Die Live-API-Doku |
-| [docs/TESTING.md](docs/TESTING.md) | Backend- und Web-Tests |
-| [docs/SECURITY.md](docs/SECURITY.md) | Token- und Cookie-Modell |
-| [docs/CI.md](docs/CI.md) | GitHub Actions, Docker-Image, Releases |
-| [docs/meilenstein-doku](docs/meilenstein-doku/README.md) | Zeitleiste der Meilensteine |
+| [docs/DATA_MODEL.md](docs/DATA_MODEL.md) | ER model: entities, fields, relationships, status transitions |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | How the parts fit together, with flow diagrams |
+| [docs/BACKEND_FLOW.md](docs/BACKEND_FLOW.md) | Backend call chain per endpoint, incl. the security filter chain |
+| [docs/RUNNING.md](docs/RUNNING.md) | Running it, Docker containers, ports, environment variables |
+| [docs/SWAGGER.md](docs/SWAGGER.md) | The live API docs |
+| [docs/TESTING.md](docs/TESTING.md) | Backend and web tests |
+| [docs/SECURITY.md](docs/SECURITY.md) | Token and cookie model |
+| [docs/CI.md](docs/CI.md) | GitHub Actions, Docker image, releases |
+| [docs/meilenstein-doku](docs/meilenstein-doku/README.md) | Milestone timeline |
 
 ---
 
-## 🛠️ Tech-Stack
+## 🛠️ Tech stack
 
-**Backend:** Spring Boot 4, Java 21, Spring Security (OAuth2 Resource Server), Spring Data JPA, PostgreSQL / H2, springdoc-openapi; geplant: gRPC.
+**Backend:** Spring Boot 4, Java 21, Spring Security (OAuth2 Resource Server), Spring Data JPA, PostgreSQL / H2, springdoc-openapi; planned: gRPC.
 **Frontend:** Next.js 16 (App Router), React 19, Redux Toolkit Query, react-hook-form + Zod, Tailwind CSS v4, shadcn/ui.
-**Betrieb:** Docker, GitHub Actions, ghcr.io; geplant: Kubernetes (HPA, Ingress), k6.
-**Tests:** JUnit 5, Mockito, MockMvc, JaCoCo, Vitest, Playwright.
+**Operations:** Docker, GitHub Actions, ghcr.io; planned: Kubernetes (HPA, Ingress), k6.
+**Testing:** JUnit 5, Mockito, MockMvc, JaCoCo, Vitest, Playwright.
 
 ---
 
-Umejr Dzinovic · Projektarbeit 2026/27
+Umejr Dzinovic · Project work 2026/27
