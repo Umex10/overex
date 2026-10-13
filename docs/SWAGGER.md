@@ -1,6 +1,6 @@
 # Swagger / OpenAPI
 
-AuthKit ships a **live, interactive API explorer** powered by springdoc-openapi.
+Overex ships a **live, interactive API explorer** powered by springdoc-openapi.
 Because the auth routes and a `bearerAuth` security scheme are declared in code,
 the UI gets a green **`Authorize 🔒`** button and shows a lock icon on every
 protected route.

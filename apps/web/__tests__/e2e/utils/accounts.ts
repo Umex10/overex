@@ -15,7 +15,7 @@ export interface TestAccount {
  */
 export const bootstrapAccount: TestAccount = {
   name: "Bootstrap User",
-  email: "bootstrap@authkit.test",
+  email: "bootstrap@overex.test",
   phone: "+4366000000001",
   password: "bootstrap-pass-1",
 };
@@ -30,7 +30,7 @@ export function newAccount(): TestAccount {
   const id = `${Date.now()}${process.pid}${counter++}`;
   return {
     name: "New User",
-    email: `new-${id}@authkit.test`,
+    email: `new-${id}@overex.test`,
     // The end of the id holds the process id and counter, so it stays unique.
     phone: `+43${id.slice(-12)}`,
     password: "new-user-pass-1",

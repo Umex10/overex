@@ -1,5 +1,5 @@
 # =============================================================================
-# AuthKit backend — multi-stage image
+# Overex backend — multi-stage image
 #
 # Stage 1 builds the fat jar with the Maven wrapper (no local Maven needed).
 # Stage 2 ships only a JRE + the jar, keeping the runtime image small.
@@ -48,11 +48,11 @@ RUN ./mvnw -B -q clean package -DskipTests
 FROM eclipse-temurin:21-jre AS runtime
 WORKDIR /app
 
-# Run as a non-root user: create the system account "authkit" with the fixed
+# Run as a non-root user: create the system account "overex" with the fixed
 # uid 1001 (predictable for file permissions of mounted files such as the JWT
 # keys, and for Kubernetes runAsUser), then switch to it.
-RUN useradd --system --uid 1001 authkit
-USER authkit
+RUN useradd --system --uid 1001 overex
+USER overex
 
 # Take only the fat jar from the build stage (it already contains all
 # dependencies). *.jar does not match the thin "*.jar.original".

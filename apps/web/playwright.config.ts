@@ -1,7 +1,7 @@
 import { defineConfig, devices } from "@playwright/test";
 
 /**
- * Playwright config for AuthKit's end-to-end tests.
+ * Playwright config for Overex's end-to-end tests.
  *
  * Two projects run in sequence:
  *   1. `setup` registers the bootstrap account and saves its storage state

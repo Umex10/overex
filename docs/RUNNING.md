@@ -1,4 +1,4 @@
-# Running AuthKit
+# Running Overex
 
 Three ways to run it, from "just show me" to "I want to develop on it".
 
@@ -66,10 +66,10 @@ containerised here (Next.js dev experience is best run locally), so still do
 
 | Service | Compose file | Container | Host port | What it is |
 |---------|--------------|-----------|-----------|------------|
-| `db` | `docker-compose.yml` | `authkit-db` | `5432` | PostgreSQL (user/pw/db all `authkit`) |
-| `backend` | `docker-compose.yml` | `authkit-backend` | `8080` | The Spring Boot API, served under `/api/v1` |
-| `swagger-ui` | `docker-compose.yml` | `authkit-swagger` | `8082` | A standalone Swagger UI mirroring the live spec |
-| `db-test` | `docker-compose.test.yml` | `authkit-test-db` | `5433` | Throwaway PostgreSQL used by the e2e tests |
+| `db` | `docker-compose.yml` | `overex-db` | `5432` | PostgreSQL (user/pw/db all `overex`) |
+| `backend` | `docker-compose.yml` | `overex-backend` | `8080` | The Spring Boot API, served under `/api/v1` |
+| `swagger-ui` | `docker-compose.yml` | `overex-swagger` | `8082` | A standalone Swagger UI mirroring the live spec |
+| `db-test` | `docker-compose.test.yml` | `overex-test-db` | `5433` | Throwaway PostgreSQL used by the e2e tests |
 
 ```bash
 docker compose up -d            # main stack
@@ -104,8 +104,8 @@ Everything has a default, so you only set these to override.
 | `JWT_PRIVATE_KEY_LOCATION` | `file:./keys/private.pem` | RSA private key (PKCS#8 PEM) that signs the tokens (RS256). Keep it secret. |
 | `JWT_PUBLIC_KEY_LOCATION` | `file:./keys/public.pem` | Matching public key (PEM). Verifies tokens and is published at `/.well-known/jwks.json`. |
 | `JWT_GENERATE_MISSING_KEYS` | `true` (`false` in the Docker image) | Create a dev key pair on startup when neither key file exists. |
-| `DB_URL` | `jdbc:postgresql://localhost:5432/authkit` | JDBC URL |
-| `DB_USER` / `DB_PASSWORD` | `authkit` / `authkit` | DB credentials |
+| `DB_URL` | `jdbc:postgresql://localhost:5432/overex` | JDBC URL |
+| `DB_USER` / `DB_PASSWORD` | `overex` / `overex` | DB credentials |
 | `FRONTEND_URL` | `http://localhost:3000` | Allowed CORS origin(s), comma-separated, wildcards ok |
 
 ### JWT keys
@@ -134,7 +134,7 @@ as another user and must read them) and meant only for local tokens.
 secret, cloud key vault) and let the platform mount them as files into the
 container. Point `JWT_PRIVATE_KEY_LOCATION` / `JWT_PUBLIC_KEY_LOCATION` at
 these files (e.g. `file:/run/secrets/jwt-private.pem`) and make sure the
-container user (`authkit`, uid 1001) can read them. The image never generates
+container user (`overex`, uid 1001) can read them. The image never generates
 keys (`JWT_GENERATE_MISSING_KEYS=false`), so missing or unreadable keys stop the
 backend at startup with an error that names the path. Never reuse the dev keys.
 

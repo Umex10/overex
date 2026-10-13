@@ -1,5 +1,5 @@
 # =============================================================================
-# AuthKit — local development stack
+# Overex — local development stack
 #
 #   docker compose up            -> Postgres + backend + Swagger UI
 #   docker compose up db         -> just Postgres (run the backend via mvnw)
@@ -18,17 +18,17 @@
 services:
   db:
     image: postgres:17.7
-    container_name: authkit-db
+    container_name: overex-db
     environment:
-      POSTGRES_USER: authkit
-      POSTGRES_PASSWORD: authkit
-      POSTGRES_DB: authkit
+      POSTGRES_USER: overex
+      POSTGRES_PASSWORD: overex
+      POSTGRES_DB: overex
     ports:
       - "5432:5432"
     volumes:
-      - authkit_db_data:/var/lib/postgresql/data
+      - overex_db_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U authkit -d authkit"]
+      test: ["CMD-SHELL", "pg_isready -U overex -d overex"]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -36,15 +36,15 @@ services:
   backend:
     build:
       context: ./apps/backend
-    container_name: authkit-backend
+    container_name: overex-backend
     depends_on:
       db:
         condition: service_healthy
     environment:
       # Inside the compose network the database host is the service name "db".
-      DB_URL: jdbc:postgresql://db:5432/authkit
-      DB_USER: authkit
-      DB_PASSWORD: authkit
+      DB_URL: jdbc:postgresql://db:5432/overex
+      DB_USER: overex
+      DB_PASSWORD: overex
       # Override these in any real deployment.
       FRONTEND_URL: http://localhost:3000
     ports:
@@ -54,7 +54,7 @@ services:
 
   swagger-ui:
     image: swaggerapi/swagger-ui
-    container_name: authkit-swagger
+    container_name: overex-swagger
     depends_on:
       - backend
     environment:
@@ -65,4 +65,4 @@ services:
     restart: unless-stopped
 
 volumes:
-  authkit_db_data:
+  overex_db_data:

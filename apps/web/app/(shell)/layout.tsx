@@ -25,7 +25,7 @@ export default function ShellLayout({
                 "already signed in" note — demonstrating the redirect flow. */}
             <Link href="/" className="flex items-center gap-2 font-semibold">
               <span className="text-xl">🔐</span>
-              <span>AuthKit</span>
+              <span>Overex</span>
             </Link>
             <div className="flex items-center gap-2">
               <ThemeToggle />

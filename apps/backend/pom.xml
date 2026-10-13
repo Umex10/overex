@@ -9,11 +9,11 @@
 		<version>4.0.5</version>
 		<relativePath /> <!-- lookup parent from repository -->
 	</parent>
-	<groupId>com.authkit</groupId>
+	<groupId>com.overex</groupId>
 	<artifactId>backend</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name>authkit-backend</name>
-	<description>AuthKit — a reusable JWT authentication microservice (Spring Boot)</description>
+	<name>overex-backend</name>
+	<description>Overex — ticketing platform for high-demand events, core monolith (Spring Boot)</description>
 
 	<properties>
 		<java.version>21</java.version>
@@ -183,8 +183,8 @@
 					     Only src/main is ever measured, never target/ sources or test classes.
 					     Lombok-generated code is skipped via lombok.config. -->
 					<excludes>
-						<exclude>com/authkit/backend/BackendApplication.class</exclude> <!-- only main(); covered by the context test anyway -->
-						<exclude>com/authkit/backend/config/OpenApiConfig.class</exclude> <!-- annotations only, no logic -->
+						<exclude>com/overex/backend/BackendApplication.class</exclude> <!-- only main(); covered by the context test anyway -->
+						<exclude>com/overex/backend/config/OpenApiConfig.class</exclude> <!-- annotations only, no logic -->
 					</excludes>
 				</configuration>
 				<executions>

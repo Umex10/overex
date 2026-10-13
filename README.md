@@ -1,186 +1,147 @@
-# 🔐 AuthKit
+# 🎟️ Overex
 
-[![backend](https://github.com/Umex10/authkit/actions/workflows/backend-verify-ci.yml/badge.svg?branch=main)](https://github.com/Umex10/authkit/actions/workflows/backend-verify-ci.yml)
-[![web build](https://github.com/Umex10/authkit/actions/workflows/web-build-ci.yml/badge.svg?branch=main)](https://github.com/Umex10/authkit/actions/workflows/web-build-ci.yml)
-[![web unit](https://github.com/Umex10/authkit/actions/workflows/web-unit-ci.yml/badge.svg?branch=main)](https://github.com/Umex10/authkit/actions/workflows/web-unit-ci.yml)
-[![web e2e](https://github.com/Umex10/authkit/actions/workflows/web-e2e-ci.yml/badge.svg?branch=main)](https://github.com/Umex10/authkit/actions/workflows/web-e2e-ci.yml)
-[![docker image](https://github.com/Umex10/authkit/actions/workflows/docker-publish.yml/badge.svg)](https://github.com/Umex10/authkit/pkgs/container/authkit-backend)
+[![backend](https://github.com/Umex10/overex/actions/workflows/backend-verify-ci.yml/badge.svg?branch=main)](https://github.com/Umex10/overex/actions/workflows/backend-verify-ci.yml)
+[![web build](https://github.com/Umex10/overex/actions/workflows/web-build-ci.yml/badge.svg?branch=main)](https://github.com/Umex10/overex/actions/workflows/web-build-ci.yml)
+[![web unit](https://github.com/Umex10/overex/actions/workflows/web-unit-ci.yml/badge.svg?branch=main)](https://github.com/Umex10/overex/actions/workflows/web-unit-ci.yml)
+[![web e2e](https://github.com/Umex10/overex/actions/workflows/web-e2e-ci.yml/badge.svg?branch=main)](https://github.com/Umex10/overex/actions/workflows/web-e2e-ci.yml)
+[![docker image](https://github.com/Umex10/overex/actions/workflows/docker-publish.yml/badge.svg)](https://github.com/Umex10/overex/pkgs/container/overex-backend)
 
-> A reusable, drop-in **authentication microservice** — clone it, start it, and you have working sign-up, sign-in, JWT sessions, roles, Swagger and tests on day one.
+> Eine Ticketplattform für Events mit hohem Andrang: Wenn tausende Käufer gleichzeitig auf wenige Tickets zugreifen, darf **nie mehr verkauft werden, als es gibt**, und das System muss **unter Last erreichbar bleiben**.
 
-AuthKit is a small monorepo with a **Spring Boot** auth backend and a **Next.js** web app that implements the complete, production-style auth flow against it ([how to use it](#-how-to-use-it)):
-
-- ✅ Sign-up & sign-in with server-side validation
-- ✅ Short-lived **access token** (15 min) + long-lived **refresh token** (30 days) in an **HTTP-only cookie**
-- ✅ Stateless JWT security (RS256), role-based authorization (`USER` / `ADMIN`; sign-up always creates a `USER`)
-- ✅ A public **JWKS endpoint**, so other services verify tokens themselves
-- ✅ A protected example route (`GET /me`) and an admin-only route (`@PreAuthorize`)
-- ✅ Live **Swagger UI** with an `Authorize 🔒` button
-- ✅ Modern frontend: Next.js App Router + Server Actions + **Redux Toolkit Query**; route protection via `proxy.ts` / `AuthProvider`, silent token renewal, expired sessions lead back to sign-in
-- ✅ Tests everywhere: Spring unit/slice/integration tests, Vitest unit tests and Playwright e2e for the web app
-- ✅ One `docker compose up` away from running; the backend is also published as a versioned image on ghcr.io
-- ✅ GitHub Actions for everything: backend tests, web build/unit/e2e, Docker image build and publish
-
-It was extracted, almost 1:1, from a production app — so it is not a toy. Use it as the starting point for any new project that needs auth, and as a reference for how the pieces fit together.
+Overex ist meine **Projektarbeit** (12.10.2026 – 26.01.2027, Betreuung: Herr Schwab) und die Grundlage für meine **Bachelorarbeit**.
 
 ---
 
-## 📸 A look at it
+## 🎯 Problem und Ziel
 
-<table>
-<tr>
-<td width="50%" valign="top">
-  <img src="docs/screenshots/authkit-landing.png" width="100%" alt="AuthKit landing page"/>
-  <sub><b>Landing</b> — what you get out of the box.</sub>
-</td>
-<td width="50%" valign="top">
-  <img src="docs/screenshots/authkit-signup.png" width="100%" alt="AuthKit sign-up screen"/>
-  <sub><b>Sign-up</b> — validation, terms; posts to <code>/auth/sign-up</code>. Every new account is a <code>USER</code>.</sub>
-</td>
-</tr>
-<tr>
-<td colspan="2" valign="top">
-  <img src="docs/screenshots/authkit-dashboard.jpg" width="100%" alt="AuthKit dashboard after sign-up"/>
-  <sub><b>Dashboard</b> — you land here logged in; the account card is live data from the protected <code>GET /me</code> route.</sub>
-</td>
-</tr>
-</table>
+Beim Vorverkauf beliebter Events greifen sehr viele Käufer im selben Moment auf ein kleines Ticketkontingent zu. Daraus entstehen zwei Probleme:
 
-**On mobile** — the same web app, responsive:
+1. **Overselling:** Ohne saubere Synchronisation verkauft das System mehr Tickets, als es gibt.
+2. **Lastspitzen:** Der Ansturm trifft den Teil, der Tickets zählt und reserviert. Andere Funktionen wie der Login sollen davon nicht mitgerissen werden.
 
-<table>
-<tr>
-<td width="33%"><img src="docs/screenshots/mobile/authkit-landing.jpg" width="100%" alt="AuthKit landing on mobile"/></td>
-<td width="33%"><img src="docs/screenshots/mobile/authkit-signup.jpg" width="100%" alt="AuthKit sign-up on mobile"/></td>
-<td width="33%"><img src="docs/screenshots/mobile/authkit-dashboard.jpg" width="100%" alt="AuthKit dashboard on mobile"/></td>
-</tr>
-</table>
+Die Projektarbeit vergleicht drei Lösungsansätze (nur Monolith, nur Microservices, Monolith + ein ausgelagerter Service) und setzt den dritten um. Der Monolith enthält den Kern, und nur die Reservierung, die den Ansturm abbekommt, wird ein eigener, skalierbarer Service.
+
+**Nachweise am Ende:**
+- Concurrency-Test: 200 gleichzeitige Käufer auf 50 Tickets, genau 50 kommen durch
+- Lasttest mit k6: 1.000 Käufer auf 100 Tickets, nie zu viel verkauft, Autoscaling greift, Login bleibt erreichbar
 
 ---
 
-## 🧭 How to use it
+## 🏗️ Architektur
 
-The heart of AuthKit is the **backend in `apps/backend`** — a self-contained
-**authentication microservice**. `apps/web` is its reference client.
+```mermaid
+flowchart LR
+    B["Browser"] --> F["Frontend<br/>Next.js"]
+    F -->|"REST"| M["Monolith<br/>Spring Boot<br/>Auth · Events · Bestellungen · Meine Tickets"]
+    M -->|"gRPC<br/>reservieren · bestätigen · freigeben"| R["Reservierungs-Service<br/>Spring Boot<br/>Ticketzähler · Locking"]
+    M --> DB1[("PostgreSQL<br/>Schema Monolith")]
+    R --> DB2[("PostgreSQL<br/>Schema Reservierung")]
+```
 
-- **Building a web app?** Start from `apps/web`: the sign-up/sign-in forms, the
-  HTTP-only refresh cookie (via Server Actions) and the route guards are done.
-- **Already have an app?** Run `apps/backend` as a standalone auth service and
-  point your app at its HTTP API (`/api/v1/auth/**`, `/api/v1/me`, …). Other
-  backend services verify the tokens with the public key from
-  `/api/v1/.well-known/jwks.json`. `apps/web` then doubles as a **copy-paste
-  reference** for the client side: forms, validation (`lib/validation.ts`),
-  RTK Query layer, token renewal and route guards.
+| Bestandteil | Wo | Aufgabe |
+|---|---|---|
+| **Frontend** | Next.js | Events ansehen, Ticket kaufen, Login, Meine Tickets. Spricht nur mit dem Monolithen. |
+| **Auth** | Monolith | Registrieren, Login, JWT (RS256) mit JWKS-Endpoint. Übernommen aus AuthKit. |
+| **Events** | Monolith | Veranstaltungen und Ticketkategorien mit Preis, Datum, Ort und Verkaufsstart. |
+| **Bestellungen** | Monolith | Schließt einen Kauf ab (simulierte Zahlung, Bestellnummer). Nur mit gültiger Reservierung. |
+| **Meine Tickets** | Monolith | Zeigt dem User seine gekauften Tickets. |
+| **Reservierung** | eigener Service | Zählt freie Tickets, hält ein Ticket 10 Minuten fest und verhindert Overselling mit pessimistischem Locking. |
+| **gRPC** | Monolith ↔ Reservierung | Reservieren, Bestätigen, Freigeben, jeweils mit Zeitlimit. |
+| **Datenbank** | PostgreSQL | Ein Schema pro Service, jeder greift nur auf sein eigenes zu. |
+| **Kubernetes** | lokaler Cluster | Monolith mit 2 festen Kopien, Reservierung mit 1–10 Kopien je nach Last (HPA). |
+| **CI/CD** | GitHub Actions | Baut und testet bei jedem Push, legt Docker-Images in ghcr.io ab. |
 
-See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the full flow.
+**Ablauf eines Kaufs:** Ticket kaufen klicken → Monolith fragt per gRPC die Reservierung → Reservierung sperrt kurz den Ticketzähler, zieht 1 ab und hält das Ticket 10 Minuten fest → Käufer füllt die Bezahlseite aus → Monolith legt die Bestellung an und bestätigt die Reservierung → Ticket erscheint in „Meine Tickets". Wird nicht rechtzeitig bezahlt, gibt die Reservierung das Ticket wieder frei.
 
 ---
 
-## 🚀 Quick start (the 60-second version)
+## 📍 Aktueller Stand
+
+Overex startet auf der Basis von **AuthKit** (Release v1.0.0), meinem eigenen Auth-Service. Davon ist bereits fertig:
+
+- ✅ Registrierung und Login, Access-Token (15 Min.) + Refresh-Token im HTTP-only-Cookie
+- ✅ JWT mit **RS256**, öffentlicher Schlüssel über **JWKS-Endpoint**, Prüfung per OAuth2 Resource Server
+- ✅ Schlüsselverwaltung (Dev-Key-Generator, Skript für Produktionsschlüssel)
+- ✅ Tests in drei Ebenen (Unit, Slice, Integration) mit JaCoCo, Web-Unit- und Playwright-E2E-Tests
+- ✅ GitHub Actions für Backend, Web-Build/Unit/E2E, Docker-Build und Image-Publish nach ghcr.io
+
+Als Nächstes kommen Events, Reservierungs-Service, gRPC, Bestellungen und Kubernetes (siehe Roadmap).
+
+---
+
+## 🗓️ Roadmap
+
+| Phase | Zeitraum | Ziel |
+|---|---|---|
+| 0 · Start | 12.10. – 20.10. | Monorepo, Domänenmodell, Konzept |
+| 1 · Core + Frontend | 21.10. – 08.11. | Events im Monolithen, erste Screens, gRPC- und Kubernetes-Spike |
+| 2 · Reservierung + gRPC | 10.11. – 13.12. | Reservierungs-Service, pessimistisches Locking, gRPC, kompletter Kaufablauf |
+| 3 · Kubernetes | 14.12. – 10.01. | Gesamtsystem auf Kubernetes, Autoscaling, Lasttest mit k6 |
+| 4 · Abschluss | 11.01. – 26.01. | Dokumentation, Präsentation, Puffer |
+
+**Nicht Teil der Projektarbeit (Ausblick Bachelorarbeit):** Warteraum, Rate Limiting und Load Shedding.
+
+Der Fortschritt ist pro Meilenstein in [docs/meilenstein-doku](docs/meilenstein-doku/README.md) dokumentiert.
+
+---
+
+## 🚀 Schnellstart
 
 ```bash
-# 0. Create the JWT signing keys (once after cloning; never overwrites)
+# 0. JWT-Schlüssel erzeugen (einmal nach dem Klonen, überschreibt nichts)
 scripts/generate-jwt-keys.sh
 
-# 1. Start the database + backend (+ a mirrored Swagger UI)
+# 1. Datenbank + Backend (+ Swagger UI) starten
 docker compose up -d
 
-# 2. …then start the web frontend (Next.js)
+# 2. Frontend starten
 cd apps/web
 npm install
 npm run dev          # → http://localhost:3000
 ```
 
-Open **http://localhost:3000**, register — and you land on a dashboard that says *"You made it!"* 🎉
-
-> No configuration needed: every value has a sensible default. Only the JWT keys are created per clone (step 0; when you run the backend without Docker it creates them itself). See [docs/RUNNING.md](docs/RUNNING.md) for all the variations (full Docker, manual dev, individual services) and for [production keys](docs/RUNNING.md#jwt-keys).
+Swagger UI: **http://localhost:8080/api/v1/swagger-ui.html**. Alle Varianten (komplett in Docker, manuell, einzelne Services) stehen in [docs/RUNNING.md](docs/RUNNING.md).
 
 ---
 
-## 🐳 Prebuilt backend image
-
-Every release is published to the GitHub Container Registry:
-
-```bash
-docker pull ghcr.io/umex10/authkit-backend:1.0.0   # or :latest
-```
-
-The image ships without keys: mount a key pair and point
-`JWT_PRIVATE_KEY_LOCATION` / `JWT_PUBLIC_KEY_LOCATION` at it — see
-[docs/RUNNING.md](docs/RUNNING.md#jwt-keys) and [docs/CI.md](docs/CI.md).
-
----
-
-## 🗺️ What's in the box
+## 🗺️ Repository
 
 ```
-authkit/
+overex/
 ├── apps/
-│   ├── backend/        Spring Boot 4 · Java 21 · JWT · Spring Security · springdoc
-│   └── web/            Next.js 16 · React 19 · Redux Toolkit Query · Tailwind v4 · shadcn/ui
-├── .github/workflows/         CI: backend + web tests, Docker build/publish
-├── docker-compose.yml         Postgres + backend + Swagger UI
-├── docker-compose.test.yml    Throwaway Postgres for e2e tests
+│   ├── backend/        Monolith: Spring Boot 4 · Java 21 · Spring Security · JPA · springdoc
+│   └── web/            Frontend: Next.js 16 · React 19 · Redux Toolkit Query · Tailwind v4 · shadcn/ui
+├── .github/workflows/         CI: Backend- und Web-Tests, Docker-Build/Publish
+├── docker-compose.yml         Postgres + Backend + Swagger UI
+├── docker-compose.test.yml    Wegwerf-Postgres für die E2E-Tests
 ├── scripts/                   generate-jwt-keys.sh
-└── docs/                      You are here-ish
+└── docs/                      Technische Doku und Meilenstein-Doku
 ```
 
 ---
 
-## 📚 Documentation
+## 📚 Dokumentation
 
-| Document | What it covers |
-|----------|----------------|
-| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | How it all fits together + **flow diagrams** (who calls whom, in what order) |
-| [docs/BACKEND_FLOW.md](docs/BACKEND_FLOW.md) | **Detailed backend call graph** — controller → service → repository → DB, per endpoint, incl. the security filter chain |
-| [docs/RUNNING.md](docs/RUNNING.md) | Every way to run it, all Docker instances, ports and environment variables |
-| [docs/SWAGGER.md](docs/SWAGGER.md) | Using the live API docs and the `Authorize 🔒` button |
-| [docs/TESTING.md](docs/TESTING.md) | Backend unit/slice/integration tests, web unit tests, Playwright e2e |
-| [docs/SECURITY.md](docs/SECURITY.md) | The token/cookie model and what to harden before production |
-| [docs/CI.md](docs/CI.md) | The GitHub Actions workflows, the published Docker image and how to make a release |
-| [docs/CUSTOMIZING.md](docs/CUSTOMIZING.md) | Change the roles, add endpoints, re-theme, and remove the fun gag |
-
----
-
-## 🧭 The auth flow at a glance
-
-```mermaid
-flowchart LR
-    B["Browser"] -->|"form submit"| N["Next.js<br/>(Server Action / BFF)"]
-    N -->|"POST /api/v1/auth/sign-in"| S["Spring Boot<br/>AuthKit API"]
-    S -->|"access token + Set-Cookie: refresh_tk"| N
-    N -->|"sets HTTP-only cookie,<br/>caches access token"| B
-    B -->|"GET /me  (Bearer access token)"| S
-    S -->|"current user"| B
-```
-
-Full sequence diagrams (sign-up, sign-in, silent refresh, protected request) live in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). For the **detailed backend call graph** — every hop from controller through service to repository and database, plus the security filter chain — see [docs/BACKEND_FLOW.md](docs/BACKEND_FLOW.md).
+| Dokument | Inhalt |
+|---|---|
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Zusammenspiel der Teile mit Ablaufdiagrammen |
+| [docs/BACKEND_FLOW.md](docs/BACKEND_FLOW.md) | Aufrufkette im Backend pro Endpoint, inkl. Security-Filter |
+| [docs/RUNNING.md](docs/RUNNING.md) | Starten, Docker-Container, Ports, Umgebungsvariablen |
+| [docs/SWAGGER.md](docs/SWAGGER.md) | Die Live-API-Doku |
+| [docs/TESTING.md](docs/TESTING.md) | Backend- und Web-Tests |
+| [docs/SECURITY.md](docs/SECURITY.md) | Token- und Cookie-Modell |
+| [docs/CI.md](docs/CI.md) | GitHub Actions, Docker-Image, Releases |
+| [docs/meilenstein-doku](docs/meilenstein-doku/README.md) | Zeitleiste der Meilensteine |
 
 ---
 
-## 🔌 API surface
+## 🛠️ Tech-Stack
 
-| Method | Route | Auth | Purpose |
-|--------|-------|------|---------|
-| `POST` | `/api/v1/auth/sign-up` | public | Create an account, returns access token + sets refresh cookie |
-| `POST` | `/api/v1/auth/sign-in` | public | Authenticate, returns access token + sets refresh cookie |
-| `GET`  | `/api/v1/auth/access-tk` | refresh cookie | Exchange the refresh cookie for a fresh access token |
-| `GET`  | `/api/v1/me` | access token | The current user (example protected route) |
-| `GET`  | `/api/v1/admin/ping` | access token + `ADMIN` | Role-protected example route |
-| `GET`  | `/api/v1/.well-known/jwks.json` | public | Public key (JWKS) for services that verify AuthKit tokens |
-
-Explore them live at **http://localhost:8080/api/v1/swagger-ui.html**.
+**Backend:** Spring Boot 4, Java 21, Spring Security (OAuth2 Resource Server), Spring Data JPA, PostgreSQL / H2, springdoc-openapi; geplant: gRPC.
+**Frontend:** Next.js 16 (App Router), React 19, Redux Toolkit Query, react-hook-form + Zod, Tailwind CSS v4, shadcn/ui.
+**Betrieb:** Docker, GitHub Actions, ghcr.io; geplant: Kubernetes (HPA, Ingress), k6.
+**Tests:** JUnit 5, Mockito, MockMvc, JaCoCo, Vitest, Playwright.
 
 ---
 
-## 🛠️ Tech stack
-
-**Backend:** Spring Boot 4, Java 21, Spring Security, JJWT, Spring Data JPA, PostgreSQL / H2, springdoc-openapi.
-**Web frontend:** Next.js 16 (App Router), React 19, Redux Toolkit Query, react-hook-form + Zod, Tailwind CSS v4, shadcn/ui, sonner.
-**Testing:** JUnit 5 + Mockito + MockMvc + Spring Security Test + JaCoCo, Vitest + Testing Library, Playwright.
-
----
-
-## 📄 License
-
-Use it, fork it, build on it. AuthKit is meant to be copied into your own projects.
+Umejr Dzinovic · Projektarbeit 2026/27

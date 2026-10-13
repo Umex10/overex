@@ -7,15 +7,15 @@
   Spring Security's **OAuth2 resource server**: the `JwtDecoder` checks the
   signature, the expiry and that the token is an access token (`type_tk = ACCESS`).
   No database lookup is needed per request.
-- **Asymmetric signing (RS256).** Only AuthKit holds the **private key** and
+- **Asymmetric signing (RS256).** Only Overex holds the **private key** and
   signs tokens with it. The matching **public key** is published at
-  `/.well-known/jwks.json`, so any other service can verify AuthKit tokens
+  `/.well-known/jwks.json`, so any other service can verify Overex tokens
   itself, without calling back. A leaked public key is harmless; a leaked
   private key lets anyone forge tokens for any user.
 - **Refresh tokens are no access tokens.** Both are signed with the same key, so
   a refresh token has a valid signature too. The `type_tk` claim tells them
   apart: the resource server only accepts `ACCESS`, the refresh endpoint only
-  `REFRESH`. **Every other service that verifies AuthKit tokens must add the same
+  `REFRESH`. **Every other service that verifies Overex tokens must add the same
   `type_tk = ACCESS` check**, otherwise it would accept a 30-day refresh token
   as a bearer token.
 - **Two tokens, two lifetimes.**

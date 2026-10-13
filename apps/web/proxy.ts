@@ -37,7 +37,7 @@ export async function proxy(request: NextRequest) {
 
   // Logged in + opening the landing page -> dashboard, flagged so the dashboard
   // can show the "you're already signed in" note (this is the flow you hit by
-  // reopening the site at the root URL, or by clicking the AuthKit logo).
+  // reopening the site at the root URL, or by clicking the Overex logo).
   if (token && isLandingPage) {
     const url = new URL("/dashboard", request.url);
     url.searchParams.set("redirected", "1");

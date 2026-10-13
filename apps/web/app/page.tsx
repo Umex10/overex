@@ -33,7 +33,7 @@ export default function Home() {
         <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between px-6">
           <Link href="/" className="flex items-center gap-2 font-semibold">
             <span className="text-xl">🔐</span>
-            <span>AuthKit</span>
+            <span>Overex</span>
           </Link>
           <div className="flex items-center gap-2">
             <ThemeToggle />
@@ -69,9 +69,9 @@ export default function Home() {
             <span className="text-primary">never rewrite</span> again.
           </h1>
           <p className="max-w-xl text-base leading-relaxed text-muted-foreground sm:text-lg">
-            AuthKit is a reusable auth microservice: a Spring Boot backend and a
-            Next.js frontend with sign-up, sign-in, refresh tokens, roles,
-            Swagger and tests. Start your next project with auth already done.
+            Overex is a ticketing platform for high-demand events, built on a
+            Spring Boot backend and a Next.js frontend. Sign-up, sign-in,
+            refresh tokens and roles are already in place.
           </p>
           <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
             <Button asChild size="lg" className="h-auto rounded-xl px-6 py-3 text-sm">
@@ -108,7 +108,7 @@ export default function Home() {
       {/* Footer */}
       <footer className="border-t border-border">
         <div className="mx-auto flex w-full max-w-6xl flex-col items-center justify-between gap-2 px-6 py-8 text-xs text-muted-foreground sm:flex-row">
-          <p>AuthKit — a reusable authentication starter.</p>
+          <p>Overex — tickets for high-demand events.</p>
           <p>Built on Spring Boot + Next.js.</p>
         </div>
       </footer>

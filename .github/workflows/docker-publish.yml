@@ -73,9 +73,9 @@ jobs:
         id: meta
         uses: docker/metadata-action@v6
         with:
-          # ghcr.io/<owner>/authkit-backend; the action lowercases it
+          # ghcr.io/<owner>/overex-backend; the action lowercases it
           # (image names must not contain capital letters, e.g. "Umex10").
-          images: ghcr.io/${{ github.repository_owner }}/authkit-backend
+          images: ghcr.io/${{ github.repository_owner }}/overex-backend
           # One tag rule per line (one image, several names):
           # - "latest": the newest image, from main or from the newest release.
           # - semver rules, only on a version tag (v1.2.3, the "v" is dropped):
