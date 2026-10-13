@@ -124,6 +124,7 @@ overex/
 
 | Dokument | Inhalt |
 |---|---|
+| [docs/DATA_MODEL.md](docs/DATA_MODEL.md) | ER-Modell: Entities, Felder, Beziehungen, Statuswechsel |
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Zusammenspiel der Teile mit Ablaufdiagrammen |
 | [docs/BACKEND_FLOW.md](docs/BACKEND_FLOW.md) | Aufrufkette im Backend pro Endpoint, inkl. Security-Filter |
 | [docs/RUNNING.md](docs/RUNNING.md) | Starten, Docker-Container, Ports, Umgebungsvariablen |
