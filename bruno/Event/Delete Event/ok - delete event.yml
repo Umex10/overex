@@ -1,0 +1,23 @@
+info:
+  name: ok - delete event
+  type: http
+  seq: 1
+
+http:
+  method: DELETE
+  url: "{{baseUrl}}/event/{{eventId}}"
+  auth:
+    type: bearer
+    token: "{{accessTk}}"
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "204"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

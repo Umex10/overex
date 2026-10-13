@@ -1,0 +1,35 @@
+info:
+  name: fail - unknown id
+  type: http
+  seq: 7
+
+http:
+  method: PATCH
+  url: "{{baseUrl}}/event/00000000-0000-0000-0000-000000000000"
+  body:
+    type: json
+    data: |
+      {
+        "title": "Frequency Festival 2027",
+        "description": "Drei Tage Musik am Traisenpark in St. Pölten. Einlass ab 12:00 Uhr.",
+        "venue": "Green Park St. Pölten",
+        "city": "St. Pölten",
+        "startsAt": "2027-08-12T14:00:00Z",
+        "saleStartsAt": "2026-11-01T10:00:00Z",
+        "imageUrl": "https://images.unsplash.com/photo-1459749411175-04bf5292ceea"
+      }
+  auth:
+    type: bearer
+    token: "{{accessTk}}"
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "404"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

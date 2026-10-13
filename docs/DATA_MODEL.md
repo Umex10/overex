@@ -16,7 +16,6 @@ Registrierte Konten. `role` ist `USER` oder `ADMIN`.
 ### `events`
 | Feld | Bedeutung |
 |---|---|
-| `slug` | Lesbarer, eindeutiger URL-Teil (`/events/frequency-2027`) |
 | `venue`, `city` | Ort der Veranstaltung |
 | `starts_at` | Beginn des Events |
 | `sale_starts_at` | Verkaufsstart. Davor zeigt die Detailseite den Countdown, und der Monolith lehnt Reservierungen ab |
