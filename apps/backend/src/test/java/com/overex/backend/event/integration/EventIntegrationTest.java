@@ -9,11 +9,14 @@ import static org.hamcrest.Matchers.notNullValue;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
@@ -24,11 +27,13 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.nio.file.Path;
 import java.util.List;
 
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.overex.backend.auth.utils.TestKeys;
 import com.overex.backend.auth.utils.TkFactory;
 import com.overex.backend.common.repositories.UserRepository;
 import com.overex.backend.event.Event;
@@ -46,6 +51,28 @@ import lombok.extern.slf4j.Slf4j;
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 public class EventIntegrationTest {
+
+    /**
+     * Temporary folder for the generated key files. JUnit creates it before the
+     * Spring context starts and deletes it after all tests of this class. It is
+     * static because {@link #keyLocations} below is static and runs before any
+     * test instance exists.
+     */
+    @TempDir
+    static Path keyDir;
+
+    /**
+     * Runs while Spring builds the context, before the beans are created: writes
+     * {@code private.pem} and {@code public.pem} into {@link #keyDir} and sets the
+     * two key-location properties to these files. Values registered here win over
+     * {@code application.properties} and {@code application-test.properties}.
+     */
+    @DynamicPropertySource
+    static void keyLocations(DynamicPropertyRegistry registry) {
+        TestKeys.writePemFiles(keyDir);
+        registry.add("jwt.private-key-location", () -> keyDir.resolve("private.pem").toUri().toString());
+        registry.add("jwt.public-key-location", () -> keyDir.resolve("public.pem").toUri().toString());
+    }
 
     /** Sends requests through the whole application, like a client would. */
     @Autowired
