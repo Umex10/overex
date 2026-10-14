@@ -1,4 +1,4 @@
-package com.overex.backend.slice.auth;
+package com.overex.backend.auth.slice;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -15,7 +15,7 @@ import com.overex.backend.auth.JwksController;
 import com.overex.backend.auth.security.CustomUserDetailsService;
 import com.overex.backend.auth.security.config.SecurityConfig;
 import com.overex.backend.common.repositories.UserRepository;
-import com.overex.backend.utils.TestKeys;
+import com.overex.backend.auth.utils.TestKeys;
 
 /**
  * Web-layer test for {@link JwksController}, through the real

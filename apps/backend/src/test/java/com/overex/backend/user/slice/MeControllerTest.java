@@ -1,9 +1,8 @@
-package com.overex.backend.slice.user;
+package com.overex.backend.user.slice;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
@@ -17,10 +16,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.request.RequestPostProcessor;
 
 import com.overex.backend.auth.JwtService;
 import com.overex.backend.auth.security.CustomUserDetailsService;
@@ -28,8 +25,9 @@ import com.overex.backend.auth.security.config.SecurityConfig;
 import com.overex.backend.common.entities.User;
 import com.overex.backend.common.repositories.UserRepository;
 import com.overex.backend.user.MeController;
-import com.overex.backend.utils.TestDataFactory;
-import com.overex.backend.utils.TestKeys;
+import com.overex.backend.auth.utils.AuthTestDataFactory;
+import com.overex.backend.auth.utils.TestKeys;
+import com.overex.backend.auth.utils.TkFactory;
 
 /**
  * Web-layer test for the protected {@link MeController} routes, exercised
@@ -61,9 +59,9 @@ public class MeControllerTest {
 	/** Only a tool to create real tokens; built by hand, not a Spring bean. */
 	private JwtService jwtService;
 
-	private final User user = TestDataFactory.createDefaultUser();
+	private final User user = AuthTestDataFactory.createDefaultUser();
 
-	private final User admin = TestDataFactory.createAdminUser();
+	private final User admin = AuthTestDataFactory.createAdminUser();
 
 	/**
 	 * Builds the token tool with the same key pair whose public key the
@@ -81,7 +79,7 @@ public class MeControllerTest {
 	void shouldReturnCurrentUser() throws Exception {
 		when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
 
-		mockMvc.perform(get("/me").with(authenticatedAs(user)))
+		mockMvc.perform(get("/me").with(TkFactory.authenticatedAs(user)))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.email").value(user.getEmail()))
 				.andExpect(jsonPath("$.role").value("USER"))
@@ -97,7 +95,7 @@ public class MeControllerTest {
 	void shouldReturn404WhenUserNoLongerExists() throws Exception {
 		when(userRepository.findById(user.getId())).thenReturn(Optional.empty());
 
-		mockMvc.perform(get("/me").with(authenticatedAs(user)))
+		mockMvc.perform(get("/me").with(TkFactory.authenticatedAs(user)))
 				.andExpect(status().isNotFound())
 				.andExpect(jsonPath("$.status").value(404))
 				.andExpect(jsonPath("$.error").value("Not Found"))
@@ -133,14 +131,14 @@ public class MeControllerTest {
 	/** A regular user gets 403 on the admin route. */
 	@Test
 	void shouldForbidAdminRouteForRegularUser() throws Exception {
-		mockMvc.perform(get("/admin/ping").with(authenticatedAs(user)))
+		mockMvc.perform(get("/admin/ping").with(TkFactory.authenticatedAs(user)))
 				.andExpect(status().isForbidden());
 	}
 
 	/** An admin may use the admin route. */
 	@Test
 	void shouldAllowAdminRouteForAdmin() throws Exception {
-		mockMvc.perform(get("/admin/ping").with(authenticatedAs(admin)))
+		mockMvc.perform(get("/admin/ping").with(TkFactory.authenticatedAs(admin)))
 				.andExpect(status().isOk())
 				.andExpect(content().string(containsString("pong")));
 	}
@@ -171,16 +169,5 @@ public class MeControllerTest {
 		mockMvc.perform(get("/admin/ping")
 				.header("Authorization", "Bearer " + accessTk))
 				.andExpect(status().isForbidden());
-	}
-
-	/**
-	 * Simulates a request that already passed token verification: puts a JWT
-	 * (subject = user id) with the user's {@code ROLE_} authority into the
-	 * security context.
-	 */
-	private static RequestPostProcessor authenticatedAs(User user) {
-		return jwt()
-				.jwt(token -> token.subject(user.getId().toString()))
-				.authorities(new SimpleGrantedAuthority("ROLE_" + user.getRole().name()));
 	}
 }

@@ -1,4 +1,4 @@
-package com.overex.backend.integration;
+package com.overex.backend.auth.integration;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasItems;
@@ -38,8 +38,8 @@ import com.overex.backend.auth.dto.requests.SignInAccountRequestDto;
 import com.overex.backend.auth.dto.requests.SignUpAccountRequestDto;
 import com.overex.backend.common.entities.User;
 import com.overex.backend.common.repositories.UserRepository;
-import com.overex.backend.utils.TestDataFactory;
-import com.overex.backend.utils.TestKeys;
+import com.overex.backend.auth.utils.AuthTestDataFactory;
+import com.overex.backend.auth.utils.TestKeys;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jayway.jsonpath.JsonPath;
 import com.nimbusds.jose.jwk.JWKSet;
@@ -122,10 +122,10 @@ class BackendApplicationTests {
 	 */
 	@Test
 	void shouldReturnOwnAccountWithTokenFromSignIn() throws Exception {
-		SignUpAccountRequestDto signUp = TestDataFactory.createSignUpDto();
+		SignUpAccountRequestDto signUp = AuthTestDataFactory.createSignUpDto();
 		signUp(signUp);
 
-		String accessTk = accessTkOf(signIn(TestDataFactory.createSignInDto()));
+		String accessTk = accessTkOf(signIn(AuthTestDataFactory.createSignInDto()));
 
 		mockMvc.perform(get("/me").header("Authorization", "Bearer " + accessTk))
 				.andExpect(status().isOk())
@@ -141,8 +141,8 @@ class BackendApplicationTests {
 	 */
 	@Test
 	void shouldIssueWorkingAccessTkFromRefreshCookie() throws Exception {
-		signUp(TestDataFactory.createSignUpDto());
-		Cookie refreshCookie = signIn(TestDataFactory.createSignInDto()).getResponse().getCookie("refresh_tk");
+		signUp(AuthTestDataFactory.createSignUpDto());
+		Cookie refreshCookie = signIn(AuthTestDataFactory.createSignInDto()).getResponse().getCookie("refresh_tk");
 
 		MvcResult refreshed = mockMvc.perform(get("/auth/access-tk").cookie(refreshCookie))
 				.andExpect(status().isOk())
@@ -150,7 +150,7 @@ class BackendApplicationTests {
 
 		mockMvc.perform(get("/me").header("Authorization", "Bearer " + accessTkOf(refreshed)))
 				.andExpect(status().isOk())
-				.andExpect(jsonPath("$.email").value(TestDataFactory.createSignUpDto().getEmail()));
+				.andExpect(jsonPath("$.email").value(AuthTestDataFactory.createSignUpDto().getEmail()));
 	}
 
 	/**
@@ -170,14 +170,14 @@ class BackendApplicationTests {
 	 */
 	@Test
 	void shouldAllowAdminRouteOnlyForAdminAccounts() throws Exception {
-		User admin = TestDataFactory.createAdminUser();
+		User admin = AuthTestDataFactory.createAdminUser();
 		admin.setId(null); // let JPA generate it
-		admin.setPassword(passwordEncoder.encode(TestDataFactory.createAdminSignInDto().getPassword()));
+		admin.setPassword(passwordEncoder.encode(AuthTestDataFactory.createAdminSignInDto().getPassword()));
 		userRepository.save(admin);
-		signUp(TestDataFactory.createSignUpDto());
+		signUp(AuthTestDataFactory.createSignUpDto());
 
-		String adminTk = accessTkOf(signIn(TestDataFactory.createAdminSignInDto()));
-		String userTk = accessTkOf(signIn(TestDataFactory.createSignInDto()));
+		String adminTk = accessTkOf(signIn(AuthTestDataFactory.createAdminSignInDto()));
+		String userTk = accessTkOf(signIn(AuthTestDataFactory.createSignInDto()));
 
 		mockMvc.perform(get("/admin/ping").header("Authorization", "Bearer " + adminTk))
 				.andExpect(status().isOk())
@@ -192,12 +192,12 @@ class BackendApplicationTests {
 	 */
 	@Test
 	void shouldIgnoreRoleSentWithSignUp() throws Exception {
-		String json = objectMapper.writeValueAsString(TestDataFactory.createSignUpDto())
+		String json = objectMapper.writeValueAsString(AuthTestDataFactory.createSignUpDto())
 				.replaceFirst("\\{", "{\"role\":\"ADMIN\",");
 		mockMvc.perform(post("/auth/sign-up").contentType(MediaType.APPLICATION_JSON).content(json))
 				.andExpect(status().isCreated());
 
-		String accessTk = accessTkOf(signIn(TestDataFactory.createSignInDto()));
+		String accessTk = accessTkOf(signIn(AuthTestDataFactory.createSignInDto()));
 
 		mockMvc.perform(get("/me").header("Authorization", "Bearer " + accessTk))
 				.andExpect(jsonPath("$.role").value("USER"));
@@ -212,9 +212,9 @@ class BackendApplicationTests {
 	 */
 	@Test
 	void shouldSignInWithDifferentlyCasedEmail() throws Exception {
-		signUp(TestDataFactory.createSignUpDto());
+		signUp(AuthTestDataFactory.createSignUpDto());
 
-		SignInAccountRequestDto shouted = TestDataFactory.createSignInDto();
+		SignInAccountRequestDto shouted = AuthTestDataFactory.createSignInDto();
 		shouted.setEmail(shouted.getEmail().toUpperCase());
 
 		signIn(shouted);
@@ -226,11 +226,11 @@ class BackendApplicationTests {
 	 */
 	@Test
 	void shouldRejectSecondSignUpWithSameEmailAndPhone() throws Exception {
-		signUp(TestDataFactory.createSignUpDto());
+		signUp(AuthTestDataFactory.createSignUpDto());
 
 		mockMvc.perform(post("/auth/sign-up")
 				.contentType(MediaType.APPLICATION_JSON)
-				.content(objectMapper.writeValueAsString(TestDataFactory.createSignUpDto())))
+				.content(objectMapper.writeValueAsString(AuthTestDataFactory.createSignUpDto())))
 				.andExpect(status().isBadRequest())
 				.andExpect(jsonPath("$.errors[*].field").value(hasItems("email", "phone")));
 	}
@@ -268,9 +268,9 @@ class BackendApplicationTests {
 	 */
 	@Test
 	void shouldVerifyAccessTkWithPublishedJwks() throws Exception {
-		SignUpAccountRequestDto signUp = TestDataFactory.createSignUpDto();
+		SignUpAccountRequestDto signUp = AuthTestDataFactory.createSignUpDto();
 		signUp(signUp);
-		String accessTk = accessTkOf(signIn(TestDataFactory.createSignInDto()));
+		String accessTk = accessTkOf(signIn(AuthTestDataFactory.createSignInDto()));
 
 		// decode() throws if the signature does not match the published key
 		Jwt jwt = decoderFromJwks().decode(accessTk);
@@ -285,8 +285,8 @@ class BackendApplicationTests {
 	 */
 	@Test
 	void shouldRejectRefreshTkWithPublishedJwks() throws Exception {
-		signUp(TestDataFactory.createSignUpDto());
-		String refreshTk = signIn(TestDataFactory.createSignInDto()).getResponse().getCookie("refresh_tk").getValue();
+		signUp(AuthTestDataFactory.createSignUpDto());
+		String refreshTk = signIn(AuthTestDataFactory.createSignInDto()).getResponse().getCookie("refresh_tk").getValue();
 
 		assertThrows(JwtValidationException.class, () -> decoderFromJwks().decode(refreshTk));
 	}

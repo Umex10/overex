@@ -1,4 +1,4 @@
-package com.overex.backend.unit.auth.security;
+package com.overex.backend.auth.unit.security;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
@@ -22,7 +22,7 @@ import com.overex.backend.auth.security.CustomUserDetails;
 import com.overex.backend.auth.security.CustomUserDetailsService;
 import com.overex.backend.common.entities.User;
 import com.overex.backend.common.repositories.UserRepository;
-import com.overex.backend.utils.TestDataFactory;
+import com.overex.backend.auth.utils.AuthTestDataFactory;
 
 /**
  * Unit tests for {@link CustomUserDetailsService}.
@@ -43,7 +43,7 @@ public class CustomUserDetailsServiceTest {
 	@InjectMocks
 	private CustomUserDetailsService customUserDetailsService;
 
-	private final User user = TestDataFactory.createDefaultUser();
+	private final User user = AuthTestDataFactory.createDefaultUser();
 
 	/**
 	 * A known email is turned into a {@link CustomUserDetails} that carries the

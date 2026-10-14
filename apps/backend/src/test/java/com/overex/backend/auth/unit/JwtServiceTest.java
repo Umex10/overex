@@ -1,4 +1,4 @@
-package com.overex.backend.unit.auth;
+package com.overex.backend.auth.unit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
@@ -28,8 +28,8 @@ import com.overex.backend.auth.JwtService;
 import com.overex.backend.auth.config.RsaKeyFiles;
 import com.overex.backend.common.entities.User;
 import com.overex.backend.common.repositories.UserRepository;
-import com.overex.backend.utils.TestDataFactory;
-import com.overex.backend.utils.TestKeys;
+import com.overex.backend.auth.utils.AuthTestDataFactory;
+import com.overex.backend.auth.utils.TestKeys;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
 
@@ -58,7 +58,7 @@ public class JwtServiceTest {
 
 	private JwtService jwtService;
 
-	private final User user = TestDataFactory.createDefaultUser();
+	private final User user = AuthTestDataFactory.createDefaultUser();
 
 	/**
 	 * Builds a fresh service per test so it always uses the current test's

@@ -1,4 +1,4 @@
-package com.overex.backend.utils;
+package com.overex.backend.auth.utils;
 
 import java.util.UUID;
 
@@ -14,9 +14,9 @@ import com.overex.backend.common.entities.User;
  * "default user" or a valid sign-up/sign-in payload gets the same well-formed
  * data from here.
  */
-public final class TestDataFactory {
+public final class AuthTestDataFactory {
 
-	private TestDataFactory() {
+	private AuthTestDataFactory() {
 	}
 
 	/** A fixed id so tests can assert against the {@code userId} request attribute. */

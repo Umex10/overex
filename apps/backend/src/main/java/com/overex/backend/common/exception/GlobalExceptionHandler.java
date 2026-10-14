@@ -14,7 +14,6 @@ import com.overex.backend.common.domain.dtos.ErrorResponse;
 import com.overex.backend.common.domain.dtos.factory.ErrorResponseFactory;
 
 import jakarta.persistence.EntityNotFoundException;
-import jakarta.persistence.UniqueConstraint;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.NonNull;
 

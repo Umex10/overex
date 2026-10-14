@@ -1,4 +1,4 @@
-package com.overex.backend.utils;
+package com.overex.backend.auth.utils;
 
 import java.nio.file.Path;
 import java.security.KeyPair;

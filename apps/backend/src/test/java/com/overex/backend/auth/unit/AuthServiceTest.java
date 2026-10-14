@@ -1,4 +1,4 @@
-package com.overex.backend.unit.auth;
+package com.overex.backend.auth.unit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -28,7 +28,7 @@ import com.overex.backend.common.entities.User;
 import com.overex.backend.common.exception.ApiError;
 import com.overex.backend.common.exception.OwnException;
 import com.overex.backend.common.repositories.UserRepository;
-import com.overex.backend.utils.TestDataFactory;
+import com.overex.backend.auth.utils.AuthTestDataFactory;
 
 import jakarta.persistence.EntityNotFoundException;
 
@@ -57,12 +57,12 @@ public class AuthServiceTest {
 	@InjectMocks
 	AuthService authService;
 
-	private final User user = TestDataFactory.createDefaultUser();
+	private final User user = AuthTestDataFactory.createDefaultUser();
 
 	/** A new user with a free email and phone is saved with the hashed password. */
 	@Test
 	void shouldSignUpAccount() {
-		SignUpAccountRequestDto dto = TestDataFactory.createSignUpDto();
+		SignUpAccountRequestDto dto = AuthTestDataFactory.createSignUpDto();
 
 		when(userRepository.findByEmail(user.getEmail())).thenReturn(Optional.empty());
 		when(userRepository.findByPhone(user.getPhone())).thenReturn(Optional.empty());
@@ -83,7 +83,7 @@ public class AuthServiceTest {
 	/** The email is stored trimmed and in lower case, and checked for duplicates that way. */
 	@Test
 	void shouldNormalizeEmailOnSignUp() {
-		SignUpAccountRequestDto dto = TestDataFactory.createSignUpDto();
+		SignUpAccountRequestDto dto = AuthTestDataFactory.createSignUpDto();
 		dto.setEmail("  Test@MAIL.com ");
 
 		when(userRepository.findByEmail("test@mail.com")).thenReturn(Optional.empty());
@@ -107,7 +107,7 @@ public class AuthServiceTest {
 	/** Taken email and phone are both reported at once. */
 	@Test
 	void shouldNotSignUpAccount() {
-		SignUpAccountRequestDto dto = TestDataFactory.createSignUpDto();
+		SignUpAccountRequestDto dto = AuthTestDataFactory.createSignUpDto();
 
 		when(userRepository.findByEmail(user.getEmail())).thenReturn(Optional.of(user));
 		when(userRepository.findByPhone(user.getPhone())).thenReturn(Optional.of(user));

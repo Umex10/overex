@@ -1,4 +1,4 @@
-package com.overex.backend.unit.auth.config;
+package com.overex.backend.auth.unit.config;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
@@ -20,7 +20,7 @@ import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 
 import com.overex.backend.auth.config.RsaKeyFiles;
-import com.overex.backend.utils.TestKeys;
+import com.overex.backend.auth.utils.TestKeys;
 
 /**
  * Unit tests for {@link RsaKeyFiles}, which {@code KeyConfig} uses to read the

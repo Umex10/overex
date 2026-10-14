@@ -1,7 +1,6 @@
-package com.overex.backend.slice.auth;
+package com.overex.backend.auth.slice;
 
 import static org.hamcrest.Matchers.hasItems;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -28,7 +27,7 @@ import com.overex.backend.auth.dto.requests.SignUpAccountRequestDto;
 import com.overex.backend.common.entities.User;
 import com.overex.backend.common.exception.ApiError;
 import com.overex.backend.common.exception.OwnException;
-import com.overex.backend.utils.TestDataFactory;
+import com.overex.backend.auth.utils.AuthTestDataFactory;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
@@ -57,12 +56,12 @@ public class AuthControllerTest {
 	@MockitoBean
 	private JwtService jwtService;
 
-	private final User user = TestDataFactory.createDefaultUser();
+	private final User user = AuthTestDataFactory.createDefaultUser();
 
 	/** A successful sign-up returns 201 with an access token and its lifetime. */
 	@Test
 	void shouldSignUpAccount() throws Exception {
-		SignUpAccountRequestDto dto = TestDataFactory.createSignUpDto();
+		SignUpAccountRequestDto dto = AuthTestDataFactory.createSignUpDto();
 		String jsonRequest = objectMapper.writeValueAsString(dto);
 
 		when(authService.signUp(dto)).thenReturn(user);
@@ -82,7 +81,7 @@ public class AuthControllerTest {
 	/** Only the email is taken: 400 with exactly one field error for {@code email}. */
 	@Test
 	void shouldNotSignUpAccountWithSingleWrongField() throws Exception {
-		SignUpAccountRequestDto dto = TestDataFactory.createSignUpDto();
+		SignUpAccountRequestDto dto = AuthTestDataFactory.createSignUpDto();
 		String jsonRequest = objectMapper.writeValueAsString(dto);
 		List<ApiError.FieldError> errors = List.of(
 				ApiError.FieldError.builder().field("email").message("The used email is already taken.").build());
@@ -100,7 +99,7 @@ public class AuthControllerTest {
 	/** Taken email and phone come back as 400 with one field error each. */
 	@Test
 	void shouldNotSignUpAccountWithMultipleWrongFields() throws Exception {
-		SignUpAccountRequestDto dto = TestDataFactory.createSignUpDto();
+		SignUpAccountRequestDto dto = AuthTestDataFactory.createSignUpDto();
 		String jsonRequest = objectMapper.writeValueAsString(dto);
 		List<ApiError.FieldError> errors = List.of(
 				ApiError.FieldError.builder().field("email").message("The used email is already taken.").build(),
@@ -137,7 +136,7 @@ public class AuthControllerTest {
 	/** A successful sign-in returns 200 with an access token and its lifetime. */
 	@Test
 	void shouldSignIn() throws Exception {
-		SignInAccountRequestDto dto = TestDataFactory.createSignInDto();
+		SignInAccountRequestDto dto = AuthTestDataFactory.createSignInDto();
 		String jsonRequest = objectMapper.writeValueAsString(dto);
 		when(authService.authenticate(any(), any())).thenReturn(user);
 		when(jwtService.createAccessTk(any())).thenReturn("mock-access-token");
@@ -156,7 +155,7 @@ public class AuthControllerTest {
 	/** Wrong credentials return 401 without field errors. */
 	@Test
 	void shouldNotSignIn() throws Exception {
-		SignInAccountRequestDto dto = TestDataFactory.createSignInDto();
+		SignInAccountRequestDto dto = AuthTestDataFactory.createSignInDto();
 		String jsonRequest = objectMapper.writeValueAsString(dto);
 
 		when(authService.authenticate(any(), any())).thenThrow(new BadCredentialsException("Invalid credentials"));
@@ -177,7 +176,7 @@ public class AuthControllerTest {
 	 */
 	@Test
 	void shouldNotSignInAndTriggerLastResortExceptionHandler() throws Exception {
-		SignInAccountRequestDto dto = TestDataFactory.createSignInDto();
+		SignInAccountRequestDto dto = AuthTestDataFactory.createSignInDto();
 		String jsonRequest = objectMapper.writeValueAsString(dto);
 
 		when(authService.authenticate(any(), any()))

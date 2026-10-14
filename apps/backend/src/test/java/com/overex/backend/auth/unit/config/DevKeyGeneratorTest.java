@@ -1,4 +1,4 @@
-package com.overex.backend.unit.auth.config;
+package com.overex.backend.auth.unit.config;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
