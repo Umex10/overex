@@ -23,34 +23,43 @@ profile, `src/test/resources/application-test.properties`) — no Docker require
 runs in seconds.
 
 No key files are needed either: the tests create their own RSA key
-pair at runtime (`utils/TestKeys`).
+pair at runtime (`auth/utils/TestKeys`).
 
 `./mvnw verify` additionally writes a JaCoCo coverage report to
 `apps/backend/target/site/jacoco/index.html` (the CI uploads it as the
 `backend-reports` artifact).
 
-The tests are split into three layers:
+The tests are grouped by feature (`auth/`, `event/`, `user/`, mirroring the
+main packages). Inside each feature they are split into three layers, plus a
+`utils/` folder with that feature's fixtures (`AuthTestDataFactory`,
+`EventTestDataFactory`, `TestKeys`, `TkFactory`):
 
-**Unit** (`unit/`, no Spring context, dependencies mocked):
-- `JwtServiceTest`: access/refresh token claims, refresh token validation (wrong key, expired, malformed, wrong type, user gone), cookie extraction
-- `AuthServiceTest`: sign-up with free/taken email and phone, sign-in with valid/invalid credentials
-- `CustomUserDetailsServiceTest`: email lookup for the password check
-- `RsaKeyFilesTest`: reading the PEM key files (valid, broken, unreadable) and a write/read round trip
-- `DevKeyGeneratorTest`: the dev key pair is created only when both files are missing and the switch is on
+**Unit** (`<feature>/unit/`, no Spring context, dependencies mocked):
+- `auth/unit/JwtServiceTest`: access/refresh token claims, refresh token validation (wrong key, expired, malformed, wrong type, user gone), cookie extraction
+- `auth/unit/AuthServiceTest`: sign-up with free/taken email and phone, sign-in with valid/invalid credentials
+- `auth/unit/security/CustomUserDetailsServiceTest`: email lookup for the password check
+- `auth/unit/config/RsaKeyFilesTest`: reading the PEM key files (valid, broken, unreadable) and a write/read round trip
+- `auth/unit/config/DevKeyGeneratorTest`: the dev key pair is created only when both files are missing and the switch is on
+- `event/unit/EventServiceTest`: create, get and delete (incl. a missing event), and every business rule of the update
 
-**Slice** (`slice/`, `@WebMvcTest`: only the web layer, services mocked):
-- `AuthControllerTest`: the three `/auth` endpoints, error envelopes, bean validation
-- `MeControllerTest`: `/me` and `/admin/ping` through the real `SecurityConfig`, with real signed tokens and `@PreAuthorize`
-- `JwksControllerTest`: the public JWKS endpoint, without any private key material
+**Slice** (`<feature>/slice/`, `@WebMvcTest`: only the web layer, services mocked):
+- `auth/slice/AuthControllerTest`: the three `/auth` endpoints, error envelopes, bean validation
+- `auth/slice/JwksControllerTest`: the public JWKS endpoint, without any private key material
+- `user/slice/MeControllerTest`: `/me` and `/admin/ping` through the real `SecurityConfig`, with real signed tokens and `@PreAuthorize`
+- `event/slice/EventControllerTest`: the `/event` CRUD endpoints, 404 and 400 (bean validation and business rules) error envelopes
 
-**Integration** (`integration/BackendApplicationTests`, the whole app, nothing mocked):
-the real `KeyConfig` loads keys written to a temp folder; the Spring context
-starts once and is shared by all tests, the database is emptied before each.
-Covers sign-up → sign-in → `/me`, the refresh cookie (valid → new access
-token, invalid → 401), admin vs. user role,
-duplicate sign-up, the published JWKS, and a decoder built only from
-`jwks.json` (as another microservice would) that accepts access tokens and
-rejects refresh tokens.
+**Integration** (`<feature>/integration/`, the whole app, nothing mocked):
+- `auth/integration/AuthIntegrationTest`: the real `KeyConfig` loads keys
+  written to a temp folder; the Spring context starts once and is shared by
+  all tests, the database is emptied before each. Covers sign-up → sign-in →
+  `/me`, the refresh cookie (valid → new access token, invalid → 401), admin
+  vs. user role, duplicate sign-up, the published JWKS, and a decoder built
+  only from `jwks.json` (as another microservice would) that accepts access
+  tokens and rejects refresh tokens.
+
+**Smoke test** (`BackendApplicationTests`, in the root test package): only
+`contextLoads()`, i.e. the whole application context starts with the "test"
+profile.
 
 ---
 

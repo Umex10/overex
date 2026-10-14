@@ -23,18 +23,20 @@ import com.overex.backend.event.Event;
 import com.overex.backend.event.EventMapper;
 import com.overex.backend.event.EventRepository;
 import com.overex.backend.event.EventService;
+import com.overex.backend.event.dto.requests.CreateEventDto;
 import com.overex.backend.event.dto.requests.UpdateEventDto;
 import com.overex.backend.event.utils.EventTestDataFactory;
 
 import jakarta.persistence.EntityNotFoundException;
 
 /**
- * Unit tests for {@link EventService#updateEvent(UpdateEventDto, java.util.UUID)}.
+ * Unit tests for {@link EventService}.
  *
  * <p>
- * Pure Mockito tests: no Spring context. Every business rule of the update gets
- * one payload that triggers it; a rejected update must neither map nor save
- * the event.
+ * Pure Mockito tests: no Spring context. Covers create, get and delete
+ * (including a missing event), and gives every business rule of the update one
+ * payload that triggers it; a rejected update must neither map nor save the
+ * event.
  */
 @ExtendWith(MockitoExtension.class)
 public class EventServiceTest {
@@ -49,6 +51,40 @@ public class EventServiceTest {
 	EventService eventService;
 
 	private final Event event = EventTestDataFactory.createDefaultEvent();
+
+	/** The payload is mapped to an entity and that entity is saved. */
+	@Test
+	void shouldCreateEvent() {
+		CreateEventDto dto = EventTestDataFactory.createCreateEventDto();
+
+		when(eventMapper.toEntity(dto)).thenReturn(event);
+		when(eventRepository.save(event)).thenReturn(event);
+
+		Event createdEvent = eventService.createEvent(dto);
+
+		assertSame(event, createdEvent);
+		verify(eventMapper).toEntity(dto);
+		verify(eventRepository).save(event);
+	}
+
+	@Test
+	void shouldGetEvent() {
+		when(eventRepository.findById(event.getId())).thenReturn(Optional.of(event));
+
+		Event foundEvent = eventService.getEvent(event.getId());
+
+		assertSame(event, foundEvent);
+	}
+
+	@Test
+	void shouldNotGetMissingEvent() {
+		when(eventRepository.findById(event.getId())).thenReturn(Optional.empty());
+
+		EntityNotFoundException ex = assertThrows(EntityNotFoundException.class,
+				() -> eventService.getEvent(event.getId()));
+
+		assertEquals(String.format("Event '%s' was not found", event.getId()), ex.getMessage());
+	}
 
 	/** A valid update of an upcoming event is mapped onto the entity and saved. */
 	@Test
@@ -143,6 +179,26 @@ public class EventServiceTest {
 		assertFieldError(ex, "saleStartsAt", "The sale must start before the event starts.");
 		verifyNoInteractions(eventMapper);
 		verify(eventRepository, never()).save(any());
+	}
+
+	@Test
+	void shouldDeleteEvent() {
+		when(eventRepository.findById(event.getId())).thenReturn(Optional.of(event));
+
+		eventService.deleteEvent(event.getId());
+
+		verify(eventRepository).delete(event);
+	}
+
+	@Test
+	void shouldNotDeleteMissingEvent() {
+		when(eventRepository.findById(event.getId())).thenReturn(Optional.empty());
+
+		EntityNotFoundException ex = assertThrows(EntityNotFoundException.class,
+				() -> eventService.deleteEvent(event.getId()));
+
+		assertEquals(String.format("Event '%s' was not found", event.getId()), ex.getMessage());
+		verify(eventRepository, never()).delete(any());
 	}
 
 	/** Asserts that the exception carries exactly one error for the given field. */

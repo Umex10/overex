@@ -67,7 +67,7 @@ import jakarta.servlet.http.Cookie;
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
-class BackendApplicationTests {
+class AuthIntegrationTest {
 
 	/**
 	 * Temporary folder for the generated key files. JUnit creates it before the

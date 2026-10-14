@@ -16,6 +16,8 @@ public interface EventMapper {
         @Mapping(target = "updatedAt", ignore = true)
         Event toEntity(CreateEventDto dto);
 
+        CreateEventDto toCreateEventDto(Event event);
+
         @Mapping(target = "id", ignore = true)
         @Mapping(target = "status", ignore = true)
         @Mapping(target = "createdAt", ignore = true)

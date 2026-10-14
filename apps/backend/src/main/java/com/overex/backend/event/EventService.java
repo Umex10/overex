@@ -22,16 +22,20 @@ public class EventService {
     private final EventRepository eventRepository;
     private final EventMapper eventMapper;
 
-    public Event createEvent(CreateEventDto createEventDto) {
-
-        Event event = eventMapper.toEntity(createEventDto);
-
-        return eventRepository.save(event);
+    public List<Event> getEvents() {
+        return eventRepository.findAll();
     }
 
     public Event getEvent(UUID eventId) {
         return eventRepository.findById(eventId)
                 .orElseThrow(() -> new EntityNotFoundException(String.format("Event '%s' was not found", eventId)));
+    }
+
+    public Event createEvent(CreateEventDto createEventDto) {
+
+        Event event = eventMapper.toEntity(createEventDto);
+
+        return eventRepository.save(event);
     }
 
     @Transactional
@@ -69,8 +73,6 @@ public class EventService {
         if (!updateEventDto.saleStartsAt().isBefore(updateEventDto.startsAt())) {
             throw fieldError("saleStartsAt", "The sale must start before the event starts.");
         }
-
-        
 
         eventMapper.updateEntity(updateEventDto, event);
 

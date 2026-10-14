@@ -1,5 +1,6 @@
 package com.overex.backend.event;
 
+import java.util.List;
 import java.util.UUID;
 
 import org.springframework.http.HttpStatus;
@@ -25,6 +26,12 @@ import lombok.RequiredArgsConstructor;
 public class EventController {
 
     private final EventService eventService;
+
+    @GetMapping
+    public ResponseEntity<List<Event>> getEvents() {
+        List<Event> events = eventService.getEvents();
+        return new ResponseEntity<List<Event>>(events, HttpStatus.OK);
+    }
 
     @GetMapping("/{eventId}")
     public ResponseEntity<Event> getEvent(@PathVariable UUID eventId) {
