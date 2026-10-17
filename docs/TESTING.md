@@ -63,6 +63,28 @@ profile.
 
 ---
 
+## API requests (Bruno)
+
+The `bruno/` folder is a [Bruno](https://www.usebruno.com/) collection that
+plays the API against a **running** backend (`http://localhost:8080/api/v1`,
+environment `Local`): sign up and sign in, then create, read, update and delete
+an event, including the error cases (bean validation, business rules, unknown
+or malformed id, missing or invalid access token). Each request asserts its
+status code and the relevant body fields.
+
+```bash
+cd apps/backend && ./mvnw spring-boot:run   # first terminal: start the backend
+cd bruno && npm install && npm test         # second terminal: run all requests
+```
+
+`npm test` runs `bru run --env Local` (Bruno CLI, pinned in
+`bruno/package.json`) and ends with a summary table; the exit code is non-zero
+as soon as one assertion fails. Sign up answers 400 from the second run on (the
+account already exists); sign-in still works, so the rest of the run is
+unaffected.
+
+---
+
 ## Web unit tests
 
 ```bash

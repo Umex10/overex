@@ -9,6 +9,7 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import com.overex.backend.common.domain.dtos.ErrorResponse;
 import com.overex.backend.common.domain.dtos.factory.ErrorResponseFactory;
@@ -70,6 +71,27 @@ public class GlobalExceptionHandler {
 				.status(HttpStatus.BAD_REQUEST.value())
 				.message("Validation failed")
 				.errors(fieldErrors)
+				.build();
+		return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
+	}
+
+	/**
+	 * Translates a path or query parameter of the wrong type (e.g. {@code abc}
+	 * where a UUID is expected) into a 400 with one field error for that
+	 * parameter. Without this handler the catch-all below would answer with a
+	 * misleading 500, although the client sent a bad request.
+	 *
+	 * @return a 400 response carrying the validation {@link ApiError}
+	 */
+	@ExceptionHandler(MethodArgumentTypeMismatchException.class)
+	public ResponseEntity<ApiError> handleTypeMismatch(MethodArgumentTypeMismatchException ex) {
+		ApiError error = ApiError.builder()
+				.status(HttpStatus.BAD_REQUEST.value())
+				.message("Validation failed")
+				.errors(List.of(ApiError.FieldError.builder()
+						.field(ex.getName())
+						.message("The value '" + ex.getValue() + "' has the wrong format.")
+						.build()))
 				.build();
 		return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
 	}

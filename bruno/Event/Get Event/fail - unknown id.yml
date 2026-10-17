@@ -15,6 +15,9 @@ runtime:
     - expression: res.status
       operator: eq
       value: "404"
+    - expression: res.body.error
+      operator: eq
+      value: "Not Found"
 
 settings:
   encodeUrl: true

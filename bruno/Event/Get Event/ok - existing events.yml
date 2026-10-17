@@ -15,6 +15,10 @@ runtime:
     - expression: res.status
       operator: eq
       value: "200"
+    - expression: res.body
+      operator: isArray
+    - expression: res.body
+      operator: isNotEmpty
 
 settings:
   encodeUrl: true

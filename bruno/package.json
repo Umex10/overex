@@ -1,0 +1,11 @@
+{
+  "name": "overex-bruno",
+  "private": true,
+  "description": "Runs the Bruno API collection against a running backend.",
+  "scripts": {
+    "test": "bru run --env Local"
+  },
+  "devDependencies": {
+    "@usebruno/cli": "4.2.1"
+  }
+}

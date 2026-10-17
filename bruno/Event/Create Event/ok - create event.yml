@@ -39,6 +39,11 @@ runtime:
     - expression: res.body.status
       operator: eq
       value: "DRAFT"
+    - expression: res.body.title
+      operator: eq
+      value: "Frequency Festival 2027"
+    - expression: res.body.id
+      operator: isString
 
 settings:
   encodeUrl: true

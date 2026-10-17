@@ -136,6 +136,18 @@ public class EventControllerTest {
                                 .andExpect(jsonPath("$.path").value("/event/" + event.getId()));
         }
 
+        /** An id that is no UUID is a client error (400), not the catch-all 500. */
+        @Test
+        void shouldRejectEventIdThatIsNoUuid() throws Exception {
+                mockMvc.perform(get("/event/{eventId}", "abc"))
+                                .andExpect(status().isBadRequest())
+                                .andExpect(jsonPath("$.status").value(400))
+                                .andExpect(jsonPath("$.message").value("Validation failed"))
+                                .andExpect(jsonPath("$.errors[0].field").value("eventId"));
+
+                verify(eventService, never()).getEvent(any());
+        }
+
         @Test
         void shouldCreateEvent() throws Exception {
                 CreateEventDto createEventDto = EventTestDataFactory.createCreateEventDto();
