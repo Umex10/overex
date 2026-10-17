@@ -39,7 +39,7 @@ export default function ShellLayout({
               <div className="flex flex-row shrink-0 items-center gap-2">
                 {/* size-auto: the button shrinks to the icon instead of the
                     fixed size-7 square, so there is no empty space around it. */}
-                <SidebarTrigger className="size-auto" />
+                <SidebarTrigger className="size-auto hover:cursor-pointer" />
 
                 {isMobile ? <SidebarLogo></SidebarLogo> 
                 : <h2>Event</h2>}
