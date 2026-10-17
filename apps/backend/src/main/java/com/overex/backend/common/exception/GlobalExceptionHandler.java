@@ -122,7 +122,7 @@ public class GlobalExceptionHandler {
 		return ResponseEntity.status(404).body(
 				ErrorResponseFactory.notFound(ex.getMessage(), request.getRequestURI()));
 	}
-
+	
 	/**
 	 * Catch-all handler that maps any unhandled exception to a 500 response.
 	 *

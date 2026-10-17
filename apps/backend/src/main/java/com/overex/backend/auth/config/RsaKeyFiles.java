@@ -21,7 +21,7 @@ import org.springframework.core.io.Resource;
 /**
  * The one place that knows the PEM format of the JWT keys, in both directions:
  * it reads the key files ({@link KeyConfig} turns them into beans) and creates
- * and writes them ({@link DevKeyGenerator} on startup, {@code TestKeys} in the
+ * and writes them ({@link DevKeyGenerator} on startup, {@code TestRsaKeys} in the
  * tests). Private keys are PKCS#8, public keys X.509.
  *
  * <p>

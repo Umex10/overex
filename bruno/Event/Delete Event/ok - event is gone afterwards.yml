@@ -1,0 +1,23 @@
+info:
+  name: ok - event is gone afterwards
+  type: http
+  seq: 2
+
+http:
+  method: GET
+  url: "{{baseUrl}}/event/{{eventId}}"
+  auth:
+    type: bearer
+    token: "{{accessTk}}"
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "404"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

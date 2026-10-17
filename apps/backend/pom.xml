@@ -17,6 +17,7 @@
 
 	<properties>
 		<java.version>21</java.version>
+		<mapstruct.version>1.6.3</mapstruct.version>
 	</properties>
 
 	<dependencies>
@@ -59,6 +60,13 @@
 			<artifactId>lombok</artifactId>
 			<optional>true</optional>
 		</dependency>
+
+		<dependency>
+			<groupId>org.mapstruct</groupId>
+			<artifactId>mapstruct</artifactId>
+			<version>${mapstruct.version}</version>
+		</dependency>
+
 
 		<!-- ==================== -->
 		<!-- JWT Authentication   -->
@@ -170,10 +178,26 @@
 							<groupId>org.projectlombok</groupId>
 							<artifactId>lombok</artifactId>
 						</path>
+
+						<path>
+							<groupId>org.projectlombok</groupId>
+							<artifactId>lombok</artifactId>
+						</path>
+						<path>
+							<groupId>org.projectlombok</groupId>
+							<artifactId>lombok-mapstruct-binding</artifactId>
+							<version>0.2.0</version>
+						</path>
+						<path>
+							<groupId>org.mapstruct</groupId>
+							<artifactId>mapstruct-processor</artifactId>
+							<version>${mapstruct.version}</version>
+						</path>
 					</annotationProcessorPaths>
 				</configuration>
 			</plugin>
-			<!-- JaCoCo: test coverage. Report: target/site/jacoco/index.html (after `./mvnw verify`). -->
+			<!-- JaCoCo: test coverage. Report: target/site/jacoco/index.html (after `./mvnw
+			verify`). -->
 			<plugin>
 				<groupId>org.jacoco</groupId>
 				<artifactId>jacoco-maven-plugin</artifactId>
@@ -183,8 +207,10 @@
 					     Only src/main is ever measured, never target/ sources or test classes.
 					     Lombok-generated code is skipped via lombok.config. -->
 					<excludes>
-						<exclude>com/overex/backend/BackendApplication.class</exclude> <!-- only main(); covered by the context test anyway -->
-						<exclude>com/overex/backend/config/OpenApiConfig.class</exclude> <!-- annotations only, no logic -->
+						<exclude>com/overex/backend/BackendApplication.class</exclude> <!-- only
+						main(); covered by the context test anyway -->
+						<exclude>com/overex/backend/config/OpenApiConfig.class</exclude> <!--
+						annotations only, no logic -->
 					</excludes>
 				</configuration>
 				<executions>

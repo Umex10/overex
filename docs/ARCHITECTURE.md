@@ -234,5 +234,5 @@ sequenceDiagram
 In a Spring service this is one property, `spring.security.oauth2.resourceserver.jwt.jwk-set-uri`,
 pointing at the JWKS URL, plus the `type_tk == ACCESS` validator (see
 [SECURITY.md](SECURITY.md)). The integration test
-`BackendApplicationTests#shouldVerifyAccessTkWithPublishedJwks` plays exactly
+`AuthIntegrationTest#shouldVerifyAccessTkWithPublishedJwks` plays exactly
 this role.

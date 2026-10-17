@@ -1,0 +1,38 @@
+info:
+  name: fail - blank title
+  type: http
+  seq: 6
+
+http:
+  method: PATCH
+  url: "{{baseUrl}}/event/{{eventId}}"
+  body:
+    type: json
+    data: |
+      {
+        "title": "",
+        "description": "Drei Tage Musik am Traisenpark in St. Pölten. Einlass ab 12:00 Uhr.",
+        "venue": "Green Park St. Pölten",
+        "city": "St. Pölten",
+        "startsAt": "2027-08-12T14:00:00Z",
+        "saleStartsAt": "2026-11-01T10:00:00Z",
+        "imageUrl": "https://images.unsplash.com/photo-1459749411175-04bf5292ceea"
+      }
+  auth:
+    type: bearer
+    token: "{{accessTk}}"
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "400"
+    - expression: res.body.errors[0].field
+      operator: eq
+      value: "title"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
