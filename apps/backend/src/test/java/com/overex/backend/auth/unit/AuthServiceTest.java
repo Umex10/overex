@@ -104,6 +104,20 @@ public class AuthServiceTest {
 				.authenticate(new UsernamePasswordAuthenticationToken("test@mail.com", user.getPassword()));
 	}
 
+	/**
+	 * A missing email stays null instead of failing in normalizeEmail; rejecting
+	 * it is the job of bean validation on the request DTO.
+	 */
+	@Test
+	void shouldPassNullEmailThroughNormalization() {
+		when(userRepository.findByEmail(null)).thenReturn(Optional.of(user));
+
+		authService.authenticate(null, user.getPassword());
+
+		verify(authenticationManager)
+				.authenticate(new UsernamePasswordAuthenticationToken(null, user.getPassword()));
+	}
+
 	/** Taken email and phone are both reported at once. */
 	@Test
 	void shouldNotSignUpAccount() {

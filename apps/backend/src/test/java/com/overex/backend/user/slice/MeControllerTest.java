@@ -25,9 +25,9 @@ import com.overex.backend.auth.security.config.SecurityConfig;
 import com.overex.backend.common.entities.User;
 import com.overex.backend.common.repositories.UserRepository;
 import com.overex.backend.user.MeController;
+import com.overex.backend.auth.utils.AuthTestClient;
 import com.overex.backend.auth.utils.AuthTestDataFactory;
-import com.overex.backend.auth.utils.TestKeys;
-import com.overex.backend.auth.utils.TkFactory;
+import com.overex.backend.auth.utils.TestRsaKeys;
 
 /**
  * Web-layer test for the protected {@link MeController} routes, exercised
@@ -40,13 +40,13 @@ import com.overex.backend.auth.utils.TkFactory;
  * security context ({@code jwt()} from spring-security-test). This checks the
  * controller and the {@code @PreAuthorize} rules without token
  * verification.</li>
- * <li>Real tokens from {@link JwtService}, signed with {@link TestKeys}, sent
+ * <li>Real tokens from {@link JwtService}, signed with {@link TestRsaKeys}, sent
  * in the {@code Authorization} header. They pass through the whole chain
  * (filter, JwtDecoder, converter), so token verification is covered too.</li>
  * </ul>
  */
 @WebMvcTest(MeController.class)
-@Import({ SecurityConfig.class, CustomUserDetailsService.class, TestKeys.PublicKeyConfig.class })
+@Import({ SecurityConfig.class, CustomUserDetailsService.class, TestRsaKeys.PublicKeyConfig.class })
 public class MeControllerTest {
 
 	@Autowired
@@ -65,11 +65,11 @@ public class MeControllerTest {
 
 	/**
 	 * Builds the token tool with the same key pair whose public key the
-	 * JwtDecoder uses ({@link TestKeys.PublicKeyConfig}).
+	 * JwtDecoder uses ({@link TestRsaKeys.PublicKeyConfig}).
 	 */
 	@BeforeEach
 	void setUp() {
-		jwtService = new JwtService(TestKeys.privateKey(), TestKeys.publicKey(), userRepository);
+		jwtService = new JwtService(TestRsaKeys.privateKey(), TestRsaKeys.publicKey(), userRepository);
 	}
 
 	/**
@@ -79,7 +79,7 @@ public class MeControllerTest {
 	void shouldReturnCurrentUser() throws Exception {
 		when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
 
-		mockMvc.perform(get("/me").with(TkFactory.authenticatedAs(user)))
+		mockMvc.perform(get("/me").with(AuthTestClient.authenticatedAs(user)))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.email").value(user.getEmail()))
 				.andExpect(jsonPath("$.role").value("USER"))
@@ -95,7 +95,7 @@ public class MeControllerTest {
 	void shouldReturn404WhenUserNoLongerExists() throws Exception {
 		when(userRepository.findById(user.getId())).thenReturn(Optional.empty());
 
-		mockMvc.perform(get("/me").with(TkFactory.authenticatedAs(user)))
+		mockMvc.perform(get("/me").with(AuthTestClient.authenticatedAs(user)))
 				.andExpect(status().isNotFound())
 				.andExpect(jsonPath("$.status").value(404))
 				.andExpect(jsonPath("$.error").value("Not Found"))
@@ -131,14 +131,14 @@ public class MeControllerTest {
 	/** A regular user gets 403 on the admin route. */
 	@Test
 	void shouldForbidAdminRouteForRegularUser() throws Exception {
-		mockMvc.perform(get("/admin/ping").with(TkFactory.authenticatedAs(user)))
+		mockMvc.perform(get("/admin/ping").with(AuthTestClient.authenticatedAs(user)))
 				.andExpect(status().isForbidden());
 	}
 
 	/** An admin may use the admin route. */
 	@Test
 	void shouldAllowAdminRouteForAdmin() throws Exception {
-		mockMvc.perform(get("/admin/ping").with(TkFactory.authenticatedAs(admin)))
+		mockMvc.perform(get("/admin/ping").with(AuthTestClient.authenticatedAs(admin)))
 				.andExpect(status().isOk())
 				.andExpect(content().string(containsString("pong")));
 	}

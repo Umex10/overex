@@ -6,6 +6,17 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+import java.nio.file.Path;
+import java.util.List;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -20,21 +31,9 @@ import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-
-import java.nio.file.Path;
-import java.util.List;
-
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.overex.backend.auth.utils.TestKeys;
-import com.overex.backend.auth.utils.TkFactory;
+import com.overex.backend.auth.utils.AuthTestClient;
+import com.overex.backend.auth.utils.TestRsaKeys;
 import com.overex.backend.common.repositories.UserRepository;
 import com.overex.backend.event.Event;
 import com.overex.backend.event.EventMapper;
@@ -44,9 +43,23 @@ import com.overex.backend.event.dto.requests.CreateEventDto;
 import com.overex.backend.event.dto.requests.UpdateEventDto;
 import com.overex.backend.event.utils.EventTestDataFactory;
 
-import lombok.extern.slf4j.Slf4j;
-
-@Slf4j
+/**
+ * Integration tests for the event endpoints: the whole application runs
+ * (security filter chain, controller, service, JPA) against the in-memory H2
+ * database of the "test" profile. Nothing is mocked.
+ *
+ * <p>
+ * Every test signs up a real user through {@link AuthTestClient} and sends its
+ * access token, like a client would. Events are created through
+ * {@code POST /event}, so id, status and timestamps come from the application;
+ * that is why each test works with the event returned by
+ * {@link #createEvent(String, CreateEventDto)} instead of a class-level fixture.
+ *
+ * <p>
+ * The business rules of the update are covered in detail by
+ * {@code EventServiceTest}; here one rule each checks that a rejection reaches
+ * the client as a 400 with field errors.
+ */
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
@@ -69,7 +82,7 @@ public class EventIntegrationTest {
      */
     @DynamicPropertySource
     static void keyLocations(DynamicPropertyRegistry registry) {
-        TestKeys.writePemFiles(keyDir);
+        TestRsaKeys.writePemFiles(keyDir);
         registry.add("jwt.private-key-location", () -> keyDir.resolve("private.pem").toUri().toString());
         registry.add("jwt.public-key-location", () -> keyDir.resolve("public.pem").toUri().toString());
     }
@@ -82,15 +95,22 @@ public class EventIntegrationTest {
     @Autowired
     private ObjectMapper objectMapper;
 
+    /** The real repository (no mock), used to reset the database and to count stored events. */
     @Autowired
     private EventRepository eventRepository;
 
+    /** Used to reset the database, so every test can sign up the same user again. */
     @Autowired
     private UserRepository userRepository;
 
+    /** Turns the events of the list fixture into create payloads. */
     @Autowired
     private EventMapper eventMapper;
 
+    /**
+     * The H2 database lives as long as the Spring context, i.e. across tests.
+     * Emptying it before every test keeps the tests independent of each other.
+     */
     @BeforeEach
     void emptyDatabase() {
         eventRepository.deleteAll();
@@ -99,7 +119,7 @@ public class EventIntegrationTest {
 
     @Test
     void shouldGetEvents() throws Exception {
-        String accessTk = TkFactory.signUpAndReturnAccessTk(mockMvc, objectMapper);
+        String accessTk = AuthTestClient.signUpAndReturnAccessTk(mockMvc, objectMapper);
 
         List<Event> events = EventTestDataFactory.createEventList();
 
@@ -136,14 +156,14 @@ public class EventIntegrationTest {
 
     @Test
     void shouldGetEvent() throws Exception {
-        String accessTk = TkFactory.signUpAndReturnAccessTk(mockMvc, objectMapper);
+        String accessTk = AuthTestClient.signUpAndReturnAccessTk(mockMvc, objectMapper);
 
         CreateEventDto createEventDto = EventTestDataFactory.createCreateEventDto();
 
         Event event = createEvent(accessTk, createEventDto);
 
-        mockMvc.perform(get(String.format("/event/%s", event.getId().toString())).header("Authorization",
-                "Bearer " + accessTk))
+        mockMvc.perform(get("/event/{eventId}", event.getId())
+                .header("Authorization", "Bearer " + accessTk))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(event.getId().toString()))
                 .andExpect(jsonPath("$.title").value(event.getTitle()))
@@ -160,14 +180,14 @@ public class EventIntegrationTest {
 
     @Test
     void shouldCreateEvent() throws Exception {
-        String accessTk = TkFactory.signUpAndReturnAccessTk(mockMvc, objectMapper);
+        String accessTk = AuthTestClient.signUpAndReturnAccessTk(mockMvc, objectMapper);
 
         CreateEventDto createEventDto = EventTestDataFactory.createCreateEventDto();
 
         Event event = createEvent(accessTk, createEventDto);
 
-        mockMvc.perform(get(String.format("/event/%s", event.getId().toString())).header("Authorization",
-                "Bearer " + accessTk))
+        mockMvc.perform(get("/event/{eventId}", event.getId())
+                .header("Authorization", "Bearer " + accessTk))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(event.getId().toString()))
                 .andExpect(jsonPath("$.title").value(event.getTitle()))
@@ -184,36 +204,37 @@ public class EventIntegrationTest {
 
     @Test
     void shouldDeleteEvent() throws Exception {
-
-        String accessTk = TkFactory.signUpAndReturnAccessTk(mockMvc, objectMapper);
+        String accessTk = AuthTestClient.signUpAndReturnAccessTk(mockMvc, objectMapper);
 
         CreateEventDto createEventDto = EventTestDataFactory.createCreateEventDto();
 
         Event event = createEvent(accessTk, createEventDto);
 
-        mockMvc.perform(
-                delete(String.format("/event/%s", event.getId().toString())).header("Authorization",
-                        "Bearer " + accessTk))
+        mockMvc.perform(delete("/event/{eventId}", event.getId())
+                .header("Authorization", "Bearer " + accessTk))
                 .andExpect(status().isNoContent())
                 .andExpect(content().string(""));
 
+        mockMvc.perform(get("/event/{eventId}", event.getId())
+                .header("Authorization", "Bearer " + accessTk))
+                .andExpect(status().isNotFound());
     }
 
     @Test
     void shouldUpdateEvent() throws Exception {
-        String accessTk = TkFactory.signUpAndReturnAccessTk(mockMvc, objectMapper);
+        String accessTk = AuthTestClient.signUpAndReturnAccessTk(mockMvc, objectMapper);
 
         CreateEventDto createEventDto = EventTestDataFactory.createCreateEventDto();
 
         Event event = createEvent(accessTk, createEventDto);
 
         Event updatedEvent = EventTestDataFactory.createUpdatedEvent();
-        UpdateEventDto updatedEventDto = EventTestDataFactory.createUpdateEventDto();
+        UpdateEventDto updateEventDto = EventTestDataFactory.createUpdateEventDto();
 
-        String jsonRequest = objectMapper.writeValueAsString(updatedEventDto);
+        String jsonRequest = objectMapper.writeValueAsString(updateEventDto);
 
-        mockMvc.perform(patch(String.format("/event/%s", event.getId().toString())).header("Authorization",
-                "Bearer " + accessTk)
+        mockMvc.perform(patch("/event/{eventId}", event.getId())
+                .header("Authorization", "Bearer " + accessTk)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(jsonRequest))
                 .andExpect(status().isOk())
@@ -231,15 +252,14 @@ public class EventIntegrationTest {
     }
 
     @Test
-    void shouldNotUpdateEventWithAlreadyStartedEvent() throws Exception {
-        String accessTk = TkFactory.signUpAndReturnAccessTk(mockMvc, objectMapper);
+    void shouldNotCreateEventWithPastStartsAt() throws Exception {
+        String accessTk = AuthTestClient.signUpAndReturnAccessTk(mockMvc, objectMapper);
 
         CreateEventDto createEventDto = EventTestDataFactory.createCreatePastEventDto();
 
         String jsonRequest = objectMapper.writeValueAsString(createEventDto);
 
-        // @Future on field startsAt in CreateEventDto will trigger
-
+        // @Future on startsAt in CreateEventDto rejects the payload
         mockMvc.perform(post("/event")
                 .header("Authorization", "Bearer " + accessTk)
                 .contentType(MediaType.APPLICATION_JSON)
@@ -247,20 +267,37 @@ public class EventIntegrationTest {
                 .andExpect(status().isBadRequest());
     }
 
+    /**
+     * A token that the resource server can't verify is rejected by the security
+     * filter chain with 401, before the controller runs: nothing is stored.
+     */
+    @Test
+    void shouldNotCreateEventWithInvalidAccessTk() throws Exception {
+        String jsonRequest = objectMapper.writeValueAsString(EventTestDataFactory.createCreateEventDto());
+
+        mockMvc.perform(post("/event")
+                .header("Authorization", "Bearer not-a-valid-token")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(jsonRequest))
+                .andExpect(status().isUnauthorized());
+
+        assertEquals(0, eventRepository.count());
+    }
+
     @Test
     void shouldNotUpdateEventWithPastStartsAt() throws Exception {
-        String accessTk = TkFactory.signUpAndReturnAccessTk(mockMvc, objectMapper);
+        String accessTk = AuthTestClient.signUpAndReturnAccessTk(mockMvc, objectMapper);
 
         CreateEventDto createEventDto = EventTestDataFactory.createCreateEventDto();
 
         Event event = createEvent(accessTk, createEventDto);
 
-        UpdateEventDto updatedEventDto = EventTestDataFactory.createUpdateEventDtoWithPastStartsAt();
+        UpdateEventDto updateEventDto = EventTestDataFactory.createUpdateEventDtoWithPastStartsAt();
 
-        String jsonRequest = objectMapper.writeValueAsString(updatedEventDto);
+        String jsonRequest = objectMapper.writeValueAsString(updateEventDto);
 
-        mockMvc.perform(patch(String.format("/event/%s", event.getId().toString())).header("Authorization",
-                "Bearer " + accessTk)
+        mockMvc.perform(patch("/event/{eventId}", event.getId())
+                .header("Authorization", "Bearer " + accessTk)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(jsonRequest))
                 .andExpect(status().isBadRequest())
@@ -271,19 +308,19 @@ public class EventIntegrationTest {
     }
 
     @Test
-    void shouldNotUpdateEventWithSaleAtAfterStartAt() throws Exception {
-        String accessTk = TkFactory.signUpAndReturnAccessTk(mockMvc, objectMapper);
+    void shouldNotUpdateEventWithSaleStartingAfterEventStart() throws Exception {
+        String accessTk = AuthTestClient.signUpAndReturnAccessTk(mockMvc, objectMapper);
 
         CreateEventDto createEventDto = EventTestDataFactory.createCreateEventDto();
 
         Event event = createEvent(accessTk, createEventDto);
 
-        UpdateEventDto updatedEventDto = EventTestDataFactory.createUpdateEventDtoWithSaleAfterStart();
+        UpdateEventDto updateEventDto = EventTestDataFactory.createUpdateEventDtoWithSaleAfterStart();
 
-        String jsonRequest = objectMapper.writeValueAsString(updatedEventDto);
+        String jsonRequest = objectMapper.writeValueAsString(updateEventDto);
 
-        mockMvc.perform(patch(String.format("/event/%s", event.getId().toString())).header("Authorization",
-                "Bearer " + accessTk)
+        mockMvc.perform(patch("/event/{eventId}", event.getId())
+                .header("Authorization", "Bearer " + accessTk)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(jsonRequest))
                 .andExpect(status().isBadRequest())
@@ -293,8 +330,8 @@ public class EventIntegrationTest {
                 .andExpect(jsonPath("$.errors[0].message").value("The sale must start before the event starts."));
     }
 
+    /** Creates the event through the API, expects 201 and returns the stored event from the response. */
     private Event createEvent(String accessTk, CreateEventDto createEventDto) throws Exception {
-
         String jsonRequest = objectMapper.writeValueAsString(createEventDto);
 
         MvcResult result = mockMvc.perform(post("/event")
@@ -306,7 +343,6 @@ public class EventIntegrationTest {
 
         String body = result.getResponse().getContentAsString();
         return objectMapper.readValue(body, Event.class);
-
     }
 
 }

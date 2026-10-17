@@ -9,6 +9,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
@@ -33,10 +34,14 @@ import jakarta.persistence.EntityNotFoundException;
  * Unit tests for {@link EventService}.
  *
  * <p>
- * Pure Mockito tests: no Spring context. Covers create, get and delete
- * (including a missing event), and gives every business rule of the update one
- * payload that triggers it; a rejected update must neither map nor save the
- * event.
+ * Pure Mockito tests: no Spring context. Covers listing, create, get and
+ * delete (including a missing event), and gives every business rule of the
+ * update one payload that triggers it; a rejected update must neither map nor
+ * save the event.
+ *
+ * <p>
+ * {@link #event} is the shared fixture; JUnit creates a new test instance per
+ * test, so every test gets a fresh copy.
  */
 @ExtendWith(MockitoExtension.class)
 public class EventServiceTest {
@@ -50,6 +55,7 @@ public class EventServiceTest {
 	@InjectMocks
 	EventService eventService;
 
+	/** The default event every test works with (see the class comment). */
 	private final Event event = EventTestDataFactory.createDefaultEvent();
 
 	/** The payload is mapped to an entity and that entity is saved. */
@@ -65,6 +71,18 @@ public class EventServiceTest {
 		assertSame(event, createdEvent);
 		verify(eventMapper).toEntity(dto);
 		verify(eventRepository).save(event);
+	}
+
+	/** All stored events are returned as they come from the repository. */
+	@Test
+	void shouldGetEvents() {
+		List<Event> events = EventTestDataFactory.createEventList();
+
+		when(eventRepository.findAll()).thenReturn(events);
+
+		List<Event> foundEvents = eventService.getEvents();
+
+		assertSame(events, foundEvents);
 	}
 
 	@Test

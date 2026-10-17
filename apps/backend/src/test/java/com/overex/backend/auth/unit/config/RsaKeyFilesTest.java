@@ -20,7 +20,7 @@ import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 
 import com.overex.backend.auth.config.RsaKeyFiles;
-import com.overex.backend.auth.utils.TestKeys;
+import com.overex.backend.auth.utils.TestRsaKeys;
 
 /**
  * Unit tests for {@link RsaKeyFiles}, which {@code KeyConfig} uses to read the
@@ -28,7 +28,7 @@ import com.overex.backend.auth.utils.TestKeys;
  *
  * <p>
  * No Spring context: the PEM text is built in memory from the key pair of
- * {@link TestKeys} and handed over as a {@link ByteArrayResource}; only the
+ * {@link TestRsaKeys} and handed over as a {@link ByteArrayResource}; only the
  * round trip test writes real files, into a temporary folder.
  * The happy path compares the parsed key with the original, so it checks that
  * the right key comes out and not only that the code runs. The error paths
@@ -39,21 +39,21 @@ public class RsaKeyFilesTest {
 	/** The PEM private key is parsed into exactly the key it was built from. */
 	@Test
 	void shouldReadPrivateKey() {
-		Resource pem = pem("PRIVATE", TestKeys.privateKey().getEncoded());
+		Resource pem = pem("PRIVATE", TestRsaKeys.privateKey().getEncoded());
 
 		RSAPrivateKey key = RsaKeyFiles.readPrivateKey(pem);
 
-		assertArrayEquals(TestKeys.privateKey().getEncoded(), key.getEncoded());
+		assertArrayEquals(TestRsaKeys.privateKey().getEncoded(), key.getEncoded());
 	}
 
 	/** The PEM public key is parsed into exactly the key it was built from. */
 	@Test
 	void shouldReadPublicKey() {
-		Resource pem = pem("PUBLIC", TestKeys.publicKey().getEncoded());
+		Resource pem = pem("PUBLIC", TestRsaKeys.publicKey().getEncoded());
 
 		RSAPublicKey key = RsaKeyFiles.readPublicKey(pem);
 
-		assertArrayEquals(TestKeys.publicKey().getEncoded(), key.getEncoded());
+		assertArrayEquals(TestRsaKeys.publicKey().getEncoded(), key.getEncoded());
 	}
 
 	/** Text that is not Base64 is rejected with a clear start-up error. */
@@ -135,11 +135,11 @@ public class RsaKeyFilesTest {
 		Path privateFile = dir.resolve("keys/private.pem");
 		Path publicFile = dir.resolve("keys/public.pem");
 
-		RsaKeyFiles.write(TestKeys.PAIR, privateFile, publicFile);
+		RsaKeyFiles.write(TestRsaKeys.PAIR, privateFile, publicFile);
 
-		assertArrayEquals(TestKeys.privateKey().getEncoded(),
+		assertArrayEquals(TestRsaKeys.privateKey().getEncoded(),
 				RsaKeyFiles.readPrivateKey(new FileSystemResource(privateFile)).getEncoded());
-		assertArrayEquals(TestKeys.publicKey().getEncoded(),
+		assertArrayEquals(TestRsaKeys.publicKey().getEncoded(),
 				RsaKeyFiles.readPublicKey(new FileSystemResource(publicFile)).getEncoded());
 	}
 

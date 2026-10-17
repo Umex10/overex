@@ -38,10 +38,10 @@ import com.overex.backend.auth.dto.requests.SignInAccountRequestDto;
 import com.overex.backend.auth.dto.requests.SignUpAccountRequestDto;
 import com.overex.backend.common.entities.User;
 import com.overex.backend.common.repositories.UserRepository;
+import com.overex.backend.auth.utils.AuthTestClient;
 import com.overex.backend.auth.utils.AuthTestDataFactory;
-import com.overex.backend.auth.utils.TestKeys;
+import com.overex.backend.auth.utils.TestRsaKeys;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.jayway.jsonpath.JsonPath;
 import com.nimbusds.jose.jwk.JWKSet;
 
 import jakarta.servlet.http.Cookie;
@@ -61,7 +61,7 @@ import jakarta.servlet.http.Cookie;
  * The real {@code KeyConfig} is loaded here, so it reads the JWT keys from the
  * files named by {@code jwt.private-key-location} and
  * {@code jwt.public-key-location}. The test writes the key pair of
- * {@link TestKeys} into a temporary folder and points both properties at it,
+ * {@link TestRsaKeys} into a temporary folder and points both properties at it,
  * so no local {@code keys/} folder is needed (e.g. on the CI runner).
  */
 @SpringBootTest
@@ -86,7 +86,7 @@ class AuthIntegrationTest {
 	 */
 	@DynamicPropertySource
 	static void keyLocations(DynamicPropertyRegistry registry) {
-		TestKeys.writePemFiles(keyDir);
+		TestRsaKeys.writePemFiles(keyDir);
 		registry.add("jwt.private-key-location", () -> keyDir.resolve("private.pem").toUri().toString());
 		registry.add("jwt.public-key-location", () -> keyDir.resolve("public.pem").toUri().toString());
 	}
@@ -123,9 +123,9 @@ class AuthIntegrationTest {
 	@Test
 	void shouldReturnOwnAccountWithTokenFromSignIn() throws Exception {
 		SignUpAccountRequestDto signUp = AuthTestDataFactory.createSignUpDto();
-		signUp(signUp);
+		AuthTestClient.signUp(mockMvc, objectMapper, signUp);
 
-		String accessTk = accessTkOf(signIn(AuthTestDataFactory.createSignInDto()));
+		String accessTk = AuthTestClient.signInAndReturnAccessTk(mockMvc, objectMapper);
 
 		mockMvc.perform(get("/me").header("Authorization", "Bearer " + accessTk))
 				.andExpect(status().isOk())
@@ -141,14 +141,14 @@ class AuthIntegrationTest {
 	 */
 	@Test
 	void shouldIssueWorkingAccessTkFromRefreshCookie() throws Exception {
-		signUp(AuthTestDataFactory.createSignUpDto());
-		Cookie refreshCookie = signIn(AuthTestDataFactory.createSignInDto()).getResponse().getCookie("refresh_tk");
+		AuthTestClient.signUp(mockMvc, objectMapper, AuthTestDataFactory.createSignUpDto());
+		Cookie refreshCookie = AuthTestClient.signIn(mockMvc, objectMapper, AuthTestDataFactory.createSignInDto()).getResponse().getCookie("refresh_tk");
 
 		MvcResult refreshed = mockMvc.perform(get("/auth/access-tk").cookie(refreshCookie))
 				.andExpect(status().isOk())
 				.andReturn();
 
-		mockMvc.perform(get("/me").header("Authorization", "Bearer " + accessTkOf(refreshed)))
+		mockMvc.perform(get("/me").header("Authorization", "Bearer " + AuthTestClient.accessTkOf(refreshed)))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.email").value(AuthTestDataFactory.createSignUpDto().getEmail()));
 	}
@@ -174,15 +174,15 @@ class AuthIntegrationTest {
 		admin.setId(null); // let JPA generate it
 		admin.setPassword(passwordEncoder.encode(AuthTestDataFactory.createAdminSignInDto().getPassword()));
 		userRepository.save(admin);
-		signUp(AuthTestDataFactory.createSignUpDto());
+		AuthTestClient.signUp(mockMvc, objectMapper, AuthTestDataFactory.createSignUpDto());
 
-		String adminTk = accessTkOf(signIn(AuthTestDataFactory.createAdminSignInDto()));
-		String userTk = accessTkOf(signIn(AuthTestDataFactory.createSignInDto()));
+		String adminAccessTk = AuthTestClient.accessTkOf(AuthTestClient.signIn(mockMvc, objectMapper, AuthTestDataFactory.createAdminSignInDto()));
+		String userAccessTk = AuthTestClient.signInAndReturnAccessTk(mockMvc, objectMapper);
 
-		mockMvc.perform(get("/admin/ping").header("Authorization", "Bearer " + adminTk))
+		mockMvc.perform(get("/admin/ping").header("Authorization", "Bearer " + adminAccessTk))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$").value(containsString("pong")));
-		mockMvc.perform(get("/admin/ping").header("Authorization", "Bearer " + userTk))
+		mockMvc.perform(get("/admin/ping").header("Authorization", "Bearer " + userAccessTk))
 				.andExpect(status().isForbidden());
 	}
 
@@ -197,7 +197,7 @@ class AuthIntegrationTest {
 		mockMvc.perform(post("/auth/sign-up").contentType(MediaType.APPLICATION_JSON).content(json))
 				.andExpect(status().isCreated());
 
-		String accessTk = accessTkOf(signIn(AuthTestDataFactory.createSignInDto()));
+		String accessTk = AuthTestClient.signInAndReturnAccessTk(mockMvc, objectMapper);
 
 		mockMvc.perform(get("/me").header("Authorization", "Bearer " + accessTk))
 				.andExpect(jsonPath("$.role").value("USER"));
@@ -212,12 +212,12 @@ class AuthIntegrationTest {
 	 */
 	@Test
 	void shouldSignInWithDifferentlyCasedEmail() throws Exception {
-		signUp(AuthTestDataFactory.createSignUpDto());
+		AuthTestClient.signUp(mockMvc, objectMapper, AuthTestDataFactory.createSignUpDto());
 
 		SignInAccountRequestDto shouted = AuthTestDataFactory.createSignInDto();
 		shouted.setEmail(shouted.getEmail().toUpperCase());
 
-		signIn(shouted);
+		AuthTestClient.signIn(mockMvc, objectMapper, shouted);
 	}
 
 	/**
@@ -226,7 +226,7 @@ class AuthIntegrationTest {
 	 */
 	@Test
 	void shouldRejectSecondSignUpWithSameEmailAndPhone() throws Exception {
-		signUp(AuthTestDataFactory.createSignUpDto());
+		AuthTestClient.signUp(mockMvc, objectMapper, AuthTestDataFactory.createSignUpDto());
 
 		mockMvc.perform(post("/auth/sign-up")
 				.contentType(MediaType.APPLICATION_JSON)
@@ -269,8 +269,8 @@ class AuthIntegrationTest {
 	@Test
 	void shouldVerifyAccessTkWithPublishedJwks() throws Exception {
 		SignUpAccountRequestDto signUp = AuthTestDataFactory.createSignUpDto();
-		signUp(signUp);
-		String accessTk = accessTkOf(signIn(AuthTestDataFactory.createSignInDto()));
+		AuthTestClient.signUp(mockMvc, objectMapper, signUp);
+		String accessTk = AuthTestClient.signInAndReturnAccessTk(mockMvc, objectMapper);
 
 		// decode() throws if the signature does not match the published key
 		Jwt jwt = decoderFromJwks().decode(accessTk);
@@ -285,8 +285,8 @@ class AuthIntegrationTest {
 	 */
 	@Test
 	void shouldRejectRefreshTkWithPublishedJwks() throws Exception {
-		signUp(AuthTestDataFactory.createSignUpDto());
-		String refreshTk = signIn(AuthTestDataFactory.createSignInDto()).getResponse().getCookie("refresh_tk").getValue();
+		AuthTestClient.signUp(mockMvc, objectMapper, AuthTestDataFactory.createSignUpDto());
+		String refreshTk = AuthTestClient.signIn(mockMvc, objectMapper, AuthTestDataFactory.createSignInDto()).getResponse().getCookie("refresh_tk").getValue();
 
 		assertThrows(JwtValidationException.class, () -> decoderFromJwks().decode(refreshTk));
 	}
@@ -307,27 +307,5 @@ class AuthIntegrationTest {
 				JwtValidators.createDefault(),
 				new JwtClaimValidator<String>("type_tk", TkName.ACCESS.name()::equals)));
 		return decoder;
-	}
-
-	/** Signs up the given account and expects 201. */
-	private void signUp(SignUpAccountRequestDto dto) throws Exception {
-		mockMvc.perform(post("/auth/sign-up")
-				.contentType(MediaType.APPLICATION_JSON)
-				.content(objectMapper.writeValueAsString(dto)))
-				.andExpect(status().isCreated());
-	}
-
-	/** Signs in, expects 200 and returns the whole result (body and cookies). */
-	private MvcResult signIn(SignInAccountRequestDto dto) throws Exception {
-		return mockMvc.perform(post("/auth/sign-in")
-				.contentType(MediaType.APPLICATION_JSON)
-				.content(objectMapper.writeValueAsString(dto)))
-				.andExpect(status().isOk())
-				.andReturn();
-	}
-
-	/** Reads the access token from the JSON body of a sign-in or refresh response. */
-	private static String accessTkOf(MvcResult result) throws Exception {
-		return JsonPath.read(result.getResponse().getContentAsString(), "$.accessTk");
 	}
 }

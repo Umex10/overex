@@ -9,7 +9,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 
-import com.overex.backend.auth.utils.TestKeys;
+import com.overex.backend.auth.utils.TestRsaKeys;
 
 /**
  * Smoke test: the whole application context starts with the "test" profile.
@@ -22,7 +22,7 @@ import com.overex.backend.auth.utils.TestKeys;
  *
  * <p>
  * The real {@code KeyConfig} needs key files, so the key pair of
- * {@link TestKeys} is written into a temporary folder first, the same way
+ * {@link TestRsaKeys} is written into a temporary folder first, the same way
  * {@code AuthIntegrationTest} does it.
  */
 @SpringBootTest
@@ -36,7 +36,7 @@ class BackendApplicationTests {
 	/** Writes the key files and points the key-location properties at them. */
 	@DynamicPropertySource
 	static void keyLocations(DynamicPropertyRegistry registry) {
-		TestKeys.writePemFiles(keyDir);
+		TestRsaKeys.writePemFiles(keyDir);
 		registry.add("jwt.private-key-location", () -> keyDir.resolve("private.pem").toUri().toString());
 		registry.add("jwt.public-key-location", () -> keyDir.resolve("public.pem").toUri().toString());
 	}

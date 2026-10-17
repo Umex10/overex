@@ -21,12 +21,12 @@ import com.overex.backend.auth.config.RsaKeyFiles;
  * {@link RsaKeyFiles#generateKeyPair()}. Generating and writing the keys is
  * done by {@link RsaKeyFiles}, the same code the application uses on startup.
  */
-public final class TestKeys {
+public final class TestRsaKeys {
 
 	/** The key pair the code under test signs and verifies with. */
 	public static final KeyPair PAIR = RsaKeyFiles.generateKeyPair();
 
-	private TestKeys() {
+	private TestRsaKeys() {
 	}
 
 	/** The private key of {@link #PAIR}, used to sign tokens. */
@@ -60,7 +60,7 @@ public final class TestKeys {
 
 		@Bean
 		RSAPublicKey publicKey() {
-			return TestKeys.publicKey();
+			return TestRsaKeys.publicKey();
 		}
 	}
 }

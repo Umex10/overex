@@ -29,7 +29,7 @@ import com.overex.backend.auth.config.RsaKeyFiles;
 import com.overex.backend.common.entities.User;
 import com.overex.backend.common.repositories.UserRepository;
 import com.overex.backend.auth.utils.AuthTestDataFactory;
-import com.overex.backend.auth.utils.TestKeys;
+import com.overex.backend.auth.utils.TestRsaKeys;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
 
@@ -45,7 +45,7 @@ import jakarta.servlet.http.Cookie;
  *
  * <p>
  * Pure Mockito tests: no Spring context, so the service is built by hand with
- * {@code new}. Keys come from {@link TestKeys}, so no key file is needed. Token
+ * {@code new}. Keys come from {@link TestRsaKeys}, so no key file is needed. Token
  * contents are read with nimbus-jose-jwt ({@link SignedJWT#parse(String)}),
  * which only decodes and does not verify.
  */
@@ -66,7 +66,7 @@ public class JwtServiceTest {
 	 */
 	@BeforeEach
 	void setUp() {
-		jwtService = new JwtService(TestKeys.privateKey(), TestKeys.publicKey(), userRepository);
+		jwtService = new JwtService(TestRsaKeys.privateKey(), TestRsaKeys.publicKey(), userRepository);
 	}
 
 	/** An access token carries the user id as {@code sub} plus the {@code email} and {@code roles} claims. */
@@ -133,7 +133,7 @@ public class JwtServiceTest {
 				.setSubject(user.getId().toString())
 				.claim("type_tk", "REFRESH")
 				.setExpiration(new Date(System.currentTimeMillis() - 1000))
-				.signWith(TestKeys.privateKey(), SignatureAlgorithm.RS256) // right key: only the expiry is wrong
+				.signWith(TestRsaKeys.privateKey(), SignatureAlgorithm.RS256) // right key: only the expiry is wrong
 				.compact();
 
 		BadCredentialsException ex = assertThrows(BadCredentialsException.class,

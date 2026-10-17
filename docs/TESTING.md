@@ -23,7 +23,7 @@ profile, `src/test/resources/application-test.properties`) — no Docker require
 runs in seconds.
 
 No key files are needed either: the tests create their own RSA key
-pair at runtime (`auth/utils/TestKeys`).
+pair at runtime (`auth/utils/TestRsaKeys`).
 
 `./mvnw verify` additionally writes a JaCoCo coverage report to
 `apps/backend/target/site/jacoco/index.html` (the CI uploads it as the
@@ -32,7 +32,7 @@ pair at runtime (`auth/utils/TestKeys`).
 The tests are grouped by feature (`auth/`, `event/`, `user/`, mirroring the
 main packages). Inside each feature they are split into three layers, plus a
 `utils/` folder with that feature's fixtures (`AuthTestDataFactory`,
-`EventTestDataFactory`, `TestKeys`, `TkFactory`):
+`EventTestDataFactory`, `AuthTestClient`, `TestRsaKeys`):
 
 **Unit** (`<feature>/unit/`, no Spring context, dependencies mocked):
 - `auth/unit/JwtServiceTest`: access/refresh token claims, refresh token validation (wrong key, expired, malformed, wrong type, user gone), cookie extraction

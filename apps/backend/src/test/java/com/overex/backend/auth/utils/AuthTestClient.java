@@ -11,18 +11,21 @@ import com.overex.backend.auth.dto.requests.SignInAccountRequestDto;
 import com.overex.backend.auth.dto.requests.SignUpAccountRequestDto;
 import com.overex.backend.common.entities.User;
 
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import org.springframework.http.MediaType;
 
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 
-public final class TkFactory {
+/**
+ * Auth actions for MockMvc tests: signs up/in through the real endpoints or
+ * prepares an authenticated request. The test data itself comes from
+ * {@link AuthTestDataFactory}.
+ */
+public final class AuthTestClient {
 
-    private TkFactory() {
+    private AuthTestClient() {
     }
 
     /**
@@ -36,25 +39,34 @@ public final class TkFactory {
                 .authorities(new SimpleGrantedAuthority("ROLE_" + user.getRole().name()));
     }
 
-    public static String signUpAndReturnAccessTk(MockMvc mockMvc, ObjectMapper objectMapper) throws Exception {
-        SignUpAccountRequestDto signUpAccountRequestDto = AuthTestDataFactory.createSignUpDto();
-        MvcResult mvcResult = mockMvc.perform(post("/auth/sign-up")
+    /** Signs up the given account, expects 201 and returns the whole result. */
+    public static MvcResult signUp(MockMvc mockMvc, ObjectMapper objectMapper, SignUpAccountRequestDto dto)
+            throws Exception {
+        return mockMvc.perform(post("/auth/sign-up")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(signUpAccountRequestDto)))
-                .andExpect(status().isCreated()).andReturn();
-        return accessTkOf(mvcResult);
+                .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isCreated())
+                .andReturn();
     }
 
     /** Signs in, expects 200 and returns the whole result (body and cookies). */
-    public static String signInAndReturnAccessTk(MockMvc mockMvc, ObjectMapper objectMapper) throws Exception {
-        SignInAccountRequestDto signInAccountRequestDto = AuthTestDataFactory.createSignInDto();
-        MvcResult mvcResult = mockMvc.perform(post("/auth/sign-in")
+    public static MvcResult signIn(MockMvc mockMvc, ObjectMapper objectMapper, SignInAccountRequestDto dto)
+            throws Exception {
+        return mockMvc.perform(post("/auth/sign-in")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(signInAccountRequestDto)))
+                .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isOk())
                 .andReturn();
+    }
 
-        return accessTkOf(mvcResult);
+    /** Signs up the default user and returns the access token of the sign-up response. */
+    public static String signUpAndReturnAccessTk(MockMvc mockMvc, ObjectMapper objectMapper) throws Exception {
+        return accessTkOf(signUp(mockMvc, objectMapper, AuthTestDataFactory.createSignUpDto()));
+    }
+
+    /** Signs in the default user and returns the access token. */
+    public static String signInAndReturnAccessTk(MockMvc mockMvc, ObjectMapper objectMapper) throws Exception {
+        return accessTkOf(signIn(mockMvc, objectMapper, AuthTestDataFactory.createSignInDto()));
     }
 
     /**

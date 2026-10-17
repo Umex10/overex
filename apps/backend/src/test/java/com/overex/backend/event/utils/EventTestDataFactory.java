@@ -169,7 +169,7 @@ public final class EventTestDataFactory {
 				DEFAULT_IMAGE_URL);
 	}
 
-	/** An invalid create payload matching {@link #createDefaultEvent()}. */
+	/** Same as {@link #createCreateEventDto()} but its start lies in the past, so {@code @Future} rejects it. */
 	public static CreateEventDto createCreatePastEventDto() {
 		return new CreateEventDto(
 				DEFAULT_TITLE,
@@ -179,6 +179,18 @@ public final class EventTestDataFactory {
 				PAST_STARTS_AT,
 				DEFAULT_SALE_STARTS_AT,
 				DEFAULT_IMAGE_URL);
+	}
+
+	/** Breaks every bean-validation rule of {@link CreateEventDto}, so {@code @Valid} rejects it. */
+	public static CreateEventDto createInvalidCreateEventDto() {
+		return new CreateEventDto(
+				"",
+				"",
+				"",
+				"",
+				null,
+				null,
+				"not-a-url");
 	}
 
 	/** A valid update payload that changes every field of {@link #createDefaultEvent()}. */

@@ -15,7 +15,7 @@ import com.overex.backend.auth.JwksController;
 import com.overex.backend.auth.security.CustomUserDetailsService;
 import com.overex.backend.auth.security.config.SecurityConfig;
 import com.overex.backend.common.repositories.UserRepository;
-import com.overex.backend.auth.utils.TestKeys;
+import com.overex.backend.auth.utils.TestRsaKeys;
 
 /**
  * Web-layer test for {@link JwksController}, through the real
@@ -27,7 +27,7 @@ import com.overex.backend.auth.utils.TestKeys;
  * private key material ever leaves the service.
  */
 @WebMvcTest(JwksController.class)
-@Import({ SecurityConfig.class, CustomUserDetailsService.class, TestKeys.PublicKeyConfig.class })
+@Import({ SecurityConfig.class, CustomUserDetailsService.class, TestRsaKeys.PublicKeyConfig.class })
 public class JwksControllerTest {
 
 	@Autowired
