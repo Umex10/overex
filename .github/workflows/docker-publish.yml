@@ -20,7 +20,7 @@ on:
       - ".github/workflows/docker-publish.yml"
   # Adds a "Run workflow" button in the Actions tab to start this workflow by
   # hand, e.g. to republish the image without a code change after the base
-  # image (eclipse-temurin:21-jre) received a security update.
+  # image (eclipse-temurin:25-jre) received a security update.
   workflow_dispatch:
 
 # Rights of the automatic GITHUB_TOKEN for this workflow:

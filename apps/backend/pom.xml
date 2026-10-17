@@ -16,7 +16,7 @@
 	<description>Overex — ticketing platform for high-demand events, core monolith (Spring Boot)</description>
 
 	<properties>
-		<java.version>21</java.version>
+		<java.version>25</java.version>
 		<mapstruct.version>1.6.3</mapstruct.version>
 	</properties>
 

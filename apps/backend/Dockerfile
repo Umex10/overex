@@ -16,9 +16,9 @@
 # =============================================================================
 
 # ---- Build stage ------------------------------------------------------------
-# Base image with a JDK 21 (Eclipse Temurin). "AS build" names the stage so the
+# Base image with a JDK 25 (Eclipse Temurin). "AS build" names the stage so the
 # runtime stage can copy from it. Only the files of this image are visible here.
-FROM eclipse-temurin:21-jdk AS build
+FROM eclipse-temurin:25-jdk AS build
 # Working directory for all following instructions (created if missing).
 WORKDIR /app
 
@@ -45,7 +45,7 @@ RUN ./mvnw -B -q clean package -DskipTests
 # ---- Runtime stage ----------------------------------------------------------
 # A fresh, smaller base image with only a JRE: running the jar needs no
 # compiler. The JDK, Maven and ~/.m2 of the build stage are not part of it.
-FROM eclipse-temurin:21-jre AS runtime
+FROM eclipse-temurin:25-jre AS runtime
 WORKDIR /app
 
 # Run as a non-root user: create the system account "overex" with the fixed
