@@ -109,7 +109,7 @@ Swagger UI: **http://localhost:8080/api/v1/swagger-ui.html**. All variants (full
 ```
 overex/
 ├── apps/
-│   ├── backend/        Monolith: Spring Boot 4 · Java 21 · Spring Security · JPA · springdoc
+│   ├── backend/        Monolith: Spring Boot 4 · Java 25 · Spring Security · JPA · springdoc
 │   └── web/            Frontend: Next.js 16 · React 19 · Redux Toolkit Query · Tailwind v4 · shadcn/ui
 ├── .github/workflows/         CI: backend and web tests, Docker build/publish
 ├── docker-compose.yml         Postgres + backend + Swagger UI
@@ -138,7 +138,7 @@ overex/
 
 ## 🛠️ Tech stack
 
-**Backend:** Spring Boot 4, Java 21, Spring Security (OAuth2 Resource Server), Spring Data JPA, PostgreSQL / H2, springdoc-openapi; planned: gRPC.
+**Backend:** Spring Boot 4, Java 25, Spring Security (OAuth2 Resource Server), Spring Data JPA, PostgreSQL / H2, springdoc-openapi; planned: gRPC.
 **Frontend:** Next.js 16 (App Router), React 19, Redux Toolkit Query, react-hook-form + Zod, Tailwind CSS v4, shadcn/ui.
 **Operations:** Docker, GitHub Actions, ghcr.io; planned: Kubernetes (HPA, Ingress), k6.
 **Testing:** JUnit 5, Mockito, MockMvc, JaCoCo, Vitest, Playwright.

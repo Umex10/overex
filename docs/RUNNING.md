@@ -7,7 +7,9 @@ Three ways to run it, from "just show me" to "I want to develop on it".
 ## Prerequisites
 
 - **Docker** (for the database, and optionally the backend)
-- **Java 21** + the bundled Maven wrapper (`./mvnw`) — only if you run the backend outside Docker
+- **Java 25** + the bundled Maven wrapper (`./mvnw`) — only if you run the backend outside Docker
+  (Ubuntu/Debian/Mint: `sudo apt install openjdk-25-jdk`, then make it the default with
+  `sudo update-alternatives --config java` and `sudo update-alternatives --config javac`)
 - **Node.js 20+** — for the web frontend
 
 No global Maven and no global secrets manager needed; the Maven wrapper is

@@ -38,15 +38,15 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
 
-      # Installs JDK 21 (Eclipse Temurin, the same as in the Dockerfile) on the
+      # Installs JDK 25 (Eclipse Temurin, the same as in the Dockerfile) on the
       # machine and caches the Maven repository (~/.m2/repository) between runs.
-      - name: Set up JDK 21
+      - name: Set up JDK 25
         uses: actions/setup-java@v6
         with:
           # Vendor of the JDK.
           distribution: temurin
           # Java version; quoted so YAML reads it as text, not as a number.
-          java-version: "21"
+          java-version: "25"
           # Downloads ~/.m2/repository from the GitHub cache of this repository
           # at the start and uploads it again at the end of the job, so Maven
           # does not download every dependency on every run.

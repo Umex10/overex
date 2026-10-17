@@ -61,14 +61,14 @@ jobs:
 
       # The backend runs directly on this machine (./mvnw spring-boot:run,
       # started by Playwright), so the machine needs a JDK. Same setup as in
-      # backend-verify-ci.yml: JDK 21 (Eclipse Temurin) plus the cached Maven
+      # backend-verify-ci.yml: JDK 25 (Eclipse Temurin) plus the cached Maven
       # repository (~/.m2/repository), keyed by pom.xml.
-      - name: Set up JDK 21
+      - name: Set up JDK 25
         uses: actions/setup-java@v6
         with:
           distribution: temurin
           # Quoted so YAML reads it as text, not as a number.
-          java-version: "21"
+          java-version: "25"
           cache: maven
           cache-dependency-path: apps/backend/pom.xml
 
