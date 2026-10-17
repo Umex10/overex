@@ -1,7 +1,12 @@
-import Link from "next/link";
+"use client";
+
 import AuthProvider from "@/components/AuthProvider";
-import { ThemeToggle } from "@/components/theme-toggle";
-import { SignOutButton } from "@/components/SignOutButton";
+import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { AppSidebar } from "@/components/app-sidebar";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { SidebarLogo } from "@/components/sidebar-logo";
+import SignInButton from "@/components/sign-in-button";
+import { SearchBar } from "@/components/search-bar";
 
 /**
  * Layout for every protected route under `(shell)`.
@@ -15,29 +20,44 @@ export default function ShellLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const isMobile = useIsMobile();
+
   return (
     <AuthProvider>
-      <div className="flex min-h-screen flex-col">
-        <header className="sticky top-0 z-40 border-b border-border bg-background/80 backdrop-blur">
-          <div className="mx-auto flex h-16 w-full max-w-5xl items-center justify-between px-6">
-            {/* Goes to the root URL on purpose. If you're still signed in,
-                proxy.ts will bounce you right back to /dashboard with the
-                "already signed in" note — demonstrating the redirect flow. */}
-            <Link href="/" className="flex items-center gap-2 font-semibold">
-              <span className="text-xl">🔐</span>
-              <span>Overex</span>
-            </Link>
-            <div className="flex items-center gap-2">
-              <ThemeToggle />
-              <SignOutButton />
-            </div>
-          </div>
-        </header>
+      <SidebarProvider>
+        <AppSidebar />
+        {/* flex-1: takes the space right of the sidebar; min-w-0 lets wide
+              content shrink instead of pushing the layout wider. */}
+        <div className="min-w-0 flex-1 flex flex-row overflow-x-hidden">
+          <div className="w-full flex flex-col">
+            <header
+              className="w-full flex flex-row items-center justify-between gap-4
+            border-b py-2 px-4"
+            >
+              {/* Trigger and title in one row, so both are centred on the
+                  same line as the search field. */}
+              <div className="flex flex-row shrink-0 items-center gap-2">
+                {/* size-auto: the button shrinks to the icon instead of the
+                    fixed size-7 square, so there is no empty space around it. */}
+                <SidebarTrigger className="size-auto" />
 
-        <main className="mx-auto w-full max-w-5xl flex-1 px-6 py-10">
-          {children}
-        </main>
-      </div>
+                {isMobile ? <SidebarLogo></SidebarLogo> 
+                : <h2>Event</h2>}
+              </div>
+
+              {isMobile ? (
+                <SignInButton></SignInButton>
+              ) : (
+                // Full width by default; from md on capped at 20rem.
+                <SearchBar className="md:max-w-80" />
+              )}
+            </header>
+            <main className="w-full flex justify-center items-center p-2">
+              {children}
+            </main>
+          </div>
+        </div>
+      </SidebarProvider>
     </AuthProvider>
   );
 }

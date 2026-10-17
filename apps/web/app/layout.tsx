@@ -24,7 +24,7 @@ export default function RootLayout({
       className={cn("h-full antialiased", inter.variable)}
       suppressHydrationWarning
     >
-      <body className="flex min-h-full flex-col font-sans">
+      <body className="min-h-full font-sans">
         <Providers>
           <Toaster position="top-right" closeButton />
           {children}

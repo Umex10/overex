@@ -11,7 +11,7 @@ test.describe("Signed in", () => {
   test("reloading the dashboard keeps the session (silent refresh)", async ({ page }) => {
     // A full page load starts with an empty Redux cache: the access token is
     // fetched again with the refresh cookie before GET /me can succeed.
-    await page.goto("/dashboard");
+    await page.goto("/event");
     await expectDashboardFor(page, bootstrapAccount);
 
     await page.reload();
@@ -20,29 +20,29 @@ test.describe("Signed in", () => {
 
   test("landing and auth pages forward to the dashboard", async ({ page }) => {
     await page.goto("/sign-in");
-    await expect(page).toHaveURL("/dashboard");
+    await expect(page).toHaveURL("/event");
 
     await page.goto("/sign-up");
-    await expect(page).toHaveURL("/dashboard");
+    await expect(page).toHaveURL("/event");
 
     await page.goto("/");
-    await expect(page).toHaveURL("/dashboard?redirected=1");
+    await expect(page).toHaveURL("/event?redirected=1");
     await expect(page.getByTestId("dashboard-redirect-note")).toBeVisible();
   });
 
   test("signing out ends the session", async ({ page, context }) => {
-    await page.goto("/dashboard");
+    await page.goto("/event");
     await expectDashboardFor(page, bootstrapAccount);
 
     await signOut(page);
 
     expect((await context.cookies()).some((c) => c.name === "refresh_tk")).toBe(false);
-    await page.goto("/dashboard");
+    await page.goto("/event");
     await expect(page).toHaveURL("/sign-in");
   });
 
   test("the refresh token is out of reach for page scripts", async ({ page, context }) => {
-    await page.goto("/dashboard");
+    await page.goto("/event");
     await expectDashboardFor(page, bootstrapAccount);
 
     const cookie = (await context.cookies()).find((c) => c.name === "refresh_tk");

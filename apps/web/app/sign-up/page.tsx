@@ -54,7 +54,7 @@ export default function SignUpPage() {
         id: toastId,
         className: "toast-success",
       });
-      router.push("/dashboard");
+      router.push("/event");
     } catch (error) {
       const apiError = error as ApiErrorBody;
       const message = apiError?.message || "Sign-up failed.";

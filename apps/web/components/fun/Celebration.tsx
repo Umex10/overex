@@ -6,7 +6,7 @@
  * This whole folder (components/fun/) is the "just for fun" layer. To remove
  * the gag completely:
  *   1. delete this file (and the components/fun/ folder),
- *   2. remove the <Celebration /> usage in app/(shell)/dashboard/page.tsx,
+ *   2. remove the <Celebration /> usage in app/(shell)/event/page.tsx,
  *   3. (optional) delete the "FUN GAG" block in app/globals.css.
  * Nothing else in the app depends on it.
  * ─────────────────────────────────────────────────────────────────────────── */

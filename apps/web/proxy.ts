@@ -7,10 +7,10 @@ import type { NextRequest } from "next/server";
  *
  * - Unauthenticated visits to a protected route are redirected to `/sign-in`.
  * - Authenticated visits to the landing page (`/`), `/sign-in` or `/sign-up`
- *   are bounced straight to `/dashboard` — if you already have a refresh cookie
+ *   are bounced straight to `/event` — if you already have a refresh cookie
  *   there is no reason to show you the marketing/auth pages again. The landing
  *   redirect additionally carries a `?redirected=1` flag so the dashboard can
- *   explain *why* you landed there (see `app/(shell)/dashboard/page.tsx`).
+ *   explain *why* you landed there (see `app/(shell)/event/page.tsx`).
  * - The landing and auth pages stay publicly reachable for logged-out visitors
  *   so they can browse without an infinite redirect loop.
  *
@@ -32,14 +32,14 @@ export async function proxy(request: NextRequest) {
 
   // Logged in + visiting an auth page -> straight to the dashboard.
   if (token && isAuthPage) {
-    return NextResponse.redirect(new URL("/dashboard", request.url));
+    return NextResponse.redirect(new URL("/event", request.url));
   }
 
   // Logged in + opening the landing page -> dashboard, flagged so the dashboard
   // can show the "you're already signed in" note (this is the flow you hit by
   // reopening the site at the root URL, or by clicking the Overex logo).
   if (token && isLandingPage) {
-    const url = new URL("/dashboard", request.url);
+    const url = new URL("/event", request.url);
     url.searchParams.set("redirected", "1");
     return NextResponse.redirect(url);
   }

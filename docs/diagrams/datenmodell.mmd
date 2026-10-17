@@ -9,8 +9,15 @@ erDiagram
         string password "BCrypt-Hash"
         enum role "USER | ADMIN"
     }
+    event_categories {
+        uuid id PK
+        string name UK "Festival, Konzert, Sport"
+        string slug UK "festival (für URL/Filter)"
+        int sort_order "Reihenfolge im Filter"
+    }
     events {
         uuid id PK
+        uuid category_id FK "Kategorie des Events"
         string title
         text description
         string venue "Ort, z. B. Gasometer"
@@ -80,6 +87,7 @@ erDiagram
     }
 
     users ||--o{ orders : "kauft"
+    event_categories ||--o{ events : "ordnet zu"
     events ||--|{ ticket_categories : "hat"
     ticket_categories ||--o{ orders : "wird bestellt in"
     orders ||--o{ tickets : "erzeugt"
