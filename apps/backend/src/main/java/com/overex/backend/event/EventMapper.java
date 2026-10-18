@@ -14,13 +14,16 @@ public interface EventMapper {
         @Mapping(target = "status", constant = "DRAFT")
         @Mapping(target = "createdAt", ignore = true)
         @Mapping(target = "updatedAt", ignore = true)
+        @Mapping(target = "category", ignore = true)
         Event toEntity(CreateEventDto dto);
 
+        @Mapping(target = "categoryId", source = "category.id")
         CreateEventDto toCreateEventDto(Event event);
 
         @Mapping(target = "id", ignore = true)
         @Mapping(target = "status", ignore = true)
         @Mapping(target = "createdAt", ignore = true)
         @Mapping(target = "updatedAt", ignore = true)
+        @Mapping(target = "category", ignore = true)
         void updateEntity(UpdateEventDto dto, @MappingTarget Event event);
 }

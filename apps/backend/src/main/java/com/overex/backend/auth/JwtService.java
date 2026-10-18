@@ -50,10 +50,10 @@ public class JwtService {
 	private final RSAPublicKey publicKey;
 
 	/** Refresh-token lifetime: 30 days (in milliseconds). */
-	private final long REFRESH_TK = 1000L * 60 * 60 * 24 * 30;
+	private static final long REFRESH_TK = 1000L * 60 * 60 * 24 * 30;
 
 	/** Access-token lifetime: 15 minutes (in milliseconds). */
-	private final long ACCESS_TK = 1000L * 60 * 15;
+	private static final long ACCESS_TK = 1000L * 60 * 15;
 
 	private final UserRepository userRepository;
 

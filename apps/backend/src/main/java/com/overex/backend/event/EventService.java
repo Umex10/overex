@@ -4,6 +4,9 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,10 +23,16 @@ import lombok.RequiredArgsConstructor;
 public class EventService {
 
     private final EventRepository eventRepository;
+    private final CategoryRepository categoryRepository;
     private final EventMapper eventMapper;
 
-    public List<Event> getEvents() {
-        return eventRepository.findAll();
+    public Page<Event> getEvents(UUID categoryId, Pageable pageable) {
+
+        if (categoryId == null) {
+            return eventRepository.findAll(pageable);
+        }
+
+        return eventRepository.findByCategoryId(categoryId, pageable);
     }
 
     public Event getEvent(UUID eventId) {
@@ -33,7 +42,10 @@ public class EventService {
 
     public Event createEvent(CreateEventDto createEventDto) {
 
+        Category category = getCategory(createEventDto.categoryId());
+
         Event event = eventMapper.toEntity(createEventDto);
+        event.setCategory(category);
 
         return eventRepository.save(event);
     }
@@ -74,7 +86,10 @@ public class EventService {
             throw fieldError("saleStartsAt", "The sale must start before the event starts.");
         }
 
+        Category category = getCategory(updateEventDto.categoryId());
+
         eventMapper.updateEntity(updateEventDto, event);
+        event.setCategory(category);
 
         return eventRepository.save(event);
     }
@@ -85,6 +100,15 @@ public class EventService {
                 .orElseThrow(() -> new EntityNotFoundException(String.format("Event '%s' was not found", eventId)));
         eventRepository.delete(event);
 
+    }
+
+    /**
+     * Loads the category a payload refers to. An unknown id is a client error
+     * (400 on {@code categoryId}), not a missing resource of the URL (404).
+     */
+    private Category getCategory(UUID categoryId) {
+        return categoryRepository.findById(categoryId)
+                .orElseThrow(() -> fieldError("categoryId", String.format("Category '%s' was not found", categoryId)));
     }
 
     private static OwnException fieldError(String field, String message) {

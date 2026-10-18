@@ -32,13 +32,11 @@ const numberFormat = new Intl.NumberFormat("de-AT");
  */
 export function FeaturedEventCard({
   event,
-  category,
   ticketCount,
   priceFromCents,
   className,
 }: {
   event: EventDto;
-  category?: string;
   ticketCount?: number;
   priceFromCents?: number;
   className?: string;
@@ -74,9 +72,9 @@ export function FeaturedEventCard({
             >
               {saleOpen ? "Im Verkauf" : "Bald erhältlich"}
             </Badge>
-            {category && (
+            {event.category && (
               <span className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
-                {category}
+                {event.category.title}
               </span>
             )}
           </div>

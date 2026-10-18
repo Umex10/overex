@@ -1,6 +1,7 @@
 package com.overex.backend.event.dto.requests;
 
 import java.time.Instant;
+import java.util.UUID;
 
 import org.hibernate.validator.constraints.URL;
 
@@ -19,6 +20,8 @@ public record UpdateEventDto(
 
         @NotBlank(message = "Description is required")
         String description,
+
+        @NotNull(message = "Category is required") UUID categoryId,
 
         @NotBlank(message = "Venue is required")
         @Size(max = 120, message = "Venue must be at most {max} characters.")

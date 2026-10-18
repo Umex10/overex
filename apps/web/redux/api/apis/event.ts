@@ -1,7 +1,7 @@
 import { apiSlice } from "../apiSlice";
 
 import type { ApiErrorBody } from "@/types/ApiError";
-import type { EventsDto } from "@/types/EventsDto";
+import type { EventsDto, PageAble, PageEvent } from "@/types/EventsDto";
 
 /**
  * Auth endpoints. They do not call the backend from the browser but go through
@@ -14,8 +14,10 @@ import type { EventsDto } from "@/types/EventsDto";
 const eventApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
 
-    getEvents: builder.query<EventsDto, void>({
-      query: () => `/event`,
+    getEvents: builder.query<PageEvent, PageAble>({
+      query: (pageable) => ({
+        url: `/event?page=${pageable.page}&size=${pageable.size}&sort=${pageable.sort}&categoryId=${pageable.categoryId}`,
+      }) 
     }),
   }),
 });

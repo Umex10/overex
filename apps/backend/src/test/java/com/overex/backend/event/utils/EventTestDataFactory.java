@@ -4,6 +4,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
+import com.overex.backend.event.Category;
 import com.overex.backend.event.Event;
 import com.overex.backend.event.Status;
 import com.overex.backend.event.dto.requests.CreateEventDto;
@@ -24,6 +25,10 @@ public final class EventTestDataFactory {
 
 	/** A fixed id so tests can assert against path variables and responses. */
 	public static final UUID DEFAULT_EVENT_ID = UUID.fromString("33333333-3333-3333-3333-333333333333");
+
+	// The category every event and payload refers to.
+	public static final UUID DEFAULT_CATEGORY_ID = UUID.fromString("22222222-2222-2222-2222-222222222222");
+	public static final String DEFAULT_CATEGORY_TITLE = "Festival";
 
 	// Values of the default event and the create payload.
 	public static final String DEFAULT_TITLE = "Summer Festival";
@@ -68,10 +73,26 @@ public final class EventTestDataFactory {
 	public static final Instant THIRD_SALE_STARTS_AT = Instant.parse("2099-01-15T08:00:00Z");
 	public static final String THIRD_IMAGE_URL = "https://example.com/images/rock-am-berg.png";
 
+	/** A persisted-looking category (with id). */
+	public static Category createDefaultCategory() {
+		return Category.builder()
+				.id(DEFAULT_CATEGORY_ID)
+				.title(DEFAULT_CATEGORY_TITLE)
+				.build();
+	}
+
+	/** A new category without id, ready to be saved by a repository. */
+	public static Category createUnsavedCategory() {
+		return Category.builder()
+				.title(DEFAULT_CATEGORY_TITLE)
+				.build();
+	}
+
 	/** A persisted-looking event (with id and timestamps) in {@code DRAFT} status. */
 	public static Event createDefaultEvent() {
 		return Event.builder()
 				.id(DEFAULT_EVENT_ID)
+				.category(createDefaultCategory())
 				.title(DEFAULT_TITLE)
 				.description(DEFAULT_DESCRIPTION)
 				.venue(DEFAULT_VENUE)
@@ -107,6 +128,7 @@ public final class EventTestDataFactory {
 	public static List<Event> createEventList() {
 		Event secondEvent = Event.builder()
 				.id(SECOND_EVENT_ID)
+				.category(createDefaultCategory())
 				.title(SECOND_TITLE)
 				.description(SECOND_DESCRIPTION)
 				.venue(SECOND_VENUE)
@@ -121,6 +143,7 @@ public final class EventTestDataFactory {
 
 		Event thirdEvent = Event.builder()
 				.id(THIRD_EVENT_ID)
+				.category(createDefaultCategory())
 				.title(THIRD_TITLE)
 				.description(THIRD_DESCRIPTION)
 				.venue(THIRD_VENUE)
@@ -159,9 +182,18 @@ public final class EventTestDataFactory {
 
 	/** A valid create payload matching {@link #createDefaultEvent()}. */
 	public static CreateEventDto createCreateEventDto() {
+		return createCreateEventDto(DEFAULT_CATEGORY_ID);
+	}
+
+	/**
+	 * Same as {@link #createCreateEventDto()} but refers to the given category,
+	 * e.g. one an integration test has stored and whose id the database generated.
+	 */
+	public static CreateEventDto createCreateEventDto(UUID categoryId) {
 		return new CreateEventDto(
 				DEFAULT_TITLE,
 				DEFAULT_DESCRIPTION,
+				categoryId,
 				DEFAULT_VENUE,
 				DEFAULT_CITY,
 				DEFAULT_STARTS_AT,
@@ -174,6 +206,7 @@ public final class EventTestDataFactory {
 		return new CreateEventDto(
 				DEFAULT_TITLE,
 				DEFAULT_DESCRIPTION,
+				DEFAULT_CATEGORY_ID,
 				DEFAULT_VENUE,
 				DEFAULT_CITY,
 				PAST_STARTS_AT,
@@ -186,43 +219,7 @@ public final class EventTestDataFactory {
 		return new CreateEventDto(
 				"",
 				"",
-				"",
-				"",
 				null,
-				null,
-				"not-a-url");
-	}
-
-	/** A valid update payload that changes every field of {@link #createDefaultEvent()}. */
-	public static UpdateEventDto createUpdateEventDto() {
-		return updateEventDto(UPDATED_STARTS_AT, UPDATED_SALE_STARTS_AT);
-	}
-
-	/** Keeps the start time of {@link #createDefaultEvent()}, so the "moved to the past" check is skipped. */
-	public static UpdateEventDto createUpdateEventDtoWithUnchangedStartsAt() {
-		return updateEventDto(DEFAULT_STARTS_AT, DEFAULT_SALE_STARTS_AT);
-	}
-
-	/** Moves the start time into the past. */
-	public static UpdateEventDto createUpdateEventDtoWithPastStartsAt() {
-		return updateEventDto(PAST_STARTS_AT, PAST_SALE_STARTS_AT);
-	}
-
-	/** The sale opens exactly when the event starts (boundary: must be rejected). */
-	public static UpdateEventDto createUpdateEventDtoWithSaleAtStart() {
-		return updateEventDto(UPDATED_STARTS_AT, UPDATED_STARTS_AT);
-	}
-
-	/** The sale opens after the event starts. */
-	public static UpdateEventDto createUpdateEventDtoWithSaleAfterStart() {
-		return updateEventDto(UPDATED_STARTS_AT, UPDATED_STARTS_AT.plusSeconds(14 * 24 * 60 * 60));
-	}
-
-	/** Breaks every bean-validation rule of {@link UpdateEventDto}, so {@code @Valid} rejects it. */
-	public static UpdateEventDto createInvalidUpdateEventDto() {
-		return new UpdateEventDto(
-				"",
-				"",
 				"",
 				"",
 				null,
@@ -231,13 +228,60 @@ public final class EventTestDataFactory {
 	}
 
 	/**
-	 * The update payload with the {@code UPDATED_} texts; only the two timestamps
-	 * vary between the update variants above.
+	 * A valid update payload that changes every field of
+	 * {@link #createDefaultEvent()} except the category.
 	 */
-	private static UpdateEventDto updateEventDto(Instant startsAt, Instant saleStartsAt) {
+	public static UpdateEventDto createUpdateEventDto() {
+		return createUpdateEventDto(DEFAULT_CATEGORY_ID);
+	}
+
+	/** Same as {@link #createUpdateEventDto()} but refers to the given category. */
+	public static UpdateEventDto createUpdateEventDto(UUID categoryId) {
+		return updateEventDto(categoryId, UPDATED_STARTS_AT, UPDATED_SALE_STARTS_AT);
+	}
+
+	/** Keeps the start time of {@link #createDefaultEvent()}, so the "moved to the past" check is skipped. */
+	public static UpdateEventDto createUpdateEventDtoWithUnchangedStartsAt() {
+		return updateEventDto(DEFAULT_CATEGORY_ID, DEFAULT_STARTS_AT, DEFAULT_SALE_STARTS_AT);
+	}
+
+	/** Moves the start time into the past. */
+	public static UpdateEventDto createUpdateEventDtoWithPastStartsAt() {
+		return updateEventDto(DEFAULT_CATEGORY_ID, PAST_STARTS_AT, PAST_SALE_STARTS_AT);
+	}
+
+	/** The sale opens exactly when the event starts (boundary: must be rejected). */
+	public static UpdateEventDto createUpdateEventDtoWithSaleAtStart() {
+		return updateEventDto(DEFAULT_CATEGORY_ID, UPDATED_STARTS_AT, UPDATED_STARTS_AT);
+	}
+
+	/** The sale opens after the event starts. */
+	public static UpdateEventDto createUpdateEventDtoWithSaleAfterStart() {
+		return updateEventDto(DEFAULT_CATEGORY_ID, UPDATED_STARTS_AT, UPDATED_STARTS_AT.plusSeconds(14 * 24 * 60 * 60));
+	}
+
+	/** Breaks every bean-validation rule of {@link UpdateEventDto}, so {@code @Valid} rejects it. */
+	public static UpdateEventDto createInvalidUpdateEventDto() {
+		return new UpdateEventDto(
+				"",
+				"",
+				null,
+				"",
+				"",
+				null,
+				null,
+				"not-a-url");
+	}
+
+	/**
+	 * The update payload with the {@code UPDATED_} texts; only the category and
+	 * the two timestamps vary between the update variants above.
+	 */
+	private static UpdateEventDto updateEventDto(UUID categoryId, Instant startsAt, Instant saleStartsAt) {
 		return new UpdateEventDto(
 				UPDATED_TITLE,
 				UPDATED_DESCRIPTION,
+				categoryId,
 				UPDATED_VENUE,
 				UPDATED_CITY,
 				startsAt,

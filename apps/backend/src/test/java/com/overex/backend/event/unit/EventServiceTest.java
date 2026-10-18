@@ -20,6 +20,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.overex.backend.common.exception.ApiError;
 import com.overex.backend.common.exception.OwnException;
+import com.overex.backend.event.Category;
+import com.overex.backend.event.CategoryRepository;
 import com.overex.backend.event.Event;
 import com.overex.backend.event.EventMapper;
 import com.overex.backend.event.EventRepository;
@@ -50,6 +52,9 @@ public class EventServiceTest {
 	EventRepository eventRepository;
 
 	@Mock
+	CategoryRepository categoryRepository;
+
+	@Mock
 	EventMapper eventMapper;
 
 	@InjectMocks
@@ -58,17 +63,22 @@ public class EventServiceTest {
 	/** The default event every test works with (see the class comment). */
 	private final Event event = EventTestDataFactory.createDefaultEvent();
 
-	/** The payload is mapped to an entity and that entity is saved. */
+	/** The category the payloads refer to. */
+	private final Category category = EventTestDataFactory.createDefaultCategory();
+
+	/** The payload is mapped to an entity, gets its category and is saved. */
 	@Test
 	void shouldCreateEvent() {
 		CreateEventDto dto = EventTestDataFactory.createCreateEventDto();
 
+		when(categoryRepository.findById(dto.categoryId())).thenReturn(Optional.of(category));
 		when(eventMapper.toEntity(dto)).thenReturn(event);
 		when(eventRepository.save(event)).thenReturn(event);
 
 		Event createdEvent = eventService.createEvent(dto);
 
 		assertSame(event, createdEvent);
+		assertSame(category, createdEvent.getCategory());
 		verify(eventMapper).toEntity(dto);
 		verify(eventRepository).save(event);
 	}
@@ -110,11 +120,13 @@ public class EventServiceTest {
 		UpdateEventDto dto = EventTestDataFactory.createUpdateEventDto();
 
 		when(eventRepository.findById(event.getId())).thenReturn(Optional.of(event));
+		when(categoryRepository.findById(dto.categoryId())).thenReturn(Optional.of(category));
 		when(eventRepository.save(event)).thenReturn(event);
 
 		Event updatedEvent = eventService.updateEvent(dto, event.getId());
 
 		assertSame(event, updatedEvent);
+		assertSame(category, updatedEvent.getCategory());
 		verify(eventMapper).updateEntity(dto, event);
 		verify(eventRepository).save(event);
 	}
@@ -125,6 +137,7 @@ public class EventServiceTest {
 		UpdateEventDto dto = EventTestDataFactory.createUpdateEventDtoWithUnchangedStartsAt();
 
 		when(eventRepository.findById(event.getId())).thenReturn(Optional.of(event));
+		when(categoryRepository.findById(dto.categoryId())).thenReturn(Optional.of(category));
 		when(eventRepository.save(event)).thenReturn(event);
 
 		eventService.updateEvent(dto, event.getId());

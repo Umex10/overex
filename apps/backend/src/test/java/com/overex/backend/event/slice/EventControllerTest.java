@@ -186,8 +186,8 @@ public class EventControllerTest {
                                 .andExpect(jsonPath("$.status").value(400))
                                 .andExpect(jsonPath("$.message").value("Validation failed"))
                                 .andExpect(jsonPath("$.errors[*].field").value(hasItems(
-                                                "title", "description", "venue", "city", "startsAt", "saleStartsAt",
-                                                "imageUrl")));
+                                                "title", "description", "categoryId", "venue", "city", "startsAt",
+                                                "saleStartsAt", "imageUrl")));
 
                 // @Valid rejects the request before the controller method runs
                 verify(eventService, never()).createEvent(any());
@@ -254,8 +254,8 @@ public class EventControllerTest {
                                 .andExpect(jsonPath("$.status").value(400))
                                 .andExpect(jsonPath("$.message").value("Validation failed"))
                                 .andExpect(jsonPath("$.errors[*].field").value(hasItems(
-                                                "title", "description", "venue", "city", "startsAt", "saleStartsAt",
-                                                "imageUrl")));
+                                                "title", "description", "categoryId", "venue", "city", "startsAt",
+                                                "saleStartsAt", "imageUrl")));
 
                 // @Valid rejects the request before the controller method runs
                 verify(eventService, never()).updateEvent(any(), any());
