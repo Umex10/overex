@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { render, screen } from "@testing-library/react";
-import { AuthTips } from "@/components/AuthTips";
+import { AuthTips } from "@/features/auth/components/auth-tips";
 
 describe("AuthTips", () => {
   it("shows sign-up specific guidance", () => {

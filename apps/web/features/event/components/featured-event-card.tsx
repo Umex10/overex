@@ -4,9 +4,9 @@ import Image from "next/image";
 import { CalendarBlankIcon, MapPinIcon } from "@phosphor-icons/react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { CountdownCards } from "@/components/countdown-cards";
+import { CountdownCards } from "@/features/event/components/countdown-cards";
 import { cn } from "@/lib/utils";
-import type { EventDto } from "@/types/EventsDto";
+import type { EventDto } from "@/features/event/event-types";
 
 const dateTimeFormat = new Intl.DateTimeFormat("de-AT", {
   weekday: "short",
@@ -27,8 +27,8 @@ const numberFormat = new Intl.NumberFormat("de-AT");
  *
  * Before the sale opens it counts down to `saleStartsAt` ("Bald erhältlich");
  * once the sale is running it counts down to the event start instead.
- * Category, ticket count and price are not delivered by the backend yet, so
- * they are optional and only shown when passed in.
+ * Ticket count and price are not delivered by the backend yet, so they are
+ * optional and only shown when passed in.
  */
 export function FeaturedEventCard({
   event,

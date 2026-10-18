@@ -1,5 +1,5 @@
 import { configureStore } from "@reduxjs/toolkit";
-import { apiSlice } from "./api/apiSlice";
+import { apiSlice } from "./api-slice";
 
 /**
  * Creates the Redux store for the web app.

@@ -1,9 +1,9 @@
 "use client";
 
 import React, { useEffect } from "react";
-import { useGetAccessTkQuery } from "@/redux/api/apis/auth";
-import { useGetMeQuery } from "@/redux/api/apis/me";
-import { deleteRefreshCookie } from "@/actions/auth-action";
+import { useGetAccessTkQuery } from "@/features/auth/auth-api";
+import { useGetMeQuery } from "@/features/user/user-api";
+import { deleteRefreshCookie } from "@/features/auth/auth-actions";
 import { FullPageLoader } from "@/components/ui/loader";
 
 /**

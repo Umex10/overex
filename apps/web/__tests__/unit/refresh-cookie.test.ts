@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { extractRefreshTk } from "@/lib/refresh-cookie";
+import { extractRefreshTk } from "@/features/auth/refresh-cookie";
 
 describe("extractRefreshTk", () => {
   it("finds the token among several Set-Cookie headers", () => {

@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { deleteRefreshCookie } from "@/actions/auth-action";
+import { deleteRefreshCookie } from "@/features/auth/auth-actions";
 
 /**
  * Signs the user out by deleting the refresh-token cookie (the backend is

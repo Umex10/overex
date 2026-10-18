@@ -1,19 +1,22 @@
 "use client";
 
-import AuthProvider from "@/components/AuthProvider";
+import AuthProvider from "@/features/auth/components/auth-provider";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { SidebarLogo } from "@/components/sidebar-logo";
-import SignInButton from "@/components/sign-in-button";
+import SignInButton from "@/features/auth/components/sign-in-button";
 import { SearchBar } from "@/components/search-bar";
+import { Separator } from "@/components/ui/separator";
 
 /**
  * Layout for every protected route under `(shell)`.
  *
  * `AuthProvider` gates rendering until an access token is resolved (and the
  * current user prefetched), so child pages can assume they are authenticated.
- * A minimal top bar provides the theme toggle and sign-out.
+ * Around the page sit the sidebar and a top bar with the sidebar toggle and,
+ * on desktop, the page title and the search field; on phones the logo and the
+ * sign-in button take their place.
  */
 export default function ShellLayout({
   children,
@@ -41,8 +44,20 @@ export default function ShellLayout({
                     fixed size-7 square, so there is no empty space around it. */}
                 <SidebarTrigger className="size-auto hover:cursor-pointer" />
 
-                {isMobile ? <SidebarLogo></SidebarLogo> 
-                : <h2>Event</h2>}
+                {isMobile ? (
+                  <SidebarLogo />
+                ) : (
+                  <>
+                    {/* Vertical line between trigger and title. Fixed height
+                        instead of the default self-stretch, so it stays
+                        shorter than the text next to it. */}
+                    <Separator
+                      orientation="vertical"
+                      className="data-vertical:h-4 data-vertical:self-center"
+                    />
+                    <h2>Event</h2>
+                  </>
+                )}
               </div>
 
               {isMobile ? (

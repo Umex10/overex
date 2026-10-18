@@ -1,7 +1,7 @@
 "use client";
 
 import { ThemeProvider } from "next-themes";
-import StoreProvider from "@/redux/StoreProvider";
+import StoreProvider from "@/redux/store-provider";
 import { TooltipProvider } from "./ui/tooltip";
 
 /**

@@ -3,16 +3,16 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // The server action is replaced: it would need a Next.js request context.
 const getAccessTkAction = vi.fn();
-vi.mock("@/actions/auth-action", () => ({
+vi.mock("@/features/auth/auth-actions", () => ({
   getAccessTkAction: () => getAccessTkAction(),
   signInAction: vi.fn(),
   signUpAction: vi.fn(),
 }));
 
 const { makeStore } = await import("@/redux/store");
-const { apiSlice } = await import("@/redux/api/apiSlice");
-await import("@/redux/api/apis/auth"); // injects getAccessTk
-await import("@/redux/api/apis/me"); // injects getMe
+const { apiSlice } = await import("@/redux/api-slice");
+await import("@/features/auth/auth-api"); // injects getAccessTk
+await import("@/features/user/user-api"); // injects getMe
 
 /** Endpoints are injected at runtime, so the test looks them up untyped. */
 const endpoints = apiSlice.endpoints as unknown as {

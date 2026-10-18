@@ -1,50 +1,77 @@
 "use client";
 
-import { useGetMeQuery } from "@/redux/api/apis/me";
+import { useRef } from "react";
+import { ArrowDownIcon, ArrowUpIcon, type Icon } from "@phosphor-icons/react";
+import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/loader";
-// FUN GAG (optional): remove this import and the <Celebration/> usage below to
-// turn the dashboard into a plain welcome screen.
 import { SearchBar } from "@/components/search-bar";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { EventCard } from "@/components/event-card";
-import { useGetEventsQuery } from "@/redux/api/apis/event";
-import { FeaturedEventCard } from "@/components/featured-event-card";
-import { useState } from "react";
-import { EventSort } from "@/types/EventsDto";
-
-import {
-  Pagination,
-  PaginationContent,
-  PaginationEllipsis,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-} from "@/components/ui/pagination";
+import { CategoryFilter } from "@/features/event/components/category-filter";
+import { EventCard } from "@/features/event/components/event-card";
+import { EventPagination } from "@/features/event/components/event-pagination";
+import { FeaturedEventCard } from "@/features/event/components/featured-event-card";
+import { useEventList } from "@/features/event/hooks/use-event-list";
+import type { EventDto, EventSort } from "@/features/event/event-types";
 
 /**
- * The post-login landing page.
+ * The sort button shows the current order; a click switches to `next`.
+ * `label` is read out by screen readers and shown on hover.
+ */
+const SORT_TOGGLE: Record<
+  EventSort,
+  { icon: Icon; label: string; next: EventSort }
+> = {
+  "startsAt,asc": {
+    icon: ArrowUpIcon,
+    label: "Earliest first",
+    next: "startsAt,desc",
+  },
+  "startsAt,desc": {
+    icon: ArrowDownIcon,
+    label: "Latest first",
+    next: "startsAt,asc",
+  },
+};
+
+/**
+ * The event whose sale opens next; if every sale has started already, the
+ * first event of the list.
+ */
+function pickFeaturedEvent(events: EventDto[]): EventDto | undefined {
+  const now = Date.now();
+  return (
+    events
+      .filter((e) => new Date(e.saleStartsAt).getTime() > now)
+      .sort((a, b) => a.saleStartsAt.localeCompare(b.saleStartsAt))[0] ??
+    events[0]
+  );
+}
+
+/**
+ * Event overview at `/event`: a featured event on top, below it the event list
+ * with category filter, sort order and pagination.
  *
- * Reads the authenticated user from `GET /me` (proving the whole auth chain
- * works end to end) and greets them. The confetti celebration is an optional
- * "fun gag" — see components/fun/Celebration.tsx for how to remove it.
+ * Filter, sort and page state live in {@link useEventList}; this page only
+ * puts the parts together.
  */
 export default function EventPage() {
-  const { data: user, isLoading: isLoadingMe } = useGetMeQuery();
-  const [page, setPage] = useState(0);
-  const [size, setSize] = useState(10);
-  const [sort, setSort] = useState<EventSort>("startsAt,asc");
-  const [categoryId, setCategoryId] = useState("");
-  const { data: pageEvent, isLoading: isLoadingEvents } = useGetEventsQuery({
+  const {
+    events,
+    categories,
+    isLoading,
     page,
-    size,
     sort,
     categoryId,
-  });
-
+    setPage,
+    changeCategory,
+    changeSort,
+  } = useEventList();
   const isMobile = useIsMobile();
+  // Start of the list: a page change scrolls back up here, so the user reads
+  // the new page from its first event.
+  const listStartRef = useRef<HTMLDivElement>(null);
 
-  if (isLoadingMe || isLoadingEvents) {
+  if (isLoading) {
     return (
       <div className="flex justify-center py-20">
         <Spinner className="size-8" />
@@ -52,117 +79,92 @@ export default function EventPage() {
     );
   }
 
-  if (!pageEvent || pageEvent.content.length === 0)
-    return <p>Keine Events gefunden.</p>;
+  const featured = events && pickFeaturedEvent(events.content);
+  const sortToggle = SORT_TOGGLE[sort];
 
-  const event = pageEvent?.content;
-  const totalPages = pageEvent?.page.totalPages;
-
-  const pages: number[] = [];
-  for (let p = 0; p < totalPages; p++) {
-    // 0 and end
-    if (p === 0 || p === totalPages - 1) {
-      pages.push(p);
-      continue;
-    }
-
-    // active - 1 ++ active ++ active + 1
-    if (p === page || p === page - 1 || p === page + 1) {
-      pages.push(p);
-      continue;
-    }
-
-    // Hidden page: one ellipsis (-1) stands for the whole gap, so only add it
-    // if the previous entry isn't an ellipsis already.
-    if (pages[pages.length - 1] !== -1) {
-      pages.push(-1);
-    }
+  function changePage(newPage: number) {
+    setPage(newPage);
+    listStartRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
   }
-
-  // The event whose sale opens next; if every sale has started already, the
-  // first event of the list.
-  const now = Date.now();
-  const featured =
-    pageEvent.content
-      .filter((e) => new Date(e.saleStartsAt).getTime() > now)
-      .sort((a, b) => a.saleStartsAt.localeCompare(b.saleStartsAt))[0] ??
-    pageEvent.content[0];
 
   return (
     <div className="w-full flex flex-col items-center p-2 gap-6">
-      {isMobile && <SearchBar></SearchBar>}
+      {isMobile && <SearchBar />}
 
-      <FeaturedEventCard
-        event={featured}
-        ticketCount={8000}
-        priceFromCents={2900}
-      />
+      {featured && (
+        <FeaturedEventCard
+          event={featured}
+          ticketCount={8000}
+          priceFromCents={2900}
+        />
+      )}
 
       <div className="w-full flex flex-col items-start gap-3">
-        <div>
-          <h3 className="text-lg font-extrabold">All Events</h3>
-          <h4 className="text-xs">{`${pageEvent.page.totalElements} Events`}</h4>
-        </div>
+        {/* Phone: title on top, filter and sort in one row below it.
+            Desktop: title left, filter and sort right. */}
+        <div className="w-full flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div className="shrink-0" ref={listStartRef}>
+            <h3 className="text-lg font-extrabold">All Events</h3>
+            <h4 className="text-xs">{`${events?.page.totalElements ?? 0} Events`}</h4>
+          </div>
 
-        <div className="grid w-full grid-cols-1 gap-3 md:grid-cols-3">
-          {pageEvent.content.map((event) => (
-            <EventCard
-              key={event.id}
-              imageUrl={event.imageUrl}
-              category={event.category.title}
-              title={event.title}
-              startsAt={new Date(event.startsAt)}
-              venue={event.venue}
-              city={event.city}
-              priceFromCents={5900}
-              availablePercent={2}
-              badge="Almost sold"
+          {/* min-w-0 lets this row get narrower than its content; the filter
+              takes the remaining space and scrolls, the sort button keeps its
+              size (shrink-0) and stays on the right. */}
+          <div className="min-w-0 flex flex-row items-center gap-2">
+            <CategoryFilter
+              categories={categories}
+              categoryId={categoryId}
+              onChange={changeCategory}
+              className="flex-1"
             />
-          ))}
+
+            <Button
+              variant="outline"
+              size="icon"
+              aria-label={sortToggle.label}
+              title={sortToggle.label}
+              onClick={() => changeSort(sortToggle.next)}
+              className="shrink-0 rounded-lg hover:cursor-pointer"
+            >
+              <sortToggle.icon />
+            </Button>
+          </div>
         </div>
 
-        <Pagination>
-          <PaginationContent>
-            <PaginationItem>
-              <PaginationPrevious
-                href="#"
-                onClick={() => {
-                  if (page > 0) {
-                    setPage(page - 1);
-                  }
-                }}
+        {/* Only the list is replaced when it's empty: filter and sort stay, so
+            the user can switch back to another category. */}
+        {events && events.content.length > 0 ? (
+          <div className="grid w-full grid-cols-1 gap-3 md:grid-cols-3">
+            {events.content.map((event) => (
+              <EventCard
+                key={event.id}
+                imageUrl={event.imageUrl}
+                category={event.category.title}
+                title={event.title}
+                startsAt={new Date(event.startsAt)}
+                venue={event.venue}
+                city={event.city}
+                priceFromCents={5900}
+                availablePercent={2}
+                badge="Almost sold"
               />
-            </PaginationItem>
-
-            {pages.map((p, i) => (
-              <PaginationItem key={p === -1 ? `ellipsis-${i}` : p}>
-                {p !== -1 ? (
-                  <PaginationLink
-                    href="#"
-                    isActive={page === p}
-                    onClick={() => {
-                      setPage(p);
-                    }}
-                  >
-                    {p + 1}
-                  </PaginationLink>
-                ) : (
-                  <PaginationEllipsis></PaginationEllipsis>
-                )}
-              </PaginationItem>
             ))}
-            <PaginationItem>
-              <PaginationNext
-                href="#"
-                onClick={() => {
-                  if (page < totalPages - 1) {
-                    setPage(page + 1);
-                  }
-                }}
-              />
-            </PaginationItem>
-          </PaginationContent>
-        </Pagination>
+          </div>
+        ) : (
+          <p>Keine Events gefunden.</p>
+        )}
+
+        {events && (
+          <EventPagination
+            page={page}
+            totalPages={events.page.totalPages}
+            onPageChange={changePage}
+          />
+        )}
       </div>
     </div>
   );

@@ -1,12 +1,12 @@
-import { apiSlice } from "../apiSlice";
+import { apiSlice } from "@/redux/api-slice";
 import {
   getAccessTkAction,
   signInAction,
   signUpAction,
-} from "@/actions/auth-action";
-import type { AuthResponseDto } from "@/types/AuthResponseDto";
-import type { ApiErrorBody } from "@/types/ApiError";
-import type { SignInFormValues, SignUpFormValues } from "@/lib/validation";
+} from "@/features/auth/auth-actions";
+import type { AuthResponseDto } from "@/features/auth/auth-types";
+import type { ApiErrorBody } from "@/types/api-error";
+import type { SignInFormValues, SignUpFormValues } from "@/features/auth/auth-validation";
 
 /**
  * Auth endpoints. They do not call the backend from the browser but go through

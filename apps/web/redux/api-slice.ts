@@ -61,7 +61,7 @@ const baseQueryWithReauth: BaseQueryFn<
   if (result.error?.status === 401) {
     refreshing ??= api
       .dispatch(
-        // Injected by redux/api/apis/auth.ts; looked up at runtime to avoid a
+        // Injected by features/auth/auth-api.ts; looked up at runtime to avoid a
         // circular import between the two files, hence the cast.
         (apiSlice.endpoints as unknown as GetAccessTkEndpoints).getAccessTk.initiate(undefined, {
           forceRefetch: true,

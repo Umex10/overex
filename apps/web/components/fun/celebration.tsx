@@ -3,16 +3,16 @@
 /* ───────────────────────────────────────────────────────────────────────────
  * FUN GAG — a celebratory confetti burst + a rotating silly subtitle.
  *
- * This whole folder (components/fun/) is the "just for fun" layer. To remove
- * the gag completely:
+ * This whole folder (components/fun/) is the "just for fun" layer. No page
+ * renders it at the moment. To remove the gag completely:
  *   1. delete this file (and the components/fun/ folder),
- *   2. remove the <Celebration /> usage in app/(shell)/event/page.tsx,
- *   3. (optional) delete the "FUN GAG" block in app/globals.css.
+ *   2. delete __tests__/unit/celebration.test.tsx,
+ *   3. delete the "FUN GAG" block in app/globals.css.
  * Nothing else in the app depends on it.
  * ─────────────────────────────────────────────────────────────────────────── */
 
 import { useState } from "react";
-import { useHydrated } from "@/lib/use-hydrated";
+import { useHydrated } from "@/hooks/use-hydrated";
 
 const CONFETTI_COLORS = [
   "#7c3aed",

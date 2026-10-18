@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { render, screen } from "@testing-library/react";
-import { Celebration } from "@/components/fun/Celebration";
+import { Celebration } from "@/components/fun/celebration";
 
 /**
  * The fun gag is optional, but it should at least render without crashing and

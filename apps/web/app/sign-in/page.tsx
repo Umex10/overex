@@ -12,11 +12,11 @@ import { Input } from "@/components/ui/input";
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Spinner } from "@/components/ui/loader";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { useHydrated } from "@/lib/use-hydrated";
-import { AuthTips } from "@/components/AuthTips";
-import { useSignInMutation } from "@/redux/api/apis/auth";
-import { signInSchema, type SignInFormValues } from "@/lib/validation";
-import type { ApiErrorBody } from "@/types/ApiError";
+import { useHydrated } from "@/hooks/use-hydrated";
+import { AuthTips } from "@/features/auth/components/auth-tips";
+import { useSignInMutation } from "@/features/auth/auth-api";
+import { signInSchema, type SignInFormValues } from "@/features/auth/auth-validation";
+import type { ApiErrorBody } from "@/types/api-error";
 
 /**
  * Sign-in page at `/sign-in`. Wires a Zod-validated react-hook-form to the

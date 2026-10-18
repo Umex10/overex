@@ -7,8 +7,8 @@ import {
   REFRESH_COOKIE,
   REFRESH_COOKIE_MAX_AGE,
   extractRefreshTk,
-} from "@/lib/refresh-cookie";
-import type { SignInFormValues, SignUpFormValues } from "@/lib/validation";
+} from "@/features/auth/refresh-cookie";
+import type { SignInFormValues, SignUpFormValues } from "@/features/auth/auth-validation";
 
 /**
  * Pre-configured axios instance for the backend auth API.

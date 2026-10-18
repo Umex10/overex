@@ -29,7 +29,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import SignInButton from "./sign-in-button";
+import SignInButton from "@/features/auth/components/sign-in-button";
 
 interface NavItem {
   icon: Icon;

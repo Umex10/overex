@@ -136,10 +136,9 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   FUN GAG — animations for the celebration on the dashboard.
-   100% optional. To remove the whole gag: delete components/fun/,
-   remove its usage in app/(shell)/event/page.tsx, and delete
-   this block. Nothing else depends on it.
+   FUN GAG — animations for components/fun/celebration.tsx.
+   100% optional. To remove the whole gag: delete components/fun/
+   and its test, and delete this block. Nothing else depends on it.
    ═══════════════════════════════════════════════════════════════ */
 @keyframes ak-confetti-fall {
   0% {
