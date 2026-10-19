@@ -1,5 +1,6 @@
 package com.overex.backend.event.slice;
 
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.hasSize;
@@ -23,6 +24,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -34,12 +37,12 @@ import com.overex.backend.common.exception.OwnException;
 import com.overex.backend.event.Event;
 import com.overex.backend.event.EventController;
 import com.overex.backend.event.EventService;
+import com.overex.backend.event.Status;
 import com.overex.backend.event.dto.requests.CreateEventDto;
 import com.overex.backend.event.dto.requests.UpdateEventDto;
 import com.overex.backend.event.utils.EventTestDataFactory;
 
 import jakarta.persistence.EntityNotFoundException;
-
 
 /**
  * Slice tests for {@link EventController}: only the web layer runs
@@ -72,35 +75,94 @@ public class EventControllerTest {
         private final Event event = EventTestDataFactory.createDefaultEvent();
 
         @Test
-        void shouldGetEvents() throws Exception {
-                List<Event> events = EventTestDataFactory.createEventList();
-                when(eventService.getEvents()).thenReturn(events);
+        void shouldGetEventsWithDefaultPageableAndWithoutCategory() throws Exception {
 
+                Pageable pageable = EventTestDataFactory.createDefaultPageable();
+                Page<Event> page = EventTestDataFactory.createEventPage();
+                List<Event> events = page.getContent();
+                when(eventService.getEvents(null, pageable)).thenReturn(page);
+
+                // the mocked service returns the factory page as it is, so id and
+                // timestamps are fixed values and compared exactly
                 mockMvc.perform(get("/event"))
                                 .andExpect(status().isOk())
-                                .andExpect(jsonPath("$", hasSize(events.size())))
-                                .andExpect(jsonPath("$[*].title").value(containsInAnyOrder(
-                                                events.stream().map(Event::getTitle).toArray())))
-                                .andExpect(jsonPath("$[*].description").value(containsInAnyOrder(
-                                                events.stream().map(Event::getDescription).toArray())))
-                                .andExpect(jsonPath("$[*].venue").value(containsInAnyOrder(
-                                                events.stream().map(Event::getVenue).toArray())))
-                                .andExpect(jsonPath("$[*].city").value(containsInAnyOrder(
-                                                events.stream().map(Event::getCity).toArray())))
-                                .andExpect(jsonPath("$[*].startsAt").value(containsInAnyOrder(
-                                                events.stream().map(e -> e.getStartsAt().toString()).toArray())))
-                                .andExpect(jsonPath("$[*].saleStartsAt").value(containsInAnyOrder(
-                                                events.stream().map(e -> e.getSaleStartsAt().toString()).toArray())))
-                                .andExpect(jsonPath("$[*].imageUrl").value(containsInAnyOrder(
-                                                events.stream().map(Event::getImageUrl).toArray())))
-                                .andExpect(jsonPath("$[*].status").value(containsInAnyOrder(
-                                                events.stream().map(e -> e.getStatus().name()).toArray())))
-                                .andExpect(jsonPath("$[*].id").value(containsInAnyOrder(
+                                .andExpect(jsonPath("$.content", hasSize(events.size())))
+                                .andExpect(jsonPath("$.content[*].id").value(contains(
                                                 events.stream().map(e -> e.getId().toString()).toArray())))
-                                .andExpect(jsonPath("$[*].createdAt").value(containsInAnyOrder(
+                                .andExpect(jsonPath("$.content[*].title").value(contains(
+                                                events.stream().map(Event::getTitle).toArray())))
+                                .andExpect(jsonPath("$.content[*].description").value(containsInAnyOrder(
+                                                events.stream().map(Event::getDescription).toArray())))
+                                .andExpect(jsonPath("$.content[*].venue").value(containsInAnyOrder(
+                                                events.stream().map(Event::getVenue).toArray())))
+                                .andExpect(jsonPath("$.content[*].city").value(containsInAnyOrder(
+                                                events.stream().map(Event::getCity).toArray())))
+                                .andExpect(jsonPath("$.content[*].startsAt").value(contains(
+                                                events.stream().map(e -> e.getStartsAt().toString()).toArray())))
+                                .andExpect(jsonPath("$.content[*].saleStartsAt").value(containsInAnyOrder(
+                                                events.stream().map(e -> e.getSaleStartsAt().toString()).toArray())))
+                                .andExpect(jsonPath("$.content[*].imageUrl").value(containsInAnyOrder(
+                                                events.stream().map(Event::getImageUrl).toArray())))
+                                // no POST involved, so the factory events keep their own status
+                                .andExpect(jsonPath("$.content[*].status").value(containsInAnyOrder(
+                                                events.stream().map(e -> e.getStatus().name()).toArray())))
+                                .andExpect(jsonPath("$.content[*].createdAt").value(contains(
                                                 events.stream().map(e -> e.getCreatedAt().toString()).toArray())))
-                                .andExpect(jsonPath("$[*].updatedAt").value(containsInAnyOrder(
-                                                events.stream().map(e -> e.getUpdatedAt().toString()).toArray())));
+                                .andExpect(jsonPath("$.content[*].updatedAt").value(contains(
+                                                events.stream().map(e -> e.getUpdatedAt().toString()).toArray())))
+
+                                .andExpect(jsonPath("$.page.size").value(EventTestDataFactory.DEFAULT_PAGE_SIZE))
+                                .andExpect(jsonPath("$.page.number").value(EventTestDataFactory.DEFAULT_PAGE))
+                                .andExpect(jsonPath("$.page.totalElements").value(events.size()))
+                                .andExpect(jsonPath("$.page.totalPages").value(
+                                                Math.ceilDiv(events.size(), EventTestDataFactory.DEFAULT_PAGE_SIZE)));
+        }
+
+        @Test
+        void shouldGetEventsWithDefaultPageableAndWithCategory() throws Exception {
+
+                Pageable pageable = EventTestDataFactory.createDefaultPageable();
+                Page<Event> page = EventTestDataFactory.createFestivalEventPage();
+                List<Event> events = page.getContent();
+
+                when(eventService.getEvents(EventTestDataFactory.DEFAULT_CATEGORY_ID, pageable)).thenReturn(page);
+
+                // the mocked service returns the factory page as it is, so id and
+                // timestamps are fixed values and compared exactly
+                mockMvc.perform(get(String.format("/event?categoryId=%s", EventTestDataFactory.DEFAULT_CATEGORY_ID)))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.content", hasSize(events.size())))
+                                .andExpect(jsonPath("$.content[*].id").value(contains(
+                                                events.stream().map(e -> e.getId().toString()).toArray())))
+                                .andExpect(jsonPath("$.content[*].category.id").value(containsInAnyOrder(
+                                                events.stream().map(e -> e.getCategory().getId().toString()).toArray())))
+                                .andExpect(jsonPath("$.content[*].title").value(contains(
+                                                events.stream().map(Event::getTitle).toArray())))
+                                .andExpect(jsonPath("$.content[*].description").value(containsInAnyOrder(
+                                                events.stream().map(Event::getDescription).toArray())))
+                                .andExpect(jsonPath("$.content[*].venue").value(containsInAnyOrder(
+                                                events.stream().map(Event::getVenue).toArray())))
+                                .andExpect(jsonPath("$.content[*].city").value(containsInAnyOrder(
+                                                events.stream().map(Event::getCity).toArray())))
+                                .andExpect(jsonPath("$.content[*].startsAt").value(contains(
+                                                events.stream().map(e -> e.getStartsAt().toString()).toArray())))
+                                .andExpect(jsonPath("$.content[*].saleStartsAt").value(containsInAnyOrder(
+                                                events.stream().map(e -> e.getSaleStartsAt().toString()).toArray())))
+                                .andExpect(jsonPath("$.content[*].imageUrl").value(containsInAnyOrder(
+                                                events.stream().map(Event::getImageUrl).toArray())))
+                                // no POST involved, so the factory events keep their own status
+                                .andExpect(jsonPath("$.content[*].status").value(containsInAnyOrder(
+                                                events.stream().map(e -> e.getStatus().name()).toArray())))
+                                .andExpect(jsonPath("$.content[*].createdAt").value(contains(
+                                                events.stream().map(e -> e.getCreatedAt().toString()).toArray())))
+                                .andExpect(jsonPath("$.content[*].updatedAt").value(contains(
+                                                events.stream().map(e -> e.getUpdatedAt().toString()).toArray())))
+
+                                .andExpect(jsonPath("$.page.size").value(EventTestDataFactory.DEFAULT_PAGE_SIZE))
+                                .andExpect(jsonPath("$.page.number").value(EventTestDataFactory.DEFAULT_PAGE))
+                                .andExpect(jsonPath("$.page.totalElements").value(events.size()))
+                                .andExpect(jsonPath("$.page.totalPages").value(
+                                                Math.ceilDiv(events.size(), EventTestDataFactory.DEFAULT_PAGE_SIZE)));
         }
 
         @Test

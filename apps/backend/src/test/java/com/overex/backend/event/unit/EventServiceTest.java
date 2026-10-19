@@ -17,6 +17,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import com.overex.backend.common.exception.ApiError;
 import com.overex.backend.common.exception.OwnException;
@@ -85,14 +87,29 @@ public class EventServiceTest {
 
 	/** All stored events are returned as they come from the repository. */
 	@Test
-	void shouldGetEvents() {
-		List<Event> events = EventTestDataFactory.createEventList();
+	void shouldGetAllEvents() {
+		Pageable pageable = EventTestDataFactory.createDefaultPageable();
+		Page<Event> page = EventTestDataFactory.createEventPage();
 
-		when(eventRepository.findAll()).thenReturn(events);
+		when(eventRepository.findAll(pageable)).thenReturn(page);
 
-		List<Event> foundEvents = eventService.getEvents();
+		Page<Event> foundPage = eventService.getEvents(null, pageable);
 
-		assertSame(events, foundEvents);
+		assertSame(page, foundPage);
+		verify(eventRepository, never()).findByCategoryId(any(), any());
+	}
+
+	@Test
+	void shouldGetEventsWithCategory() {
+		Pageable pageable = EventTestDataFactory.createDefaultPageable();
+		Page<Event> page = EventTestDataFactory.createFestivalEventPage();
+
+		when(eventRepository.findByCategoryId(EventTestDataFactory.DEFAULT_CATEGORY_ID, pageable)).thenReturn(page);
+
+		Page<Event> foundPage = eventService.getEvents(EventTestDataFactory.DEFAULT_CATEGORY_ID, pageable);
+
+		assertSame(page, foundPage);
+		verify(eventRepository, never()).findAll(any(Pageable.class));
 	}
 
 	@Test
@@ -185,7 +202,9 @@ public class EventServiceTest {
 		verify(eventRepository, never()).save(any());
 	}
 
-	/** Boundary: a sale that opens exactly when the event starts is rejected too. */
+	/**
+	 * Boundary: a sale that opens exactly when the event starts is rejected too.
+	 */
 	@Test
 	void shouldNotUpdateEventWithSaleStartingAtEventStart() {
 		when(eventRepository.findById(event.getId())).thenReturn(Optional.of(event));
