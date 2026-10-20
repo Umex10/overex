@@ -22,7 +22,7 @@ import lombok.RequiredArgsConstructor;
 public class EventService {
 
     private final EventRepository eventRepository;
-    private final CategoryRepository categoryRepository;
+    private final CategoryService categoryService;
     private final EventMapper eventMapper;
 
     public Page<Event> getEvents(UUID categoryId, Pageable pageable) {
@@ -41,7 +41,7 @@ public class EventService {
 
     public Event createEvent(CreateEventDto createEventDto) {
 
-        Category category = getCategory(createEventDto.categoryId());
+        Category category = categoryService.getCategory(createEventDto.categoryId());
 
         Event event = eventMapper.toEntity(createEventDto);
         event.setCategory(category);
@@ -85,7 +85,7 @@ public class EventService {
             throw fieldError("saleStartsAt", "The sale must start before the event starts.");
         }
 
-        Category category = getCategory(updateEventDto.categoryId());
+        Category category = categoryService.getCategory(updateEventDto.categoryId());
 
         eventMapper.updateEntity(updateEventDto, event);
         event.setCategory(category);
@@ -99,15 +99,6 @@ public class EventService {
                 .orElseThrow(() -> new EntityNotFoundException(String.format("Event '%s' was not found", eventId)));
         eventRepository.delete(event);
 
-    }
-
-    /**
-     * Loads the category a payload refers to. An unknown id is a client error
-     * (400 on {@code categoryId}), not a missing resource of the URL (404).
-     */
-    private Category getCategory(UUID categoryId) {
-        return categoryRepository.findById(categoryId)
-                .orElseThrow(() -> fieldError("categoryId", String.format("Category '%s' was not found", categoryId)));
     }
 
     private static OwnException fieldError(String field, String message) {

@@ -37,7 +37,6 @@ import com.overex.backend.common.exception.OwnException;
 import com.overex.backend.event.Event;
 import com.overex.backend.event.EventController;
 import com.overex.backend.event.EventService;
-import com.overex.backend.event.Status;
 import com.overex.backend.event.dto.requests.CreateEventDto;
 import com.overex.backend.event.dto.requests.UpdateEventDto;
 import com.overex.backend.event.utils.EventTestDataFactory;

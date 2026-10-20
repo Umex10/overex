@@ -5,8 +5,10 @@ info:
 
 http:
   method: GET
-  url: ""
-  auth: inherit
+  url: "{{baseUrl}}/category"
+  auth:
+    type: bearer
+    token: "{{accessTk}}"
 
 settings:
   encodeUrl: true

@@ -35,13 +35,13 @@ public final class EventTestDataFactory {
 	public static final UUID DEFAULT_EVENT_ID = UUID.fromString("33333333-3333-3333-3333-333333333333");
 
 	// The category every event and payload refers to.
-	public static final UUID DEFAULT_CATEGORY_ID = UUID.fromString("22222222-2222-2222-2222-222222222222");
-	public static final String DEFAULT_CATEGORY_TITLE = "Festival";
+	public static final UUID DEFAULT_CATEGORY_ID = CategoryTestDataFactory.DEFAULT_CATEGORY_ID;
+	public static final String DEFAULT_CATEGORY_TITLE = CategoryTestDataFactory.DEFAULT_CATEGORY_TITLE;
 
 	// A second category, so the list can be filtered (only the second event belongs
 	// to it).
-	public static final UUID CONCERT_CATEGORY_ID = UUID.fromString("66666666-6666-6666-6666-666666666666");
-	public static final String CONCERT_CATEGORY_TITLE = "Konzert";
+	public static final UUID CONCERT_CATEGORY_ID = CategoryTestDataFactory.CONCERT_CATEGORY_ID;
+	public static final String CONCERT_CATEGORY_TITLE = CategoryTestDataFactory.CONCERT_CATEGORY_TITLE;
 
 	// The same paging defaults as @PageableDefault on EventController#getEvents.
 	public static final int DEFAULT_PAGE = 0;
@@ -98,10 +98,7 @@ public final class EventTestDataFactory {
 
 	/** A persisted-looking category (with id). */
 	public static Category createDefaultCategory() {
-		return Category.builder()
-				.id(DEFAULT_CATEGORY_ID)
-				.title(DEFAULT_CATEGORY_TITLE)
-				.build();
+		return CategoryTestDataFactory.createDefaultCategory();
 	}
 
 	/**
@@ -109,17 +106,12 @@ public final class EventTestDataFactory {
 	 * belongs to it.
 	 */
 	public static Category createConcertCategory() {
-		return Category.builder()
-				.id(CONCERT_CATEGORY_ID)
-				.title(CONCERT_CATEGORY_TITLE)
-				.build();
+		return CategoryTestDataFactory.createConcertCategory();
 	}
 
 	/** A new category without id, ready to be saved by a repository. */
 	public static Category createUnsavedCategory(String title) {
-		return Category.builder()
-				.title(title)
-				.build();
+		return CategoryTestDataFactory.createUnsavedCategory(title);
 	}
 
 	/**

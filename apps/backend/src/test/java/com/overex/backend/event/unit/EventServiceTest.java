@@ -9,7 +9,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
-import java.util.List;
 import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
@@ -24,6 +23,7 @@ import com.overex.backend.common.exception.ApiError;
 import com.overex.backend.common.exception.OwnException;
 import com.overex.backend.event.Category;
 import com.overex.backend.event.CategoryRepository;
+import com.overex.backend.event.CategoryService;
 import com.overex.backend.event.Event;
 import com.overex.backend.event.EventMapper;
 import com.overex.backend.event.EventRepository;
@@ -54,10 +54,10 @@ public class EventServiceTest {
 	EventRepository eventRepository;
 
 	@Mock
-	CategoryRepository categoryRepository;
+	EventMapper eventMapper;
 
 	@Mock
-	EventMapper eventMapper;
+	CategoryService categoryService;
 
 	@InjectMocks
 	EventService eventService;
@@ -73,7 +73,7 @@ public class EventServiceTest {
 	void shouldCreateEvent() {
 		CreateEventDto dto = EventTestDataFactory.createCreateEventDto();
 
-		when(categoryRepository.findById(dto.categoryId())).thenReturn(Optional.of(category));
+		when(categoryService.getCategory(dto.categoryId())).thenReturn(category);
 		when(eventMapper.toEntity(dto)).thenReturn(event);
 		when(eventRepository.save(event)).thenReturn(event);
 
@@ -137,7 +137,7 @@ public class EventServiceTest {
 		UpdateEventDto dto = EventTestDataFactory.createUpdateEventDto();
 
 		when(eventRepository.findById(event.getId())).thenReturn(Optional.of(event));
-		when(categoryRepository.findById(dto.categoryId())).thenReturn(Optional.of(category));
+		when(categoryService.getCategory(dto.categoryId())).thenReturn(category);
 		when(eventRepository.save(event)).thenReturn(event);
 
 		Event updatedEvent = eventService.updateEvent(dto, event.getId());
@@ -154,7 +154,7 @@ public class EventServiceTest {
 		UpdateEventDto dto = EventTestDataFactory.createUpdateEventDtoWithUnchangedStartsAt();
 
 		when(eventRepository.findById(event.getId())).thenReturn(Optional.of(event));
-		when(categoryRepository.findById(dto.categoryId())).thenReturn(Optional.of(category));
+		when(categoryService.getCategory(dto.categoryId())).thenReturn(category);
 		when(eventRepository.save(event)).thenReturn(event);
 
 		eventService.updateEvent(dto, event.getId());
