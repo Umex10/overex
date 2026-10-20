@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import { CalendarBlankIcon, MapPinIcon } from "@phosphor-icons/react";
 import { Badge } from "@/components/ui/badge";
@@ -43,7 +44,14 @@ export function FeaturedEventCard({
 }) {
   const startsAt = new Date(event.startsAt);
   const saleStartsAt = new Date(event.saleStartsAt);
-  const saleOpen = saleStartsAt.getTime() <= Date.now();
+  // The current time as state, so rendering stays pure and the badge flips
+  // as soon as the sale opens.
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, []);
+  const saleOpen = saleStartsAt.getTime() <= now;
 
   return (
     <article
