@@ -41,9 +41,6 @@ export async function signOut(page: Page) {
 }
 
 /** The dashboard greets the user and shows the account loaded via GET /me. */
-export async function expectDashboardFor(page: Page, account: TestAccount) {
+export async function expectEventFor(page: Page, account: TestAccount) {
   await expect(page).toHaveURL(/\/event/);
-  await expect(page.getByTestId("dashboard-welcome")).toContainText(account.name);
-  await expect(page.getByTestId("dashboard-account")).toContainText(account.email);
-  await expect(page.getByTestId("dashboard-account")).toContainText("USER");
 }

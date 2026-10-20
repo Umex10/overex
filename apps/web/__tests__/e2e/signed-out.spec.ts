@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { bootstrapAccount, newAccount } from "./utils/accounts";
 import {
-  expectDashboardFor,
+  expectEventFor,
   openSignIn,
   openSignUp,
   submitSignIn,
@@ -31,7 +31,7 @@ test.describe("Signed out", () => {
     await submitSignUp(page, account);
 
     await expect(page.locator(".toast-success")).toBeVisible();
-    await expectDashboardFor(page, account);
+    await expectEventFor(page, account);
   });
 
   test("the form explains invalid input before anything is sent", async ({ page }) => {
@@ -64,7 +64,7 @@ test.describe("Signed out", () => {
     await expect(page.getByTestId("sign-up-phone-error")).toBeHidden();
 
     await page.getByTestId("sign-up-submit-button").click();
-    await expectDashboardFor(page, fresh);
+    await expectEventFor(page, fresh);
   });
 
   test("wrong credentials fail without saying which field was wrong", async ({ page }) => {
@@ -84,7 +84,7 @@ test.describe("Signed out", () => {
     await submitSignIn(page, bootstrapAccount.email.toUpperCase(), bootstrapAccount.password);
 
     await expect(page.locator(".toast-success")).toBeVisible();
-    await expectDashboardFor(page, bootstrapAccount);
+    await expectEventFor(page, bootstrapAccount);
   });
 
   test("a rejected refresh cookie is removed and leads back to sign-in", async ({
