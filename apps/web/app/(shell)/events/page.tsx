@@ -12,6 +12,11 @@ import { EventPagination } from "@/features/event/components/event-pagination";
 import { FeaturedEventCard } from "@/features/event/components/featured-event-card";
 import { useEventList } from "@/features/event/hooks/use-event-list";
 import type { EventDto, EventSort } from "@/features/event/event-types";
+import { useDispatch, useSelector } from "react-redux";
+import { AppDispatch, RootState } from "@/redux/store";
+import { useEffect, useState } from "react";
+import { setBreadcrumbs, setShowSearch } from "@/redux/route-context-slice";
+import { usePathname } from "next/navigation";
 
 /**
  * The sort button shows the current order; a click switches to `next`.
@@ -48,7 +53,7 @@ function pickFeaturedEvent(events: EventDto[]): EventDto | undefined {
 }
 
 /**
- * Event overview at `/event`: a featured event on top, below it the event list
+ * Event overview at `/events`: a featured event on top, below it the event list
  * with category filter, sort order and pagination.
  *
  * Filter, sort and page state live in {@link useEventList}; this page only
@@ -70,6 +75,16 @@ export default function EventPage() {
   // Start of the list: a page change scrolls back up here, so the user reads
   // the new page from its first event.
   const listStartRef = useRef<HTMLDivElement>(null);
+
+  const dispatch = useDispatch<AppDispatch>();
+
+  const path = usePathname();
+  const segments = path.split("/").filter(Boolean); // ["events", "5"]
+ 
+  useEffect(() => {
+    dispatch(setBreadcrumbs(segments));
+    dispatch(setShowSearch(false));
+  }, [dispatch]);
 
   if (isLoading) {
     return (
@@ -142,6 +157,7 @@ export default function EventPage() {
             {events.content.map((event) => (
               <EventCard
                 key={event.id}
+                id={event.id}
                 imageUrl={event.imageUrl}
                 category={event.category.title}
                 title={event.title}

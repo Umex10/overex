@@ -16,7 +16,7 @@ test.use({ storageState: { cookies: [], origins: [] } });
 
 test.describe("Signed out", () => {
   test("a protected page sends visitors to sign-in", async ({ page }) => {
-    await page.goto("/event");
+    await page.goto("/events");
 
     await expect(page).toHaveURL("/sign-in");
   });
@@ -96,7 +96,7 @@ test.describe("Signed out", () => {
       { name: "refresh_tk", value: "not-a-valid-token", url: "http://localhost:3001" },
     ]);
 
-    await page.goto("/event");
+    await page.goto("/events");
 
     await expect(page).toHaveURL("/sign-in?session=expired");
     await expect(page.getByTestId("sign-in-session-expired-note")).toBeVisible();

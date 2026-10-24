@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 /**
- * Only here to set the tab title of `/event`: `page.tsx` is a client
+ * Only here to set the tab title of `/events`: `page.tsx` is a client
  * component, and Next.js reads `metadata` from server components only.
  * The root layout's title template turns "Events" into "Events · Overex".
  */

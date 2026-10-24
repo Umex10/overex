@@ -42,5 +42,5 @@ export async function signOut(page: Page) {
 
 /** The dashboard greets the user and shows the account loaded via GET /me. */
 export async function expectEventFor(page: Page, account: TestAccount) {
-  await expect(page).toHaveURL(/\/event/);
+  await expect(page).toHaveURL(/\/events/);
 }

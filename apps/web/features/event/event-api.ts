@@ -20,7 +20,11 @@ const eventApi = apiSlice.injectEndpoints({
         params: { ...pageable, categoryId: categoryId || undefined },
       }),
     }),
+
+    getEvent: builder.query<EventDto, string>({
+      query: (eventId) => `/event/${eventId}`
+    })
   }),
 });
 
-export const { useGetEventsQuery } = eventApi;
+export const { useGetEventsQuery, useGetEventQuery } = eventApi;

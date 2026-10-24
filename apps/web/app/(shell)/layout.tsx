@@ -8,6 +8,19 @@ import { SidebarLogo } from "@/components/sidebar-logo";
 import SignInButton from "@/features/auth/components/sign-in-button";
 import { SearchBar } from "@/components/search-bar";
 import { Separator } from "@/components/ui/separator";
+import { useSelector } from "react-redux";
+import { RootState } from "@/redux/store";
+
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
+import Link from "next/link";
+import { Fragment } from "react";
 
 /**
  * Layout for every protected route under `(shell)`.
@@ -24,6 +37,9 @@ export default function ShellLayout({
   children: React.ReactNode;
 }) {
   const isMobile = useIsMobile();
+  const { breadcrumbs, showSearch } = useSelector(
+    (state: RootState) => state.routeContextSate,
+  );
 
   return (
     <AuthProvider>
@@ -55,14 +71,41 @@ export default function ShellLayout({
                       orientation="vertical"
                       className="data-vertical:h-4 data-vertical:self-center"
                     />
-                    <h2>Event</h2>
+                    <Breadcrumb>
+                      <BreadcrumbList>
+                        {breadcrumbs.map((breadcrumb, index) => {
+                          // A crumb links to the path up to and including its
+                          // own segment: ["events", "5"] -> "/events", "/events/5".
+                          const href =
+                            "/" + breadcrumbs.slice(0, index + 1).join("/");
+                          const label =
+                            breadcrumb[0].toUpperCase() + breadcrumb.slice(1);
+                          const isLast = index === breadcrumbs.length - 1;
+
+                          return (
+                            <Fragment key={href}>
+                              <BreadcrumbItem>
+                                {isLast ? (
+                                  <BreadcrumbPage>{label}</BreadcrumbPage>
+                                ) : (
+                                  <BreadcrumbLink asChild>
+                                    <Link href={href}>{label}</Link>
+                                  </BreadcrumbLink>
+                                )}
+                              </BreadcrumbItem>
+                              {!isLast && <BreadcrumbSeparator />}
+                            </Fragment>
+                          );
+                        })}
+                      </BreadcrumbList>
+                    </Breadcrumb>
                   </>
                 )}
               </div>
 
-              {isMobile ? (
-                <SignInButton></SignInButton>
-              ) : (
+              {isMobile && <SignInButton></SignInButton>}
+
+              {!isMobile && showSearch && (
                 // Full width by default; from md on capped at 20rem.
                 <SearchBar className="md:max-w-80" />
               )}

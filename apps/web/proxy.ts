@@ -7,7 +7,7 @@ import type { NextRequest } from "next/server";
  *
  * - Unauthenticated visits to a protected route are redirected to `/sign-in`.
  * - Authenticated visits to the landing page (`/`), `/sign-in` or `/sign-up`
- *   are bounced straight to `/event` — if you already have a refresh cookie
+ *   are bounced straight to `/events` — if you already have a refresh cookie
  *   there is no reason to show you the marketing/auth pages again. The landing
  *   redirect additionally carries a `?redirected=1` flag, so a page could
  *   explain *why* you landed there (no page reads it at the moment).
@@ -32,13 +32,13 @@ export async function proxy(request: NextRequest) {
 
   // Logged in + visiting an auth page -> straight to the dashboard.
   if (token && isAuthPage) {
-    return NextResponse.redirect(new URL("/event", request.url));
+    return NextResponse.redirect(new URL("/events", request.url));
   }
 
-  // Logged in + opening the landing page -> /event, with the `redirected` flag
+  // Logged in + opening the landing page -> /events, with the `redirected` flag
   // (this is the flow you hit by reopening the site at the root URL).
   if (token && isLandingPage) {
-    const url = new URL("/event", request.url);
+    const url = new URL("/events", request.url);
     url.searchParams.set("redirected", "1");
     return NextResponse.redirect(url);
   }

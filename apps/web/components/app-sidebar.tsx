@@ -21,14 +21,7 @@ import { CalendarDotsIcon, LightningIcon, TicketIcon } from "@phosphor-icons/rea
 
 import { Button } from "@/components/ui/button";
 import { SidebarLogo } from "@/components/sidebar-logo";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+
 import SignInButton from "@/features/auth/components/sign-in-button";
 
 interface NavItem {
@@ -41,7 +34,7 @@ const NAV_ITEMS: NavItem[] = [
   {
     icon: CalendarDotsIcon,
     title: "Events",
-    href: "/event",
+    href: "/events",
   },
   {
     icon: TicketIcon,

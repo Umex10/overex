@@ -15,7 +15,7 @@ async function visit(path: string, withCookie: boolean) {
 
 describe("proxy (route gate on the refresh cookie)", () => {
   it("sends visitors without a cookie from protected pages to sign-in", async () => {
-    expect(await visit("/event", false)).toBe("/sign-in");
+    expect(await visit("/events", false)).toBe("/sign-in");
   });
 
   it("lets visitors without a cookie see the landing and auth pages", async () => {
@@ -25,15 +25,15 @@ describe("proxy (route gate on the refresh cookie)", () => {
   });
 
   it("forwards signed-in users from the auth pages to the dashboard", async () => {
-    expect(await visit("/sign-in", true)).toBe("/event");
-    expect(await visit("/sign-up", true)).toBe("/event");
+    expect(await visit("/sign-in", true)).toBe("/events");
+    expect(await visit("/sign-up", true)).toBe("/events");
   });
 
   it("forwards signed-in users from the landing page with the 'redirected' flag", async () => {
-    expect(await visit("/", true)).toBe("/event?redirected=1");
+    expect(await visit("/", true)).toBe("/events?redirected=1");
   });
 
   it("lets signed-in users through to protected pages", async () => {
-    expect(await visit("/event", true)).toBeNull();
+    expect(await visit("/events", true)).toBeNull();
   });
 });

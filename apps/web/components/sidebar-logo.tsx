@@ -26,7 +26,7 @@ export function SidebarLogo({
 
   return (
     <Link
-      href="/event"
+      href="/events"
       aria-label={collapsed ? "Open sidebar" : "Overex"}
       className={cn("flex items-center gap-1", className)}
       {...props}

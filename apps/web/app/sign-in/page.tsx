@@ -44,7 +44,7 @@ export default function SignInPage() {
         id: toastId,
         className: "toast-success",
       });
-      router.push("/event");
+      router.push("/events");
     } catch (error) {
       const message = (error as ApiErrorBody)?.message || "Sign-in failed.";
       toast.error(message, { id: toastId, className: "toast-error" });
