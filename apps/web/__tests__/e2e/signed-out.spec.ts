@@ -99,7 +99,7 @@ test.describe("Signed out", () => {
     await page.goto("/events");
 
     await expect(page).toHaveURL("/sign-in?session=expired");
-    await expect(page.getByTestId("sign-in-session-expired-note")).toBeVisible();
+    await expect(page.getByText("Your session has expired.", { exact: false })).toBeVisible();
     // The stale cookie is gone, so the page stays here instead of bouncing back.
     expect((await context.cookies()).some((c) => c.name === "refresh_tk")).toBe(false);
   });
