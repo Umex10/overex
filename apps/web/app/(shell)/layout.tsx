@@ -1,5 +1,7 @@
 "use client";
 
+import { cn } from "@/lib/utils";
+
 import AuthProvider from "@/features/auth/components/auth-provider";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
@@ -11,16 +13,8 @@ import { Separator } from "@/components/ui/separator";
 import { useSelector } from "react-redux";
 import { RootState } from "@/redux/store";
 
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
-import Link from "next/link";
-import { Fragment } from "react";
+import BreadcrumbsContainer from "@/components/BreadcrumbsContainer";
+import { useGetMeQuery } from "@/features/user/user-api";
 
 /**
  * Layout for every protected route under `(shell)`.
@@ -37,9 +31,11 @@ export default function ShellLayout({
   children: React.ReactNode;
 }) {
   const isMobile = useIsMobile();
-  const { breadcrumbs, showSearch } = useSelector(
+  const { showSearch } = useSelector(
     (state: RootState) => state.routeContextSate,
   );
+
+  const { data: me, isLoading: isLoadingMe } = useGetMeQuery();
 
   return (
     <AuthProvider>
@@ -50,20 +46,32 @@ export default function ShellLayout({
         <div className="min-w-0 flex-1 flex flex-row overflow-x-hidden">
           <div className="w-full flex flex-col">
             <header
-              className="w-full flex flex-row items-center justify-between gap-4
-            border-b py-2 px-4"
+              className={cn(
+                "w-full items-center border-b py-2 px-4",
+                // Phones: three columns, the outer two always equally wide, so
+                // the logo in the middle column sits exactly in the centre.
+                isMobile
+                  ? "grid grid-cols-[1fr_auto_1fr]"
+                  : "flex flex-row justify-between gap-4",
+              )}
             >
-              {/* Trigger and title in one row, so both are centred on the
-                  same line as the search field. */}
-              <div className="flex flex-row shrink-0 items-center gap-2">
-                {/* size-auto: the button shrinks to the icon instead of the
-                    fixed size-7 square, so there is no empty space around it. */}
-                <SidebarTrigger className="size-auto hover:cursor-pointer" />
-
-                {isMobile ? (
+              {isMobile ? (
+                <>
+                  <SidebarTrigger className="size-auto justify-self-start hover:cursor-pointer" />
                   <SidebarLogo />
-                ) : (
-                  <>
+                  {!me && (
+                    <SignInButton className="justify-self-end"></SignInButton>
+                  )}
+                </>
+              ) : (
+                <>
+                  {/* Trigger and title in one row, so both are centred on the
+                      same line as the search field. */}
+                  <div className="flex flex-row shrink-0 items-center gap-2">
+                    {/* size-auto: the button shrinks to the icon instead of the
+                        fixed size-7 square, so there is no empty space around it. */}
+                    <SidebarTrigger className="size-auto hover:cursor-pointer" />
+
                     {/* Vertical line between trigger and title. Fixed height
                         instead of the default self-stretch, so it stays
                         shorter than the text next to it. */}
@@ -71,46 +79,17 @@ export default function ShellLayout({
                       orientation="vertical"
                       className="data-vertical:h-4 data-vertical:self-center"
                     />
-                    <Breadcrumb>
-                      <BreadcrumbList>
-                        {breadcrumbs.map((breadcrumb, index) => {
-                          // A crumb links to the path up to and including its
-                          // own segment: ["events", "5"] -> "/events", "/events/5".
-                          const href =
-                            "/" + breadcrumbs.slice(0, index + 1).join("/");
-                          const label =
-                            breadcrumb[0].toUpperCase() + breadcrumb.slice(1);
-                          const isLast = index === breadcrumbs.length - 1;
+                    <BreadcrumbsContainer></BreadcrumbsContainer>
+                  </div>
 
-                          return (
-                            <Fragment key={href}>
-                              <BreadcrumbItem>
-                                {isLast ? (
-                                  <BreadcrumbPage>{label}</BreadcrumbPage>
-                                ) : (
-                                  <BreadcrumbLink asChild>
-                                    <Link href={href}>{label}</Link>
-                                  </BreadcrumbLink>
-                                )}
-                              </BreadcrumbItem>
-                              {!isLast && <BreadcrumbSeparator />}
-                            </Fragment>
-                          );
-                        })}
-                      </BreadcrumbList>
-                    </Breadcrumb>
-                  </>
-                )}
-              </div>
-
-              {isMobile && <SignInButton></SignInButton>}
-
-              {!isMobile && showSearch && (
-                // Full width by default; from md on capped at 20rem.
-                <SearchBar className="md:max-w-80" />
+                  {showSearch && (
+                    // Full width by default; from md on capped at 20rem.
+                    <SearchBar className="md:max-w-80" />
+                  )}
+                </>
               )}
             </header>
-            <main className="w-full flex justify-center items-center p-2">
+            <main className="w-full flex justify-center items-center p-4">
               {children}
             </main>
           </div>

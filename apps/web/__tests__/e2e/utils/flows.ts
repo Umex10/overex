@@ -34,10 +34,10 @@ export async function submitSignIn(page: Page, email: string, password: string) 
   await page.getByTestId("sign-in-submit-button").click();
 }
 
-/** Uses the header button; ends on the landing page. */
+/** Uses the sidebar button; ends on the sign-in page. */
 export async function signOut(page: Page) {
   await page.getByTestId("header-sign-out-button").click();
-  await expect(page).toHaveURL("/");
+  await expect(page).toHaveURL("/sign-in");
 }
 
 /** The dashboard greets the user and shows the account loaded via GET /me. */

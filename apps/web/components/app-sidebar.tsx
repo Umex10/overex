@@ -17,12 +17,18 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import type { Icon } from "@phosphor-icons/react";
-import { CalendarDotsIcon, LightningIcon, TicketIcon } from "@phosphor-icons/react";
+import {
+  CalendarDotsIcon,
+  LightningIcon,
+  TicketIcon,
+} from "@phosphor-icons/react";
 
 import { Button } from "@/components/ui/button";
 import { SidebarLogo } from "@/components/sidebar-logo";
 
 import SignInButton from "@/features/auth/components/sign-in-button";
+import { useGetMeQuery } from "@/features/user/user-api";
+import { SignOutButton } from "@/features/auth/components/sign-out-button";
 
 interface NavItem {
   icon: Icon;
@@ -45,7 +51,7 @@ const NAV_ITEMS: NavItem[] = [
 
 /**
  * Grey sidebar with the main navigation. The entry of the current page is
- * highlighted in near-black (`--sidebar-primary`), hover uses a slightly darker
+ * highlighted in the brand colour (`--sidebar-primary`), hover uses a slightly darker
  * grey (`--sidebar-accent`); both colours live in app/globals.css.
  *
  * Closing it collapses it to an icon rail (`collapsible="icon"`): only the logo
@@ -54,8 +60,10 @@ const NAV_ITEMS: NavItem[] = [
  */
 export function AppSidebar() {
   const pathname = usePathname();
-  const { state } = useSidebar();
+  const { state, isMobile, setOpenMobile } = useSidebar();
   const collapsed = state === "collapsed";
+
+  const { data: me, isLoading: isLoadingMe } = useGetMeQuery();
 
   return (
     <Sidebar collapsible="icon">
@@ -82,7 +90,12 @@ export function AppSidebar() {
           <SidebarGroupContent>
             <SidebarMenu className="gap-1">
               {NAV_ITEMS.map((n) => (
-                <SidebarMenuItem key={n.title}>
+                <SidebarMenuItem
+                  key={n.title}
+                  // On phones the sidebar is an overlay sheet: close it after
+                  // navigating so the new page is visible.
+                  onClick={() => isMobile && setOpenMobile(false)}
+                >
                   <SidebarMenuButton
                     asChild
                     isActive={pathname.startsWith(n.href)}
@@ -103,37 +116,45 @@ export function AppSidebar() {
       </SidebarContent>
       {/* Hidden in the icon rail: the card doesn't fit into 3rem. */}
       <SidebarFooter className="group-data-[collapsible=icon]:hidden">
-        <div className="relative overflow-hidden rounded-xl border border-white/10 bg-zinc-950 p-4 text-zinc-100 shadow-lg">
-          {/* Soft glow in the top right corner. */}
-          <div
-            aria-hidden
-            className="pointer-events-none absolute -top-10 -right-10 size-28 rounded-full bg-white/10 blur-2xl"
-          />
+        {!me ? (
+          <div className="relative overflow-hidden rounded-xl border border-white/10 bg-zinc-950 p-4 text-zinc-100 shadow-lg">
+            {/* Soft glow in the brand colour in the top right corner. */}
+            <div
+              aria-hidden
+              className="pointer-events-none absolute -top-10 -right-10 size-28 rounded-full bg-primary/40 blur-2xl"
+            />
 
-          <div className="relative flex flex-col gap-3">
-            <div className="flex items-center gap-2">
-              <span className="flex size-7 items-center justify-center rounded-lg bg-white/10">
-                <LightningIcon weight="fill" className="size-4 text-amber-300" />
-              </span>
-              <p className="text-sm font-semibold">Bereit für den Drop?</p>
-            </div>
+            <div className="relative flex flex-col gap-3">
+              <div className="flex items-center gap-2">
+                <span className="flex size-7 items-center justify-center rounded-lg bg-white/10">
+                  <LightningIcon
+                    weight="fill"
+                    className="size-4 text-amber-300"
+                  />
+                </span>
+                <p className="text-sm font-semibold">Bereit für den Drop?</p>
+              </div>
 
-            <p className="text-xs leading-relaxed text-zinc-400">
-              Melde dich vor dem Drop an, dann geht der Kauf schneller.
-            </p>
+              <p className="text-xs leading-relaxed text-zinc-400">
+                Melde dich vor dem Drop an, dann geht der Kauf schneller.
+              </p>
 
-            <div className="flex flex-col gap-2">
-              <SignInButton></SignInButton>
-              <Button
-                asChild
-                variant="outline"
-                className="h-9 rounded-lg border-white/20 bg-transparent text-zinc-100 transition-all duration-150 hover:border-white/40 hover:bg-white/10 hover:text-white active:scale-[0.98] dark:bg-transparent"
-              >
-                <Link href="/sign-up">Konto erstellen</Link>
-              </Button>
+              <div className="flex flex-col gap-2">
+                <SignInButton></SignInButton>
+
+                <Button
+                  asChild
+                  variant="outline"
+                  className="h-9 rounded-lg border-white/20 bg-transparent text-zinc-100 transition-all duration-150 hover:border-white/40 hover:bg-white/10 hover:text-white active:scale-[0.98] dark:bg-transparent"
+                >
+                  <Link href="/sign-up">Konto erstellen</Link>
+                </Button>
+              </div>
             </div>
           </div>
-        </div>
+        ) : (
+          <SignOutButton></SignOutButton>
+        )}
       </SidebarFooter>
     </Sidebar>
   );
