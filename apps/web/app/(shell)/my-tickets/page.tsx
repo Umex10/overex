@@ -1,9 +1,9 @@
-import React from 'react'
+"use client";
 
-const page = () => {
-  return (
-    <div>page</div>
-  )
+import useBreadcrumbs from "@/hooks/use-breadcrumbs";
+
+export default function MyTicketsPage() {
+  useBreadcrumbs();
+
+  return <div>page</div>;
 }
-
-export default page
