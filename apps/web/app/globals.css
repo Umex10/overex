@@ -5,7 +5,7 @@
 @custom-variant dark (&:is(.dark *));
 
 /* ═══════════════════════════════════════════════════════════════
-   Overex design tokens (shadcn/ui CSS variables, violet theme)
+   Overex design tokens (shadcn/ui CSS variables, pink theme)
    ═══════════════════════════════════════════════════════════════ */
 
 :root {
@@ -17,7 +17,7 @@
   --card-foreground: #18181b;
   --popover: #ffffff;
   --popover-foreground: #18181b;
-  --primary: #7c3aed; /* violet-600 — brand colour, CTAs */
+  --primary: #db2777; /* pink-600 — brand colour, CTAs */
   --primary-foreground: #ffffff;
   --secondary: #f4f4f5;
   --secondary-foreground: #18181b;
@@ -28,22 +28,22 @@
   --destructive: oklch(0.577 0.245 27.325);
   --border: #e4e4e7;
   --input: #e4e4e7;
-  --ring: #7c3aed;
-  --chart-1: #7c3aed;
-  --chart-2: #6d28d9;
-  --chart-3: #a78bfa;
-  --chart-4: #c4b5fd;
-  --chart-5: #8b5cf6;
+  --ring: #db2777;
+  --chart-1: #db2777;
+  --chart-2: #be185d;
+  --chart-3: #f472b6;
+  --chart-4: #fbcfe8;
+  --chart-5: #ec4899;
 
   /* Sidebar (components/ui/sidebar.tsx) */
   --sidebar: #f4f4f5; /* zinc-100: grey surface */
   --sidebar-foreground: #3f3f46;
-  --sidebar-primary: #18181b; /* active item and logo: near-black */
-  --sidebar-primary-foreground: #fafafa;
+  --sidebar-primary: var(--primary); /* active item and logo: brand pink */
+  --sidebar-primary-foreground: var(--primary-foreground);
   --sidebar-accent: #e4e4e7; /* hover: one step darker grey */
   --sidebar-accent-foreground: #18181b;
   --sidebar-border: #e4e4e7;
-  --sidebar-ring: #a1a1aa;
+  --sidebar-ring: var(--ring);
 }
 
 .dark {
@@ -53,7 +53,7 @@
   --card-foreground: #fafafa;
   --popover: #1a1a22;
   --popover-foreground: #fafafa;
-  --primary: #8b5cf6; /* violet-500, a touch brighter for dark backgrounds */
+  --primary: #ec4899; /* pink-500, a touch brighter for dark backgrounds */
   --primary-foreground: #ffffff;
   --secondary: #1f1f27;
   --secondary-foreground: #fafafa;
@@ -64,22 +64,22 @@
   --destructive: oklch(0.704 0.191 22.216);
   --border: rgba(255, 255, 255, 0.1);
   --input: rgba(255, 255, 255, 0.12);
-  --ring: #8b5cf6;
-  --chart-1: #8b5cf6;
-  --chart-2: #a78bfa;
-  --chart-3: #7c3aed;
-  --chart-4: #c4b5fd;
-  --chart-5: #6d28d9;
+  --ring: #ec4899;
+  --chart-1: #ec4899;
+  --chart-2: #f472b6;
+  --chart-3: #db2777;
+  --chart-4: #fbcfe8;
+  --chart-5: #be185d;
 
   /* Sidebar (components/ui/sidebar.tsx) */
   --sidebar: #18181b; /* zinc-900: grey surface */
   --sidebar-foreground: #d4d4d8;
-  --sidebar-primary: #09090b; /* active item and logo: black (zinc-950) */
-  --sidebar-primary-foreground: #fafafa;
+  --sidebar-primary: var(--primary); /* active item and logo: brand pink */
+  --sidebar-primary-foreground: var(--primary-foreground);
   --sidebar-accent: #27272a; /* hover: one step lighter grey */
   --sidebar-accent-foreground: #fafafa;
   --sidebar-border: rgba(255, 255, 255, 0.08);
-  --sidebar-ring: #52525b;
+  --sidebar-ring: var(--ring);
 }
 
 /* Map the CSS variables onto Tailwind v4 theme tokens. */

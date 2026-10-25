@@ -15,12 +15,12 @@ import { useState } from "react";
 import { useHydrated } from "@/hooks/use-hydrated";
 
 const CONFETTI_COLORS = [
-  "#7c3aed",
-  "#8b5cf6",
-  "#a78bfa",
+  "#db2777",
+  "#ec4899",
+  "#f472b6",
   "#f59e0b",
   "#22c55e",
-  "#ec4899",
+  "#fbcfe8",
 ];
 
 /** A few interchangeable, deliberately goofy congratulation lines. */
