@@ -3,68 +3,101 @@ import { useGetEventQuery } from "@/features/event/event-api";
 import { setBreadcrumbs, setShowSearch } from "@/redux/route-context-slice";
 import { AppDispatch, RootState } from "@/redux/store";
 import { useParams, usePathname } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
-import Link from "next/link";
-import { Fragment } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
+import BreadcrumbsContainer from "@/components/BreadcrumbsContainer";
+import Image from "next/image";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { Button } from "@/components/ui/button";
+import { CalendarBlankIcon, ClockIcon, MapPinIcon } from "@phosphor-icons/react";
+import DateFormat from "@/features/event/components/date-format";
+import TimeFormat from "@/features/event/components/time-format";
+import EventMetaItem from "@/features/event/components/event-meta-item";
+import useBreadcrumbs from "@/hooks/use-breadcrumbs";
 
 export default function EventDetailsPage() {
   const { id } = useParams<{ id: string }>();
   const { data: event, isLoading: isLoadingEvent } = useGetEventQuery(id);
-  const path = usePathname();
-  const segments = path.split("/").filter(Boolean); // ["events", "5"]
+
   const dispatch = useDispatch<AppDispatch>();
 
   const isMobile = useIsMobile();
-  const { breadcrumbs } = useSelector(
-    (state: RootState) => state.routeContextSate,
-  );
+
+  const [showMore, setShowMore] = useState<boolean>(false);
+
+  useBreadcrumbs();
 
   useEffect(() => {
-    dispatch(setBreadcrumbs(segments));
     dispatch(setShowSearch(false));
   }, [dispatch]);
 
-  return (
-    <div className="w-full flex flex-row justify-start">
-      {isMobile && (
-        <Breadcrumb>
-          <BreadcrumbList>
-            {breadcrumbs.map((breadcrumb, index) => {
-              // A crumb links to the path up to and including its
-              // own segment: ["events", "5"] -> "/events", "/events/5".
-              const href = "/" + breadcrumbs.slice(0, index + 1).join("/");
-              const label = breadcrumb[0].toUpperCase() + breadcrumb.slice(1);
-              const isLast = index === breadcrumbs.length - 1;
+  if (isLoadingEvent || !event) {
+    return <p className="w-full text-center">Loading Event...</p>;
+  }
 
-              return (
-                <Fragment key={href}>
-                  <BreadcrumbItem>
-                    {isLast ? (
-                      <BreadcrumbPage>{label}</BreadcrumbPage>
-                    ) : (
-                      <BreadcrumbLink asChild>
-                        <Link href={href}>{label}</Link>
-                      </BreadcrumbLink>
-                    )}
-                  </BreadcrumbItem>
-                  {!isLast && <BreadcrumbSeparator />}
-                </Fragment>
-              );
-            })}
-          </BreadcrumbList>
-        </Breadcrumb>
-      )}
+  return (
+    <div className="w-full flex flex-col justify-start gap-3">
+      {isMobile && <BreadcrumbsContainer></BreadcrumbsContainer>}
+
+      <Image
+        src={event.imageUrl}
+        alt={event.title}
+        width={300}
+        height={300}
+        className="w-full rounded-xl object-cover transition-transform duration-300 group-hover:scale-105"
+      />
+
+      <Badge
+        variant="secondary"
+        className="rounded-sm bg-primary text-primary-foreground backdrop-blur"
+      >
+        Almost sold
+      </Badge>
+
+      <h3 className="line-clamp-2 text-2xl font-bold">{event.title}</h3>
+
+      <div className="w-full flex flex-col justify-start gap-1 text-slate-400">
+        <EventMetaItem icon={CalendarBlankIcon}>
+          <DateFormat dateToFormat={event.startsAt} weekdayType="long" />
+        </EventMetaItem>
+
+        <EventMetaItem icon={ClockIcon}>
+          Beginn <TimeFormat timeToFormat={event.startsAt} />
+        </EventMetaItem>
+
+        <EventMetaItem icon={MapPinIcon}>
+          {event.venue}, {event.city}
+        </EventMetaItem>
+      </div>
+
+      <div>
+        <p
+          className={`text-base text-slate-400 ${showMore ? "line-clamp-none" : "line-clamp-5"}`}
+        >
+          {event.description}
+        </p>
+
+        <Button
+          variant="ghost"
+          className="bg-transparent text-primary p-0 text-sm"
+          onClick={() => setShowMore(!showMore)}
+        >
+          {showMore ? "Weniger anzeigen" : "Mehr Anzeigen"}
+        </Button>
+      </div>
+
+      <Badge
+        variant="secondary"
+        className="w-full rounded-xl p-6 bg-emerald-400/60 text-lg"
+      >
+        <strong>Verkaufsstart: </strong>
+        <DateFormat dateToFormat={event.saleStartsAt} weekdayType="long" />
+      </Badge>
+
+      <Separator></Separator>
     </div>
   );
 }

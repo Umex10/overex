@@ -3,13 +3,16 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
+import DateFormat from "./date-format";
+import TimeFormat from "./time-format";
+import PriceFormat from "./price-format";
 
 export interface EventCardProps {
   id: string;
   imageUrl: string;
   category: string;
   title: string;
-  startsAt: Date;
+  startsAt: string;
   venue: string;
   city: string;
   /** Cheapest ticket price in cent (like `price_cents` in the data model). */
@@ -20,21 +23,6 @@ export interface EventCardProps {
   badge?: string;
   className?: string;
 }
-
-const dateFormat = new Intl.DateTimeFormat("de-AT", {
-  weekday: "short",
-  day: "2-digit",
-  month: "2-digit",
-  year: "numeric",
-});
-const timeFormat = new Intl.DateTimeFormat("de-AT", {
-  hour: "2-digit",
-  minute: "2-digit",
-});
-const priceFormat = new Intl.NumberFormat("de-AT", {
-  style: "currency",
-  currency: "EUR",
-});
 
 /** Below this share the availability is shown in orange as a warning. */
 const LOW_AVAILABILITY_PERCENT = 10;
@@ -62,52 +50,74 @@ export function EventCard({
 
   return (
     <Link href={`/events/${id}`}>
+      {/* Phones: compact row with a thumbnail on the left. From md on: the
+          vertical card with the image on top. */}
       <article
         className={cn(
-          "group flex flex-col overflow-hidden rounded-xl border bg-card text-card-foreground transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:cursor-pointer",
+          "group flex flex-row gap-3 overflow-hidden rounded-xl border bg-card p-3 text-card-foreground transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:cursor-pointer md:flex-col md:gap-0 md:p-0",
           className,
         )}
       >
-        <div className="relative aspect-[3/2] overflow-hidden">
+        <div className="relative aspect-[4/3] w-28 shrink-0 overflow-hidden rounded-lg md:aspect-[3/2] md:w-auto md:rounded-none">
           <Image
             src={imageUrl}
             alt={title}
             fill
-            sizes="(min-width: 768px) 33vw, 100vw"
+            sizes="(min-width: 768px) 33vw, 112px"
             className="object-cover transition-transform duration-300 group-hover:scale-105"
           />
           {badge && (
             <Badge
               variant="secondary"
-              className="absolute top-2 left-2 rounded-lg bg-background/90 backdrop-blur"
+              className="absolute top-2 left-2 hidden rounded-sm bg-background/90 backdrop-blur md:inline-flex"
             >
               {badge}
             </Badge>
           )}
         </div>
 
-        <div className="flex flex-col gap-1 p-3">
-          <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+        <div className="flex min-w-0 flex-col gap-1 md:p-3">
+          {/* On phones the badge sits above the title instead of on the image. */}
+          {badge && (
+            <Badge variant="secondary" className="self-start rounded-sm md:hidden">
+              {badge}
+            </Badge>
+          )}
+          <p className="hidden text-xs font-medium tracking-wide text-muted-foreground uppercase md:block">
             {category}
           </p>
-          <h3 className="line-clamp-2 text-sm font-bold">{title}</h3>
-          <div className="flex flex-col text-xs text-muted-foreground">
-            <time dateTime={startsAt.toISOString()}>
-              {dateFormat.format(startsAt)} · {timeFormat.format(startsAt)} Uhr
-            </time>
+          <h3 className="line-clamp-2 text-base font-bold md:text-sm">{title}</h3>
+
+          {/* Phones: date and venue on one line. */}
+          <p className="truncate text-sm text-muted-foreground md:hidden">
+            <DateFormat dateToFormat={startsAt} weekdayType="short" /> · {venue}
+          </p>
+          <div className="hidden flex-col text-xs text-muted-foreground md:flex">
+            {/* One span, so date and time share a line in the flex column. */}
+            <span>
+              <DateFormat dateToFormat={startsAt} weekdayType="short" /> ·{" "}
+              <TimeFormat timeToFormat={startsAt} />
+            </span>
             <span>
               {venue}, {city}
             </span>
           </div>
+
+          <p className="mt-1 text-sm md:hidden">
+            <span className="text-muted-foreground">ab</span>{" "}
+            <span className="text-base font-bold">
+              <PriceFormat priceInCents={priceFromCents} />
+            </span>
+          </p>
         </div>
 
-        <Separator className="mt-auto" />
+        <Separator className="mt-auto hidden md:block" />
 
-        <div className="flex items-center justify-between p-3">
+        <div className="hidden items-center justify-between p-3 md:flex">
           <p className="text-xs">
             <span className="text-muted-foreground">ab</span>{" "}
             <span className="text-base font-bold">
-              {priceFormat.format(priceFromCents / 100)}
+              <PriceFormat priceInCents={priceFromCents} />
             </span>
           </p>
 

@@ -5,6 +5,7 @@ import { ArrowDownIcon, ArrowUpIcon, type Icon } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/loader";
 import { SearchBar } from "@/components/search-bar";
+import { SearchParamToast } from "@/components/search-param-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { CategoryFilter } from "@/features/event/components/category-filter";
 import { EventCard } from "@/features/event/components/event-card";
@@ -12,11 +13,11 @@ import { EventPagination } from "@/features/event/components/event-pagination";
 import { FeaturedEventCard } from "@/features/event/components/featured-event-card";
 import { useEventList } from "@/features/event/hooks/use-event-list";
 import type { EventDto, EventSort } from "@/features/event/event-types";
-import { useDispatch, useSelector } from "react-redux";
-import { AppDispatch, RootState } from "@/redux/store";
-import { useEffect, useState } from "react";
-import { setBreadcrumbs, setShowSearch } from "@/redux/route-context-slice";
-import { usePathname } from "next/navigation";
+import { useDispatch } from "react-redux";
+import { AppDispatch } from "@/redux/store";
+import { useEffect } from "react";
+import { setShowSearch } from "@/redux/route-context-slice";
+import useBreadcrumbs from "@/hooks/use-breadcrumbs";
 
 /**
  * The sort button shows the current order; a click switches to `next`.
@@ -78,11 +79,9 @@ export default function EventPage() {
 
   const dispatch = useDispatch<AppDispatch>();
 
-  const path = usePathname();
-  const segments = path.split("/").filter(Boolean); // ["events", "5"]
- 
+  useBreadcrumbs();
+
   useEffect(() => {
-    dispatch(setBreadcrumbs(segments));
     dispatch(setShowSearch(false));
   }, [dispatch]);
 
@@ -106,7 +105,14 @@ export default function EventPage() {
   }
 
   return (
-    <div className="w-full flex flex-col items-center p-2 gap-6">
+    <div className="w-full flex flex-col items-center gap-6">
+      {/* Set by the proxy when a signed-in user opens the landing page. */}
+      <SearchParamToast
+        param="redirected"
+        value="1"
+        message="Du bist bereits angemeldet."
+      />
+
       {isMobile && <SearchBar />}
 
       {featured && (
@@ -161,7 +167,7 @@ export default function EventPage() {
                 imageUrl={event.imageUrl}
                 category={event.category.title}
                 title={event.title}
-                startsAt={new Date(event.startsAt)}
+                startsAt={event.startsAt}
                 venue={event.venue}
                 city={event.city}
                 priceFromCents={5900}
