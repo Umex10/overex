@@ -15,7 +15,12 @@ async function visit(path: string, withCookie: boolean) {
 
 describe("proxy (route gate on the refresh cookie)", () => {
   it("sends visitors without a cookie from protected pages to sign-in", async () => {
-    expect(await visit("/events", false)).toBe("/sign-in");
+    expect(await visit("/my-tickets", false)).toBe("/sign-in");
+  });
+
+  it("lets visitors without a cookie browse the events (guest mode)", async () => {
+    expect(await visit("/events", false)).toBeNull();
+    expect(await visit("/events/some-id", false)).toBeNull();
   });
 
   it("lets visitors without a cookie see the landing and auth pages", async () => {

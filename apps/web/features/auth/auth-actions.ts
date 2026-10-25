@@ -88,8 +88,8 @@ export const getAccessTkAction = async () => {
 
     if (!refreshTk) {
       return {
-        success: false as const,
-        error: { status: 401, message: "No refresh token found" },
+        success: true as const,
+        data: null // guest mode
       };
     }
 

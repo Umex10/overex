@@ -13,6 +13,8 @@ import type { NextRequest } from "next/server";
  *   explain *why* you landed there (no page reads it at the moment).
  * - The landing and auth pages stay publicly reachable for logged-out visitors
  *   so they can browse without an infinite redirect loop.
+ * - `/events` and its detail pages are public as well (guest mode): guests can
+ *   browse events and only have to sign in once they act on one.
  *
  * This is a cheap presence check (does the cookie exist?), not a validity
  * check — the actual token verification happens on the backend. That keeps the
@@ -24,9 +26,10 @@ export async function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   const isAuthPage = pathname === "/sign-in" || pathname === "/sign-up";
   const isLandingPage = pathname === "/";
+  const isGuestPage = pathname === "/events" || pathname.startsWith("/events/");
 
   // Logged out + visiting a protected page -> go sign in.
-  if (!token && !isAuthPage && !isLandingPage) {
+  if (!token && !isAuthPage && !isLandingPage && !isGuestPage) {
     return NextResponse.redirect(new URL("/sign-in", request.url));
   }
 

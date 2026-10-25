@@ -38,7 +38,7 @@ const authApi = apiSlice.injectEndpoints({
       },
     }),
 
-    getAccessTk: builder.query<AuthResponseDto, undefined>({
+    getAccessTk: builder.query<AuthResponseDto | null, undefined>({
       async queryFn() {
         const res = await getAccessTkAction();
         return res.success ? { data: res.data } : { error: asError(res.error) };
