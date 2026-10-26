@@ -39,7 +39,7 @@ import org.springframework.test.web.servlet.MvcResult;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.overex.backend.auth.utils.AuthTestClient;
 import com.overex.backend.auth.utils.TestRsaKeys;
-import com.overex.backend.common.repositories.UserRepository;
+import com.overex.backend.user.UserRepository;
 import com.overex.backend.event.CategoryRepository;
 import com.overex.backend.event.Event;
 import com.overex.backend.event.EventRepository;

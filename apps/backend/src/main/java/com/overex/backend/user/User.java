@@ -1,4 +1,4 @@
-package com.overex.backend.common.entities;
+package com.overex.backend.user;
 
 import java.util.UUID;
 
@@ -24,7 +24,7 @@ import lombok.NoArgsConstructor;
  * value. The role is persisted as a string so the column stays readable and
  * refactors of the enum do not silently shift ordinals.
  *
- * @see com.overex.backend.common.repositories.UserRepository
+ * @see com.overex.backend.user.UserRepository
  * @see com.overex.backend.auth.security.CustomUserDetails
  */
 @Entity

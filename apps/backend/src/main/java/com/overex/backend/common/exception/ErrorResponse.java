@@ -1,4 +1,4 @@
-package com.overex.backend.common.domain.dtos;
+package com.overex.backend.common.exception;
 
 import lombok.Getter;
 
@@ -9,7 +9,7 @@ import lombok.Getter;
  * predictable set of fields: HTTP status code, the canonical reason phrase, the
  * underlying message and the request path that triggered the error.
  *
- * @see com.overex.backend.common.domain.dtos.factory.ErrorResponseFactory
+ * @see com.overex.backend.common.exception.ErrorResponseFactory
  * @see com.overex.backend.common.exception.GlobalExceptionHandler
  */
 @Getter

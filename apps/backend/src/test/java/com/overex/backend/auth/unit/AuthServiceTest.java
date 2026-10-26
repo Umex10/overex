@@ -23,11 +23,11 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 
 import com.overex.backend.auth.AuthService;
 import com.overex.backend.auth.dto.requests.SignUpAccountRequestDto;
-import com.overex.backend.common.entities.Role;
-import com.overex.backend.common.entities.User;
+import com.overex.backend.user.Role;
+import com.overex.backend.user.User;
 import com.overex.backend.common.exception.ApiError;
 import com.overex.backend.common.exception.OwnException;
-import com.overex.backend.common.repositories.UserRepository;
+import com.overex.backend.user.UserRepository;
 import com.overex.backend.auth.utils.AuthTestDataFactory;
 
 import jakarta.persistence.EntityNotFoundException;

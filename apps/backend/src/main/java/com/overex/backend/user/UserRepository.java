@@ -1,4 +1,4 @@
-package com.overex.backend.common.repositories;
+package com.overex.backend.user;
 
 import java.util.Optional;
 import java.util.UUID;
@@ -6,7 +6,6 @@ import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import com.overex.backend.common.entities.User;
 
 /**
  * Repository for {@link User} persistence operations.

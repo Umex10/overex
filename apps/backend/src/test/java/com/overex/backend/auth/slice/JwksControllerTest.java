@@ -14,7 +14,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import com.overex.backend.auth.JwksController;
 import com.overex.backend.auth.security.CustomUserDetailsService;
 import com.overex.backend.auth.security.config.SecurityConfig;
-import com.overex.backend.common.repositories.UserRepository;
+import com.overex.backend.user.UserRepository;
 import com.overex.backend.auth.utils.TestRsaKeys;
 
 /**

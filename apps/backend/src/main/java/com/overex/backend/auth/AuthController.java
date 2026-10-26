@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.overex.backend.auth.dto.requests.SignInAccountRequestDto;
 import com.overex.backend.auth.dto.requests.SignUpAccountRequestDto;
 import com.overex.backend.auth.dto.responses.AuthResponseDto;
-import com.overex.backend.common.entities.User;
+import com.overex.backend.user.User;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;

@@ -31,7 +31,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.overex.backend.auth.config.JacksonConfig;
+import com.overex.backend.common.config.JacksonConfig;
 import com.overex.backend.common.exception.ApiError;
 import com.overex.backend.common.exception.OwnException;
 import com.overex.backend.event.Event;

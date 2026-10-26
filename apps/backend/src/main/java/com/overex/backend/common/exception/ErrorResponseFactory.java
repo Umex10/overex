@@ -1,6 +1,5 @@
-package com.overex.backend.common.domain.dtos.factory;
+package com.overex.backend.common.exception;
 
-import com.overex.backend.common.domain.dtos.ErrorResponse;
 
 /**
  * Static factory helpers for building the most common {@link ErrorResponse}

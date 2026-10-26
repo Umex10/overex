@@ -10,7 +10,7 @@ make.
 The roles are deliberately generic (`USER`, `ADMIN`). To use your own:
 
 1. **Backend** — edit the enum in
-   `apps/backend/src/main/java/com/overex/backend/common/entities/Role.java`:
+   `apps/backend/src/main/java/com/overex/backend/user/Role.java`:
    ```java
    public enum Role { OWNER, DRIVER, ACCOUNTANT }
    ```

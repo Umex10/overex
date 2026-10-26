@@ -13,8 +13,8 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.stereotype.Service;
 
 import com.overex.backend.auth.dto.TkName;
-import com.overex.backend.common.entities.User;
-import com.overex.backend.common.repositories.UserRepository;
+import com.overex.backend.user.User;
+import com.overex.backend.user.UserRepository;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;

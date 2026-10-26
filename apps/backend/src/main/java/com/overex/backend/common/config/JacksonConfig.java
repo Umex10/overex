@@ -1,4 +1,4 @@
-package com.overex.backend.auth.config;
+package com.overex.backend.common.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

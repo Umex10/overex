@@ -1,4 +1,4 @@
-package com.overex.backend.common.entities;
+package com.overex.backend.user;
 
 /**
  * Application-level user roles.

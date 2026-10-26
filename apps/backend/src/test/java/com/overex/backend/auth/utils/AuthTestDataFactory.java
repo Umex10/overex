@@ -4,8 +4,8 @@ import java.util.UUID;
 
 import com.overex.backend.auth.dto.requests.SignInAccountRequestDto;
 import com.overex.backend.auth.dto.requests.SignUpAccountRequestDto;
-import com.overex.backend.common.entities.Role;
-import com.overex.backend.common.entities.User;
+import com.overex.backend.user.Role;
+import com.overex.backend.user.User;
 
 /**
  * Central source of reusable test fixtures.
