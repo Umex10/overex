@@ -4,13 +4,13 @@
  * "2026-10-24T18:00:00Z") and are turned into a `Date` where needed.
  */
 
-/** One category as returned by `GET /category`. */
+/** One category as returned by `GET /categories`. */
 export interface CategoryDto {
   id: string;
   title: string;
 }
 
-/** One event as returned by `GET /event` and `GET /event/{id}`. */
+/** One event as returned by `GET /events` and `GET /events/{id}`. */
 export interface EventDto {
   id: string;
   category: CategoryDto;
@@ -26,11 +26,11 @@ export interface EventDto {
   updatedAt: string;
 }
 
-/** Sort order of `GET /event`, in Spring's `property,direction` format. */
+/** Sort order of `GET /events`, in Spring's `property,direction` format. */
 export type EventSort = "startsAt,asc" | "startsAt,desc";
 
 /**
- * Query parameters of `GET /event`. All of them are optional: the backend
+ * Query parameters of `GET /events`. All of them are optional: the backend
  * falls back to page 0, 10 events per page, sorted by `startsAt` ascending,
  * across all categories.
  */

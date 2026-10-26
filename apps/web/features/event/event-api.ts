@@ -9,20 +9,20 @@ import type { Page } from "@/types/page";
 const eventApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     /**
-     * `GET /event`: one page of events, optionally of one category only.
+     * `GET /events`: one page of events, optionally of one category only.
      *
      * RTK Query leaves `undefined` params out of the URL, so an empty
      * `categoryId` becomes `undefined` and the backend returns all categories.
      */
     getEvents: builder.query<Page<EventDto>, EventQuery>({
       query: ({ categoryId, ...pageable }) => ({
-        url: "/event",
+        url: "/events",
         params: { ...pageable, categoryId: categoryId || undefined },
       }),
     }),
 
     getEvent: builder.query<EventDto, string>({
-      query: (eventId) => `/event/${eventId}`
+      query: (eventId) => `/events/${eventId}`
     })
   }),
 });

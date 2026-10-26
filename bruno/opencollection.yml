@@ -43,6 +43,6 @@ request:
         }
 
         if (!bru.getVar("categoryId")) {
-          const res = await bru.sendRequest({ method: "GET", url: `${baseUrl}/category` });
+          const res = await bru.sendRequest({ method: "GET", url: `${baseUrl}/categories` });
           bru.setVar("categoryId", res.data[0].id);
         }

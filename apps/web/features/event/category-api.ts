@@ -7,9 +7,9 @@ import type { CategoryDto } from "@/features/event/event-types";
  */
 const categoryApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
-    /** `GET /category`: all categories. */
+    /** `GET /categories`: all categories. */
     getCategories: builder.query<CategoryDto[], void>({
-      query: () => "/category",
+      query: () => "/categories",
     }),
   }),
 });

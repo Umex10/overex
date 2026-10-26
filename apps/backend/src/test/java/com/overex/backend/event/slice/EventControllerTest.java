@@ -83,7 +83,7 @@ public class EventControllerTest {
 
                 // the mocked service returns the factory page as it is, so id and
                 // timestamps are fixed values and compared exactly
-                mockMvc.perform(get("/event"))
+                mockMvc.perform(get("/events"))
                                 .andExpect(status().isOk())
                                 .andExpect(jsonPath("$.content", hasSize(events.size())))
                                 .andExpect(jsonPath("$.content[*].id").value(contains(
@@ -128,7 +128,7 @@ public class EventControllerTest {
 
                 // the mocked service returns the factory page as it is, so id and
                 // timestamps are fixed values and compared exactly
-                mockMvc.perform(get(String.format("/event?categoryId=%s", EventTestDataFactory.DEFAULT_CATEGORY_ID)))
+                mockMvc.perform(get(String.format("/events?categoryId=%s", EventTestDataFactory.DEFAULT_CATEGORY_ID)))
                                 .andExpect(status().isOk())
                                 .andExpect(jsonPath("$.content", hasSize(events.size())))
                                 .andExpect(jsonPath("$.content[*].id").value(contains(
@@ -168,7 +168,7 @@ public class EventControllerTest {
         void shouldGetEvent() throws Exception {
                 when(eventService.getEvent(any())).thenReturn(event);
 
-                mockMvc.perform(get("/event/{eventId}", event.getId()))
+                mockMvc.perform(get("/events/{eventId}", event.getId()))
                                 .andExpect(status().isOk())
                                 .andExpect(jsonPath("$.id").value(event.getId().toString()))
                                 .andExpect(jsonPath("$.title").value(event.getTitle()))
@@ -189,18 +189,18 @@ public class EventControllerTest {
                 when(eventService.getEvent(any()))
                                 .thenThrow(new EntityNotFoundException("The Event with the given id was not found"));
 
-                mockMvc.perform(get("/event/{eventId}", event.getId()))
+                mockMvc.perform(get("/events/{eventId}", event.getId()))
                                 .andExpect(status().isNotFound())
                                 .andExpect(jsonPath("$.status").value(404))
                                 .andExpect(jsonPath("$.error").value("Not Found"))
                                 .andExpect(jsonPath("$.message").value("The Event with the given id was not found"))
-                                .andExpect(jsonPath("$.path").value("/event/" + event.getId()));
+                                .andExpect(jsonPath("$.path").value("/events/" + event.getId()));
         }
 
         /** An id that is no UUID is a client error (400), not the catch-all 500. */
         @Test
         void shouldRejectEventIdThatIsNoUuid() throws Exception {
-                mockMvc.perform(get("/event/{eventId}", "abc"))
+                mockMvc.perform(get("/events/{eventId}", "abc"))
                                 .andExpect(status().isBadRequest())
                                 .andExpect(jsonPath("$.status").value(400))
                                 .andExpect(jsonPath("$.message").value("Validation failed"))
@@ -217,7 +217,7 @@ public class EventControllerTest {
 
                 when(eventService.createEvent(createEventDto)).thenReturn(event);
 
-                mockMvc.perform(post("/event")
+                mockMvc.perform(post("/events")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(jsonRequest))
                                 .andExpect(status().isCreated())
@@ -240,7 +240,7 @@ public class EventControllerTest {
 
                 String jsonRequest = objectMapper.writeValueAsString(createEventDto);
 
-                mockMvc.perform(post("/event")
+                mockMvc.perform(post("/events")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(jsonRequest))
                                 .andExpect(status().isBadRequest())
@@ -258,7 +258,7 @@ public class EventControllerTest {
         void shouldDeleteEvent() throws Exception {
                 doNothing().when(eventService).deleteEvent(any());
 
-                mockMvc.perform(delete("/event/{eventId}", event.getId()))
+                mockMvc.perform(delete("/events/{eventId}", event.getId()))
                                 .andExpect(status().isNoContent())
                                 .andExpect(content().string(""));
         }
@@ -269,12 +269,12 @@ public class EventControllerTest {
                 doThrow(new EntityNotFoundException("The Event with the given id was not found")).when(eventService)
                                 .deleteEvent(any());
 
-                mockMvc.perform(delete("/event/{eventId}", event.getId()))
+                mockMvc.perform(delete("/events/{eventId}", event.getId()))
                                 .andExpect(status().isNotFound())
                                 .andExpect(jsonPath("$.status").value(404))
                                 .andExpect(jsonPath("$.error").value("Not Found"))
                                 .andExpect(jsonPath("$.message").value("The Event with the given id was not found"))
-                                .andExpect(jsonPath("$.path").value("/event/" + event.getId()));
+                                .andExpect(jsonPath("$.path").value("/events/" + event.getId()));
         }
 
         @Test
@@ -286,7 +286,7 @@ public class EventControllerTest {
 
                 when(eventService.updateEvent(updateEventDto, event.getId())).thenReturn(updatedEvent);
 
-                mockMvc.perform(patch("/event/{eventId}", event.getId())
+                mockMvc.perform(patch("/events/{eventId}", event.getId())
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(jsonRequest))
                                 .andExpect(status().isOk())
@@ -308,7 +308,7 @@ public class EventControllerTest {
                 String jsonRequest = objectMapper
                                 .writeValueAsString(EventTestDataFactory.createInvalidUpdateEventDto());
 
-                mockMvc.perform(patch("/event/{eventId}", event.getId())
+                mockMvc.perform(patch("/events/{eventId}", event.getId())
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(jsonRequest))
                                 .andExpect(status().isBadRequest())
@@ -329,14 +329,14 @@ public class EventControllerTest {
                 when(eventService.updateEvent(any(), any()))
                                 .thenThrow(new EntityNotFoundException("The Event with the given id was not found"));
 
-                mockMvc.perform(patch("/event/{eventId}", event.getId())
+                mockMvc.perform(patch("/events/{eventId}", event.getId())
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(jsonRequest))
                                 .andExpect(status().isNotFound())
                                 .andExpect(jsonPath("$.status").value(404))
                                 .andExpect(jsonPath("$.error").value("Not Found"))
                                 .andExpect(jsonPath("$.message").value("The Event with the given id was not found"))
-                                .andExpect(jsonPath("$.path").value("/event/" + event.getId()));
+                                .andExpect(jsonPath("$.path").value("/events/" + event.getId()));
         }
 
         /**
@@ -353,7 +353,7 @@ public class EventControllerTest {
                                                 new ApiError.FieldError("saleStartsAt",
                                                                 "The sale must start before the event starts."))));
 
-                mockMvc.perform(patch("/event/{eventId}", event.getId())
+                mockMvc.perform(patch("/events/{eventId}", event.getId())
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(jsonRequest))
                                 .andExpect(status().isBadRequest())

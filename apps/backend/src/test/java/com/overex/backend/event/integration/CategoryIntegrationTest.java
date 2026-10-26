@@ -83,7 +83,7 @@ public class CategoryIntegrationTest {
 
         String accessTk = AuthTestClient.signUpAndReturnAccessTk(mockMvc, objectMapper);
 
-        mockMvc.perform(get("/category").header("Authorization", "Bearer " + accessTk))
+        mockMvc.perform(get("/categories").header("Authorization", "Bearer " + accessTk))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(categories.size())))
                 .andExpect(jsonPath("$[*].id").value(containsInAnyOrder(categories

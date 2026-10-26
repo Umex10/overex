@@ -5,7 +5,7 @@ info:
 
 http:
   method: GET
-  url: "{{baseUrl}}/event?categoryId={{categoryId}}"
+  url: "{{baseUrl}}/events?categoryId={{categoryId}}"
   params:
     - name: categoryId
       value: "{{categoryId}}"

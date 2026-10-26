@@ -15,7 +15,7 @@ request:
         if (req.getMethod() !== "POST" && !bru.getVar("eventId")) {
           const res = await bru.sendRequest({
             method: "POST",
-            url: `${bru.getEnvVar("baseUrl")}/event`,
+            url: `${bru.getEnvVar("baseUrl")}/events`,
             headers: { Authorization: `Bearer ${bru.getVar("accessTk")}` },
             data: {
               title: "Bruno Testevent",

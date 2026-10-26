@@ -36,7 +36,7 @@ public class CategoryControllerTest {
 
         when(categoryService.getCategories()).thenReturn(categories);
 
-        mockMvc.perform(get("/category"))
+        mockMvc.perform(get("/categories"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(categories.size())))
                 .andExpect(jsonPath("$[*].id").value(containsInAnyOrder(categories

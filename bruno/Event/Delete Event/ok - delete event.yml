@@ -5,7 +5,7 @@ info:
 
 http:
   method: DELETE
-  url: "{{baseUrl}}/event/{{eventId}}"
+  url: "{{baseUrl}}/events/{{eventId}}"
   auth:
     type: bearer
     token: "{{accessTk}}"

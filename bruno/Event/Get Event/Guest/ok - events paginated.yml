@@ -5,7 +5,7 @@ info:
 
 http:
   method: GET
-  url: "{{baseUrl}}/event?page=1&size=5"
+  url: "{{baseUrl}}/events?page=1&size=5"
   params:
     - name: page
       value: "1"

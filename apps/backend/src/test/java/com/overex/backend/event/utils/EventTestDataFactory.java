@@ -190,7 +190,7 @@ public final class EventTestDataFactory {
 
 	/**
 	 * The pageable the controller resolves when the request has no paging
-	 * parameters ({@code GET /event}), see {@link #createPageable(int, int)}.
+	 * parameters ({@code GET /events}), see {@link #createPageable(int, int)}.
 	 */
 	public static Pageable createDefaultPageable() {
 		return createPageable(DEFAULT_PAGE, DEFAULT_PAGE_SIZE);
@@ -205,10 +205,10 @@ public final class EventTestDataFactory {
 	 * missing ones come from {@code @PageableDefault} on the controller:
 	 *
 	 * <pre>
-	 * GET /event                                  → page 0, size 10, sort startsAt ASC
-	 * GET /event?page=1&amp;size=2                    → page 1, size 2,  sort startsAt ASC
-	 * GET /event?page=0&amp;size=5&amp;sort=title,desc     → page 0, size 5,  sort title DESC
-	 * GET /event?categoryId=2222…&amp;page=0&amp;size=2   → categoryId is its own parameter, not part of the Pageable
+	 * GET /events                                  → page 0, size 10, sort startsAt ASC
+	 * GET /events?page=1&amp;size=2                    → page 1, size 2,  sort startsAt ASC
+	 * GET /events?page=0&amp;size=5&amp;sort=title,desc     → page 0, size 5,  sort title DESC
+	 * GET /events?categoryId=2222…&amp;page=0&amp;size=2   → categoryId is its own parameter, not part of the Pageable
 	 * </pre>
 	 *
 	 * <p>
@@ -275,7 +275,7 @@ public final class EventTestDataFactory {
 	 *   getTotalPages()    → 2      ceil(3 / 2)
 	 *   isFirst() / isLast() / hasNext() → true / false / true
 	 *
-	 * JSON response of GET /event?page=0&amp;size=2
+	 * JSON response of GET /events?page=0&amp;size=2
 	 * (spring.data.web.pageable.serialization-mode=via-dto)
 	 * {
 	 *   "content": [

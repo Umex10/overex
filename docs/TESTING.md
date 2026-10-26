@@ -46,7 +46,7 @@ main packages). Inside each feature they are split into three layers, plus a
 - `auth/slice/AuthControllerTest`: the three `/auth` endpoints, error envelopes, bean validation
 - `auth/slice/JwksControllerTest`: the public JWKS endpoint, without any private key material
 - `user/slice/MeControllerTest`: `/me` and `/admin/ping` through the real `SecurityConfig`, with real signed tokens and `@PreAuthorize`
-- `event/slice/EventControllerTest`: the `/event` CRUD endpoints, 404 and 400 (bean validation and business rules) error envelopes
+- `event/slice/EventControllerTest`: the `/events` CRUD endpoints, 404 and 400 (bean validation and business rules) error envelopes
 
 **Integration** (`<feature>/integration/`, the whole app, nothing mocked):
 - `auth/integration/AuthIntegrationTest`: the real `KeyConfig` loads keys

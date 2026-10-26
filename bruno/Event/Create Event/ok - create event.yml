@@ -5,7 +5,7 @@ info:
 
 http:
   method: POST
-  url: "{{baseUrl}}/event"
+  url: "{{baseUrl}}/events"
   body:
     type: json
     data: |-
