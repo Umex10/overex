@@ -1,0 +1,47 @@
+info:
+  name: ok - event
+  type: http
+  seq: 6
+
+http:
+  method: GET
+  url: "{{baseUrl}}/event/{{eventId}}"
+  auth:
+    type: bearer
+    token: "{{accessTk}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        const event = res.getBody();
+
+        test("returns the requested event", function () {
+          expect(event.id).to.equal(bru.getVar("eventId"));
+        });
+
+        test("has every field the frontend reads", function () {
+          expect(event).to.include.all.keys(
+            "id", "title", "description", "venue", "city", "startsAt",
+            "saleStartsAt", "imageUrl", "status", "category"
+          );
+        });
+
+        test("carries its category", function () {
+          expect(event.category.id).to.be.a("string");
+          expect(event.category.title).to.be.a("string").and.not.be.empty;
+        });
+
+        test("opens the sale before the event starts", function () {
+          expect(new Date(event.saleStartsAt)).to.be.below(new Date(event.startsAt));
+        });
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "200"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

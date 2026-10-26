@@ -8,10 +8,11 @@ http:
   url: "{{baseUrl}}/event"
   body:
     type: json
-    data: |
+    data: |-
       {
         "title": "Frequency Festival 2027",
         "description": "Drei Tage Musik am Traisenpark in St. Pölten mit internationalen Headlinern.",
+        "categoryId": "{{categoryId}}",
         "venue": "Green Park",
         "city": "St. Pölten",
         "startsAt": "2027-08-12T14:00:00Z",
@@ -23,13 +24,22 @@ http:
     token: "{{accessTk}}"
 
 runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("names imageUrl as the invalid field", function () {
+          const fields = res.getBody().errors.map((e) => e.field);
+          expect(fields).to.include("imageUrl");
+        });
+
+        test("explains the error in a message", function () {
+          const error = res.getBody().errors.find((e) => e.field === "imageUrl");
+          expect(error.message).to.be.a("string").and.not.be.empty;
+        });
   assertions:
     - expression: res.status
       operator: eq
       value: "400"
-    - expression: res.body.errors[0].field
-      operator: eq
-      value: "imageUrl"
 
 settings:
   encodeUrl: true

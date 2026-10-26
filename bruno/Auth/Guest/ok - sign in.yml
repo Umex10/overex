@@ -1,0 +1,56 @@
+info:
+  name: ok - sign in
+  type: http
+  seq: 2
+
+http:
+  method: POST
+  url: "{{baseUrl}}/auth/sign-in"
+  body:
+    type: json
+    data: |-
+      {
+        "email": "mario@overex.test",
+        "password": "Kennwort123!"
+      }
+  auth:
+    type: none
+
+runtime:
+  scripts:
+    - type: after-response
+      code: |-
+        bru.setVar("accessTk", res.getBody().accessTk);
+        bru.setVar("accessTkExpiresAt", Date.now() + res.getBody().expiresIn * 1000 - 30000);
+    - type: tests
+      code: |-
+        const tk = res.getBody().accessTk;
+
+        test("returns an access token in JWT format", function () {
+          expect(tk.split(".")).to.have.lengthOf(3);
+        });
+
+        test("the token is an access token with the USER role", function () {
+          const atob = require("atob");
+          const part = tk.split(".")[1].replace(/-/g, "+").replace(/_/g, "/");
+          const payload = JSON.parse(atob(part));
+          expect(payload.type_tk).to.equal("ACCESS");
+          expect(payload.roles).to.include("USER");
+          expect(payload.email).to.equal("mario@overex.test");
+        });
+
+        test("sets the refresh token as an HttpOnly cookie", function () {
+          const cookie = [].concat(res.getHeader("set-cookie")).join(";");
+          expect(cookie).to.include("refresh_tk=");
+          expect(cookie).to.include("HttpOnly");
+        });
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "200"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
