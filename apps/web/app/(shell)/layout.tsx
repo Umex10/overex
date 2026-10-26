@@ -4,15 +4,15 @@ import { cn } from "@/lib/utils";
 
 import AuthProvider from "@/features/auth/components/auth-provider";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
-import { AppSidebar } from "@/components/app-sidebar";
+import { AppSidebar } from "@/features/shell/components/app-sidebar";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { SidebarLogo } from "@/components/sidebar-logo";
+import { SidebarLogo } from "@/features/shell/components/sidebar-logo";
 import SignInButton from "@/features/auth/components/sign-in-button";
-import { SearchBar } from "@/components/search-bar";
+import { SearchBar } from "@/features/shell/components/search-bar";
 import { Separator } from "@/components/ui/separator";
 import { useAppSelector } from "@/redux/hooks";
 
-import BreadcrumbsContainer from "@/components/BreadcrumbsContainer";
+import BreadcrumbsContainer from "@/features/shell/components/breadcrumbs-container";
 import { useGetMeQuery } from "@/features/user/user-api";
 
 /**

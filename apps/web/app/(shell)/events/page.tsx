@@ -4,7 +4,7 @@ import { useRef } from "react";
 import { ArrowDownIcon, ArrowUpIcon, type Icon } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/loader";
-import { SearchBar } from "@/components/search-bar";
+import { SearchBar } from "@/features/shell/components/search-bar";
 import { SearchParamToast } from "@/components/search-param-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { CategoryFilter } from "@/features/event/components/category-filter";
@@ -15,8 +15,8 @@ import { useEventList } from "@/features/event/hooks/use-event-list";
 import type { EventDto, EventSort } from "@/features/event/event-types";
 import { useAppDispatch } from "@/redux/hooks";
 import { useEffect } from "react";
-import { setShowSearch } from "@/redux/route-context-slice";
-import useBreadcrumbs from "@/hooks/use-breadcrumbs";
+import { setShowSearch } from "@/features/shell/route-context-slice";
+import useBreadcrumbs from "@/features/shell/hooks/use-breadcrumbs";
 
 /**
  * The sort button shows the current order; a click switches to `next`.

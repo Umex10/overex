@@ -1,12 +1,12 @@
 "use client";
 import { useGetEventQuery } from "@/features/event/event-api";
-import { setBreadcrumbs, setShowSearch } from "@/redux/route-context-slice";
+import { setBreadcrumbs, setShowSearch } from "@/features/shell/route-context-slice";
 import { useAppDispatch } from "@/redux/hooks";
 import { useParams, usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
 import { useIsMobile } from "@/hooks/use-mobile";
-import BreadcrumbsContainer from "@/components/BreadcrumbsContainer";
+import BreadcrumbsContainer from "@/features/shell/components/breadcrumbs-container";
 import Image from "next/image";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -15,7 +15,7 @@ import { CalendarBlankIcon, ClockIcon, MapPinIcon } from "@phosphor-icons/react"
 import DateFormat from "@/features/event/components/date-format";
 import TimeFormat from "@/features/event/components/time-format";
 import EventMetaItem from "@/features/event/components/event-meta-item";
-import useBreadcrumbs from "@/hooks/use-breadcrumbs";
+import useBreadcrumbs from "@/features/shell/hooks/use-breadcrumbs";
 
 export default function EventDetailsPage() {
   const { id } = useParams<{ id: string }>();

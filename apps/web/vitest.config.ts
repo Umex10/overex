@@ -33,18 +33,13 @@ export default defineConfig({
       include: [
         "proxy.ts",
         "features/**/*.ts",
-        "hooks/**/*.ts",
         "redux/**/*.ts",
       ],
       exclude: [
         // Only types, no code that could run.
         "**/*-types.ts",
-        "types/**",
         // RTK Query endpoints: wiring only, covered by the e2e tests.
         "**/*-api.ts",
-        // Helper hooks taken over from shadcn, not our own logic.
-        "hooks/use-mobile.ts",
-        "hooks/use-hydrated.ts",
         // Configuration only.
         "redux/store.ts",
         "redux/hooks.ts",

@@ -24,7 +24,7 @@ import {
 } from "@phosphor-icons/react";
 
 import { Button } from "@/components/ui/button";
-import { SidebarLogo } from "@/components/sidebar-logo";
+import { SidebarLogo } from "@/features/shell/components/sidebar-logo";
 
 import SignInButton from "@/features/auth/components/sign-in-button";
 import { useGetMeQuery } from "@/features/user/user-api";

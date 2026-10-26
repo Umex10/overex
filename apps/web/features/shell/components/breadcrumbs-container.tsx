@@ -1,6 +1,6 @@
 "use client";
 import { useGetEventQuery } from "@/features/event/event-api";
-import { setBreadcrumbs, setShowSearch } from "@/redux/route-context-slice";
+import { setBreadcrumbs, setShowSearch } from "@/features/shell/route-context-slice";
 import { useAppDispatch, useAppSelector } from "@/redux/hooks";
 import { usePathname } from "next/navigation";
 import { useEffect } from "react";
