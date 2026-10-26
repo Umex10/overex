@@ -10,8 +10,7 @@ import { SidebarLogo } from "@/components/sidebar-logo";
 import SignInButton from "@/features/auth/components/sign-in-button";
 import { SearchBar } from "@/components/search-bar";
 import { Separator } from "@/components/ui/separator";
-import { useSelector } from "react-redux";
-import { RootState } from "@/redux/store";
+import { useAppSelector } from "@/redux/hooks";
 
 import BreadcrumbsContainer from "@/components/BreadcrumbsContainer";
 import { useGetMeQuery } from "@/features/user/user-api";
@@ -31,9 +30,7 @@ export default function ShellLayout({
   children: React.ReactNode;
 }) {
   const isMobile = useIsMobile();
-  const { showSearch } = useSelector(
-    (state: RootState) => state.routeContextSate,
-  );
+  const { showSearch } = useAppSelector((state) => state.routeContext);
 
   const { data: me, isLoading: isLoadingMe } = useGetMeQuery();
 

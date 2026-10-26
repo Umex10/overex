@@ -1,10 +1,9 @@
 "use client";
 import { useGetEventQuery } from "@/features/event/event-api";
 import { setBreadcrumbs, setShowSearch } from "@/redux/route-context-slice";
-import { AppDispatch, RootState } from "@/redux/store";
+import { useAppDispatch } from "@/redux/hooks";
 import { useParams, usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
 
 import { useIsMobile } from "@/hooks/use-mobile";
 import BreadcrumbsContainer from "@/components/BreadcrumbsContainer";
@@ -22,7 +21,7 @@ export default function EventDetailsPage() {
   const { id } = useParams<{ id: string }>();
   const { data: event, isLoading: isLoadingEvent } = useGetEventQuery(id);
 
-  const dispatch = useDispatch<AppDispatch>();
+  const dispatch = useAppDispatch();
 
   const isMobile = useIsMobile();
 

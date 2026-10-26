@@ -25,6 +25,33 @@ export default defineConfig({
       ...(process.env.GITHUB_ACTIONS ? ["github-actions"] : []),
     ],
     outputFile: { junit: "test-reports/junit.xml" },
+    // Coverage only for logic (plain .ts: functions with input and output).
+    // React components (.tsx) are left to the Playwright e2e tests, so an
+    // untested button never lowers the number. Run with `npm run test:coverage`.
+    coverage: {
+      provider: "v8",
+      include: [
+        "proxy.ts",
+        "features/**/*.ts",
+        "hooks/**/*.ts",
+        "redux/**/*.ts",
+      ],
+      exclude: [
+        // Only types, no code that could run.
+        "**/*-types.ts",
+        "types/**",
+        // RTK Query endpoints: wiring only, covered by the e2e tests.
+        "**/*-api.ts",
+        // Helper hooks taken over from shadcn, not our own logic.
+        "hooks/use-mobile.ts",
+        "hooks/use-hydrated.ts",
+        // Configuration only.
+        "redux/store.ts",
+        "redux/hooks.ts",
+      ],
+      reporter: ["text", "html"],
+      reportsDirectory: "coverage",
+    },
   },
   resolve: {
     alias: {

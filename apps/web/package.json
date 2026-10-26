@@ -15,7 +15,8 @@
     "e2e:web": "cross-env NEXT_PUBLIC_BACKEND_URL=http://localhost:8081 NEXT_DIST_DIR=.next-e2e next build && cross-env NEXT_DIST_DIR=.next-e2e next start -p 3001",
     "test:e2e": "npm run e2e:db-up && playwright test; status=$?; fuser -k 8081/tcp 2>/dev/null; npm run e2e:db-down; exit $status",
     "test:e2e:ui": "npm run e2e:db-up && playwright test --ui; status=$?; fuser -k 8081/tcp 2>/dev/null; npm run e2e:db-down; exit $status",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
@@ -49,6 +50,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@vitejs/plugin-react": "^6.0.1",
+    "@vitest/coverage-v8": "^4.1.8",
     "cross-env": "^10.1.0",
     "eslint": "^9",
     "eslint-config-next": "16.2.3",

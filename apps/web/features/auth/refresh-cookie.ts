@@ -24,8 +24,11 @@ export function extractRefreshTk(
     const trimmed = header.trim();
     if (!trimmed.startsWith(prefix)) continue;
 
-    // "refresh_tk=<token>; HttpOnly; Path=/" -> "<token>". Cut at the first
-    // ";" only, never at "=": a value may contain "=" itself.
+    // "refresh_tk=aB3xY9kLm=; HttpOnly; Path=/"
+    //   slice  -> "aB3xY9kLm=; HttpOnly; Path=/"
+    //   split  -> ["aB3xY9kLm=", " HttpOnly", " Path=/"]
+    //   [0]    -> "aB3xY9kLm="
+    // Only cut at ";", never at "=": the token itself may end in "=".
     const value = trimmed.slice(prefix.length).split(";")[0].trim();
     return value || null;
   }

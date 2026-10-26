@@ -10,12 +10,18 @@ async function visit(path: string, withCookie: boolean) {
   });
   const response = await proxy(request);
   const location = response.headers.get("location");
-  return location ? new URL(location).pathname + new URL(location).search : null;
+  return location
+    ? new URL(location).pathname + new URL(location).search
+    : null;
 }
 
 describe("proxy (route gate on the refresh cookie)", () => {
   it("sends visitors without a cookie from protected pages to sign-in", async () => {
     expect(await visit("/my-tickets", false)).toBe("/sign-in");
+  });
+
+  it("does not treat paths that only start like /events as guest pages", async () => {
+    expect(await visit("/events-archive", false)).toBe("/sign-in");
   });
 
   it("lets visitors without a cookie browse the events (guest mode)", async () => {
@@ -38,7 +44,11 @@ describe("proxy (route gate on the refresh cookie)", () => {
     expect(await visit("/", true)).toBe("/events?redirected=1");
   });
 
-  it("lets signed-in users through to protected pages", async () => {
+  it("lets signed-in users browse the events", async () => {
     expect(await visit("/events", true)).toBeNull();
+  });
+
+  it("lets signed-in users through to protected pages", async () => {
+    expect(await visit("/my-tickets", true)).toBeNull();
   });
 });

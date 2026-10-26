@@ -1,10 +1,9 @@
 "use client";
 import { useGetEventQuery } from "@/features/event/event-api";
 import { setBreadcrumbs, setShowSearch } from "@/redux/route-context-slice";
-import { AppDispatch, RootState } from "@/redux/store";
+import { useAppDispatch, useAppSelector } from "@/redux/hooks";
 import { usePathname } from "next/navigation";
 import { useEffect } from "react";
-import { useDispatch, useSelector } from "react-redux";
 
 import {
   Breadcrumb,
@@ -20,11 +19,9 @@ import { Fragment } from "react";
 export default function BreadcrumbsContainer() {
   const path = usePathname();
   const segments = path.split("/").filter(Boolean); // ["events", "5"]
-  const dispatch = useDispatch<AppDispatch>();
+  const dispatch = useAppDispatch();
 
-  const { breadcrumbs } = useSelector(
-    (state: RootState) => state.routeContextSate,
-  );
+  const { breadcrumbs } = useAppSelector((state) => state.routeContext);
 
   useEffect(() => {
     dispatch(setBreadcrumbs(segments));

@@ -13,8 +13,7 @@ import { EventPagination } from "@/features/event/components/event-pagination";
 import { FeaturedEventCard } from "@/features/event/components/featured-event-card";
 import { useEventList } from "@/features/event/hooks/use-event-list";
 import type { EventDto, EventSort } from "@/features/event/event-types";
-import { useDispatch } from "react-redux";
-import { AppDispatch } from "@/redux/store";
+import { useAppDispatch } from "@/redux/hooks";
 import { useEffect } from "react";
 import { setShowSearch } from "@/redux/route-context-slice";
 import useBreadcrumbs from "@/hooks/use-breadcrumbs";
@@ -77,7 +76,7 @@ export default function EventPage() {
   // the new page from its first event.
   const listStartRef = useRef<HTMLDivElement>(null);
 
-  const dispatch = useDispatch<AppDispatch>();
+  const dispatch = useAppDispatch();
 
   useBreadcrumbs();
 

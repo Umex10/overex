@@ -29,6 +29,21 @@ describe("signUpSchema", () => {
     expect(failedFields(result)).toEqual(["password"]);
   });
 
+  it("requires at least 2 name characters", () => {
+    const result = signUpSchema.safeParse({ ...validSignUp, name: "A" });
+    expect(failedFields(result)).toEqual(["name"]);
+  });
+
+  it("trims before counting: spaces do not make a name long enough", () => {
+    const result = signUpSchema.safeParse({ ...validSignUp, name: "  A  " });
+    expect(failedFields(result)).toEqual(["name"]);
+  });
+
+  it("requires at least 10 phone characters", () => {
+    const result = signUpSchema.safeParse({ ...validSignUp, phone: "066012345" });
+    expect(failedFields(result)).toEqual(["phone"]);
+  });
+
   it("requires the terms to be accepted", () => {
     const result = signUpSchema.safeParse({ ...validSignUp, terms: false });
     expect(failedFields(result)).toEqual(["terms"]);

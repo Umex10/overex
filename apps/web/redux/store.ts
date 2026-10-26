@@ -17,7 +17,7 @@ export const makeStore = () =>
   configureStore({
     reducer: {
       [apiSlice.reducerPath]: apiSlice.reducer,
-      routeContextSate: routeContextSlice.reducer
+      routeContext: routeContextSlice.reducer
     },
     middleware: (getDefaultMiddleware) =>
       getDefaultMiddleware().concat(apiSlice.middleware),
