@@ -1,5 +1,6 @@
 // @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { AppStore } from "@/redux/store";
 
 // The server action is replaced: it would need a Next.js request context.
 const getAccessTkAction = vi.fn();
@@ -10,23 +11,22 @@ vi.mock("@/features/auth/auth-actions", () => ({
 }));
 
 const { makeStore } = await import("@/redux/store");
-const { apiSlice } = await import("@/redux/api-slice");
-await import("@/features/auth/auth-api"); // injects getAccessTk
-await import("@/features/user/user-api"); // injects getMe
+const { authApi } = await import("@/features/auth/auth-api"); // injects getAccessTk
+const { meApi } = await import("@/features/user/user-api"); // injects getMe
 
-/** Endpoints are injected at runtime, so the test looks them up untyped. */
-const endpoints = apiSlice.endpoints as unknown as {
-  getMe: { initiate: () => Parameters<ReturnType<typeof makeStore>["dispatch"]>[0] };
-};
+let store: AppStore;
 
-/** A store whose cached access token has expired meanwhile. */
-async function storeWithExpiredToken() {
-  const store = makeStore();
+beforeEach(() => {
+  store = makeStore();
+  getAccessTkAction.mockReset();
+});
+
+/** Puts the given access token into the store's cache, as a sign-in would. */
+async function cacheAccessTk(accessTk: string) {
   // upsert is async: wait until the token is really in the cache.
   await store.dispatch(
-    apiSlice.util.upsertQueryData("getAccessTk" as never, undefined as never, { accessTk: "expired" } as never),
+    authApi.util.upsertQueryData("getAccessTk", undefined, { accessTk, expiresIn: 900 }),
   );
-  return store;
 }
 
 /** Fake backend for GET /me: only the token "fresh" is accepted. */
@@ -37,35 +37,72 @@ function mockBackend() {
     const auth = request.headers.get("authorization");
     seenTokens.push(auth);
     return auth === "Bearer fresh"
-      ? new Response(JSON.stringify({ name: "Max" }), { status: 200, headers: { "content-type": "application/json" } })
-      : new Response("{}", { status: 401, headers: { "content-type": "application/json" } });
+      ? new Response(JSON.stringify({ name: "Max" }), {
+          status: 200,
+          headers: { "content-type": "application/json" },
+        })
+      : new Response("{}", {
+          status: 401,
+          headers: { "content-type": "application/json" },
+        });
   }) as typeof fetch;
   return seenTokens;
 }
 
-describe("automatic access-token renewal", () => {
-  beforeEach(() => getAccessTkAction.mockReset());
-
-  it("renews an expired access token once and repeats the request", async () => {
-    const store = await storeWithExpiredToken();
+describe("baseQueryWithReauth: renew the access token on 401 and retry once", () => {
+  it("sends the cached token and renews nothing when the request succeeds", async () => {
+    await cacheAccessTk("fresh");
     const seenTokens = mockBackend();
-    getAccessTkAction.mockResolvedValue({ success: true, data: { accessTk: "fresh", expiresIn: 900 } });
 
-    const result = await store.dispatch(endpoints.getMe.initiate());
+    const result = await store.dispatch(meApi.endpoints.getMe.initiate());
 
-    expect((result as { data?: unknown }).data).toEqual({ name: "Max" });
+    expect(result.data).toEqual({ name: "Max" });
+    expect(seenTokens).toEqual(["Bearer fresh"]);
+    expect(getAccessTkAction).not.toHaveBeenCalled();
+  });
+
+  it("renews a rejected token once and repeats the request with the new one", async () => {
+    await cacheAccessTk("expired");
+    const seenTokens = mockBackend();
+    getAccessTkAction.mockResolvedValue({
+      success: true,
+      data: { accessTk: "fresh", expiresIn: 900 },
+    });
+
+    const result = await store.dispatch(meApi.endpoints.getMe.initiate());
+
+    expect(result.data).toEqual({ name: "Max" });
     expect(seenTokens).toEqual(["Bearer expired", "Bearer fresh"]);
     expect(getAccessTkAction).toHaveBeenCalledTimes(1);
   });
 
-  it("gives up when the refresh cookie is rejected too", async () => {
-    const store = await storeWithExpiredToken();
+  it("gives up without a second request when the renewal fails too", async () => {
+    await cacheAccessTk("expired");
     const seenTokens = mockBackend();
-    getAccessTkAction.mockResolvedValue({ success: false, error: { status: 401, message: "Invalid refresh token" } });
+    getAccessTkAction.mockResolvedValue({
+      success: false,
+      error: { status: 401, message: "Invalid refresh token" },
+    });
 
-    const result = await store.dispatch(endpoints.getMe.initiate());
+    const result = await store.dispatch(meApi.endpoints.getMe.initiate());
 
-    expect((result as { error?: { status?: number } }).error?.status).toBe(401);
+    expect(result.error).toMatchObject({ status: 401 });
     expect(seenTokens).toEqual(["Bearer expired"]); // no second attempt without a new token
+  });
+
+  it("sends no Authorization header without a token, then retries with a renewed one", async () => {
+    // Will not go inside the if block at the first request, since tk is "" and therefore falsy
+    await cacheAccessTk("");
+    const seenTokens = mockBackend();
+    getAccessTkAction.mockResolvedValue({
+      success: true,
+      data: { accessTk: "fresh", expiresIn: 900 },
+    });
+
+    const result = await store.dispatch(meApi.endpoints.getMe.initiate());
+
+    expect(result.data).toEqual({ name: "Max" });
+    expect(seenTokens).toEqual([null, "Bearer fresh"]);
+    expect(getAccessTkAction).toHaveBeenCalledTimes(1);
   });
 });

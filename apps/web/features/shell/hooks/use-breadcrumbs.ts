@@ -1,3 +1,5 @@
+"use client" 
+
 import { setBreadcrumbs, setShowSearch } from "@/features/shell/route-context-slice";
 import { useAppDispatch } from "@/redux/hooks";
 import { usePathname } from "next/navigation";
@@ -11,5 +13,5 @@ export default function useBreadcrumbs() {
 
   useEffect(() => {
     dispatch(setBreadcrumbs(segments));
-  }, [dispatch]);
+  }, [dispatch, path]);
 }

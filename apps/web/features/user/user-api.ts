@@ -8,7 +8,7 @@ import { apiSlice } from "@/redux/api-slice";
  * by the shared `prepareHeaders` in {@link apiSlice}. `AuthProvider` loads the
  * current user with it before any protected page renders.
  */
-const meApi = apiSlice.injectEndpoints({
+export const meApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     getMe: builder.query<User, void>({
       query: () => `/me`,

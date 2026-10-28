@@ -15,7 +15,6 @@ import { CalendarBlankIcon, ClockIcon, MapPinIcon } from "@phosphor-icons/react"
 import DateFormat from "@/features/event/components/date-format";
 import TimeFormat from "@/features/event/components/time-format";
 import EventMetaItem from "@/features/event/components/event-meta-item";
-import useBreadcrumbs from "@/features/shell/hooks/use-breadcrumbs";
 
 export default function EventDetailsPage() {
   const { id } = useParams<{ id: string }>();
@@ -26,8 +25,6 @@ export default function EventDetailsPage() {
   const isMobile = useIsMobile();
 
   const [showMore, setShowMore] = useState<boolean>(false);
-
-  useBreadcrumbs();
 
   useEffect(() => {
     dispatch(setShowSearch(false));

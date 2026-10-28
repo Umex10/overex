@@ -16,7 +16,6 @@ import type { EventDto, EventSort } from "@/features/event/event-types";
 import { useAppDispatch } from "@/redux/hooks";
 import { useEffect } from "react";
 import { setShowSearch } from "@/features/shell/route-context-slice";
-import useBreadcrumbs from "@/features/shell/hooks/use-breadcrumbs";
 
 /**
  * The sort button shows the current order; a click switches to `next`.
@@ -77,8 +76,6 @@ export default function EventPage() {
   const listStartRef = useRef<HTMLDivElement>(null);
 
   const dispatch = useAppDispatch();
-
-  useBreadcrumbs();
 
   useEffect(() => {
     dispatch(setShowSearch(false));

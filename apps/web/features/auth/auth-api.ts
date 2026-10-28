@@ -16,7 +16,7 @@ import type { SignInFormValues, SignUpFormValues } from "@/features/auth/auth-va
  * Errors are the backend's error body ({@link ApiErrorBody}); the pages read
  * `message` and, for sign-up, `errors` from it.
  */
-const authApi = apiSlice.injectEndpoints({
+export const authApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     signUp: builder.mutation<AuthResponseDto, SignUpFormValues>({
       async queryFn(signUpData) {

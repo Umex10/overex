@@ -4,7 +4,7 @@ import { useGetEventsQuery } from "@/features/event/event-api";
 import type { EventSort } from "@/features/event/event-types";
 
 /** Events per page. */
-const PAGE_SIZE = 10;
+export const PAGE_SIZE = 10;
 
 /**
  * State and data of the event list: the selected page, sort order and
