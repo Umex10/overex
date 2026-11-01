@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { signInSchema, signUpSchema } from "@/features/auth/auth-validation";
 
-const validSignUp = {
+// --- Test data -------------------------------------------------------------
+
+const validSignUpForm = {
   name: "Max Mustermann",
   email: "max@example.com",
   phone: "+43660123456",
@@ -9,43 +11,47 @@ const validSignUp = {
   terms: true,
 };
 
+// --- Helpers ---------------------------------------------------------------
+
 /** The field names that failed, e.g. ["password"]. */
 function failedFields(result: { success: boolean; error?: { issues: { path: PropertyKey[] }[] } }) {
   return result.success ? [] : result.error!.issues.map((issue) => issue.path[0]);
 }
 
+// --- Tests -----------------------------------------------------------------
+
 describe("signUpSchema", () => {
   it("accepts a complete, valid form", () => {
-    expect(signUpSchema.safeParse(validSignUp).success).toBe(true);
+    expect(signUpSchema.safeParse(validSignUpForm).success).toBe(true);
   });
 
   it("trims pasted spaces around the email instead of rejecting it", () => {
-    const result = signUpSchema.parse({ ...validSignUp, email: "  max@example.com " });
+    const result = signUpSchema.parse({ ...validSignUpForm, email: "  max@example.com " });
     expect(result.email).toBe("max@example.com");
   });
 
   it("requires at least 8 password characters, like the backend", () => {
-    const result = signUpSchema.safeParse({ ...validSignUp, password: "1234567" });
+    const result = signUpSchema.safeParse({ ...validSignUpForm, password: "1234567" });
     expect(failedFields(result)).toEqual(["password"]);
   });
 
   it("requires at least 2 name characters", () => {
-    const result = signUpSchema.safeParse({ ...validSignUp, name: "A" });
+    const result = signUpSchema.safeParse({ ...validSignUpForm, name: "A" });
     expect(failedFields(result)).toEqual(["name"]);
   });
 
   it("trims before counting: spaces do not make a name long enough", () => {
-    const result = signUpSchema.safeParse({ ...validSignUp, name: "  A  " });
+    const result = signUpSchema.safeParse({ ...validSignUpForm, name: "  A  " });
     expect(failedFields(result)).toEqual(["name"]);
   });
 
   it("requires at least 10 phone characters", () => {
-    const result = signUpSchema.safeParse({ ...validSignUp, phone: "066012345" });
+    const result = signUpSchema.safeParse({ ...validSignUpForm, phone: "066012345" });
     expect(failedFields(result)).toEqual(["phone"]);
   });
 
   it("requires the terms to be accepted", () => {
-    const result = signUpSchema.safeParse({ ...validSignUp, terms: false });
+    const result = signUpSchema.safeParse({ ...validSignUpForm, terms: false });
     expect(failedFields(result)).toEqual(["terms"]);
   });
 
@@ -55,7 +61,7 @@ describe("signUpSchema", () => {
   });
 
   it("has no role field: a smuggled role is dropped from the parsed values", () => {
-    const result = signUpSchema.parse({ ...validSignUp, role: "ADMIN" });
+    const result = signUpSchema.parse({ ...validSignUpForm, role: "ADMIN" });
     expect(result).not.toHaveProperty("role");
   });
 });

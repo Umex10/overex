@@ -2,6 +2,8 @@
 import { describe, expect, it } from "vitest";
 import { NextRequest } from "next/server";
 import { proxy } from "@/proxy";
+// --- Helpers ---------------------------------------------------------------
+
 
 /** Runs the proxy for a path, with or without the refresh cookie. */
 async function visit(path: string, withCookie: boolean) {
@@ -15,7 +17,9 @@ async function visit(path: string, withCookie: boolean) {
     : null;
 }
 
-describe("proxy (route gate on the refresh cookie)", () => {
+// --- Tests -----------------------------------------------------------------
+
+describe("proxy", () => {
   it("sends visitors without a cookie from protected pages to sign-in", async () => {
     expect(await visit("/my-tickets", false)).toBe("/sign-in");
   });

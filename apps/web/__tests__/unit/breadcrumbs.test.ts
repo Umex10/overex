@@ -5,18 +5,24 @@ import { createElement } from "react";
 import { Provider } from "react-redux";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+// --- Mocks -----------------------------------------------------------------
+
 // usePathname is replaced, so each test decides which page is open.
-const path = vi.fn();
+const pathname = vi.fn();
 vi.mock("next/navigation", () => ({
-  usePathname: () => path(),
+  usePathname: () => pathname(),
 }));
+
+// --- Setup -----------------------------------------------------------------
 
 let store: AppStore;
 
 beforeEach(() => {
   store = makeStore();
-  path.mockReset();
+  pathname.mockReset();
 });
+
+// --- Helpers ---------------------------------------------------------------
 
 /** Runs the hook inside the test store; `rerender` simulates a navigation. */
 function renderUseBreadcrumbs() {
@@ -27,36 +33,38 @@ function renderUseBreadcrumbs() {
   return rerender;
 }
 
-function breadcrumbs() {
+function storedBreadcrumbs() {
   return store.getState().routeContext.breadcrumbs;
 }
 
+// --- Tests -----------------------------------------------------------------
+
 describe("useBreadcrumbs", () => {
   it("splits the current path into its segments", () => {
-    path.mockReturnValue("/events/5");
+    pathname.mockReturnValue("/events/5");
 
     renderUseBreadcrumbs();
 
-    expect(breadcrumbs()).toEqual(["events", "5"]);
+    expect(storedBreadcrumbs()).toEqual(["events", "5"]);
   });
 
   it("updates the segments when the path changes without remounting", () => {
     // Not "/events" at the start: that is the store's initial value and
     // would pass even if the hook never wrote anything.
-    path.mockReturnValue("/events/5");
+    pathname.mockReturnValue("/events/5");
     const rerender = renderUseBreadcrumbs();
 
-    path.mockReturnValue("/my-tickets");
+    pathname.mockReturnValue("/my-tickets");
     rerender();
 
-    expect(breadcrumbs()).toEqual(["my-tickets"]);
+    expect(storedBreadcrumbs()).toEqual(["my-tickets"]);
   });
 
   it("leaves no empty segments for the root path", () => {
-    path.mockReturnValue("/");
+    pathname.mockReturnValue("/");
 
     renderUseBreadcrumbs();
 
-    expect(breadcrumbs()).toEqual([]);
+    expect(storedBreadcrumbs()).toEqual([]);
   });
 });

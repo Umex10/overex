@@ -5,6 +5,8 @@ import { act, renderHook } from "@testing-library/react";
 import { Dispatch, SetStateAction } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+// --- Mocks -----------------------------------------------------------------
+
 const useGetEventsQuery = vi.fn();
 const useGetCategoriesQuery = vi.fn();
 
@@ -23,10 +25,14 @@ vi.mock("@/features/event/category-api", () => ({
   useGetCategoriesQuery: () => useGetCategoriesQuery(),
 }));
 
+// --- Setup -----------------------------------------------------------------
+
 beforeEach(() => {
   useGetEventsQuery.mockReset();
   useGetCategoriesQuery.mockReset();
 });
+
+// --- Helpers ---------------------------------------------------------------
 
 function renderUseEventList() {
   const { result } = renderHook(() => useEventList());
@@ -34,8 +40,10 @@ function renderUseEventList() {
   return result.current;
 }
 
+// --- Tests -----------------------------------------------------------------
+
 describe("useEventList", () => {
-  it("calls the query with the correct arguments", () => {
+  it("passes page, sort and category to the events query and resets the page when sort or category change", () => {
     useGetEventsQuery.mockReturnValue({ data: undefined, isLoading: false });
     useGetCategoriesQuery.mockReturnValue({
       data: undefined,

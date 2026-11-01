@@ -2,6 +2,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { AppStore } from "@/redux/store";
 
+// --- Mocks -----------------------------------------------------------------
+
 // The server action is replaced: it would need a Next.js request context.
 const getAccessTkAction = vi.fn();
 vi.mock("@/features/auth/auth-actions", () => ({
@@ -14,6 +16,8 @@ const { makeStore } = await import("@/redux/store");
 const { authApi } = await import("@/features/auth/auth-api"); // injects getAccessTk
 const { meApi } = await import("@/features/user/user-api"); // injects getMe
 
+// --- Setup -----------------------------------------------------------------
+
 let store: AppStore;
 
 beforeEach(() => {
@@ -21,8 +25,10 @@ beforeEach(() => {
   getAccessTkAction.mockReset();
 });
 
+// --- Arrange helpers -------------------------------------------------------
+
 /** Puts the given access token into the store's cache, as a sign-in would. */
-async function cacheAccessTk(accessTk: string) {
+async function storeHasAccessTk(accessTk: string) {
   // upsert is async: wait until the token is really in the cache.
   await store.dispatch(
     authApi.util.upsertQueryData("getAccessTk", undefined, { accessTk, expiresIn: 900 }),
@@ -30,7 +36,7 @@ async function cacheAccessTk(accessTk: string) {
 }
 
 /** Fake backend for GET /me: only the token "fresh" is accepted. */
-function mockBackend() {
+function backendAcceptsOnlyFreshToken() {
   const seenTokens: (string | null)[] = [];
   globalThis.fetch = vi.fn(async (input: RequestInfo | URL) => {
     const request = input as Request;
@@ -49,10 +55,12 @@ function mockBackend() {
   return seenTokens;
 }
 
-describe("baseQueryWithReauth: renew the access token on 401 and retry once", () => {
+// --- Tests -----------------------------------------------------------------
+
+describe("baseQueryWithReauth", () => {
   it("sends the cached token and renews nothing when the request succeeds", async () => {
-    await cacheAccessTk("fresh");
-    const seenTokens = mockBackend();
+    await storeHasAccessTk("fresh");
+    const seenTokens = backendAcceptsOnlyFreshToken();
 
     const result = await store.dispatch(meApi.endpoints.getMe.initiate());
 
@@ -62,8 +70,8 @@ describe("baseQueryWithReauth: renew the access token on 401 and retry once", ()
   });
 
   it("renews a rejected token once and repeats the request with the new one", async () => {
-    await cacheAccessTk("expired");
-    const seenTokens = mockBackend();
+    await storeHasAccessTk("expired");
+    const seenTokens = backendAcceptsOnlyFreshToken();
     getAccessTkAction.mockResolvedValue({
       success: true,
       data: { accessTk: "fresh", expiresIn: 900 },
@@ -77,8 +85,8 @@ describe("baseQueryWithReauth: renew the access token on 401 and retry once", ()
   });
 
   it("gives up without a second request when the renewal fails too", async () => {
-    await cacheAccessTk("expired");
-    const seenTokens = mockBackend();
+    await storeHasAccessTk("expired");
+    const seenTokens = backendAcceptsOnlyFreshToken();
     getAccessTkAction.mockResolvedValue({
       success: false,
       error: { status: 401, message: "Invalid refresh token" },
@@ -92,8 +100,8 @@ describe("baseQueryWithReauth: renew the access token on 401 and retry once", ()
 
   it("sends no Authorization header without a token, then retries with a renewed one", async () => {
     // Will not go inside the if block at the first request, since tk is "" and therefore falsy
-    await cacheAccessTk("");
-    const seenTokens = mockBackend();
+    await storeHasAccessTk("");
+    const seenTokens = backendAcceptsOnlyFreshToken();
     getAccessTkAction.mockResolvedValue({
       success: true,
       data: { accessTk: "fresh", expiresIn: 900 },
