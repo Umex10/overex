@@ -2,10 +2,13 @@
 import { describe, expect, it } from "vitest";
 import { NextRequest } from "next/server";
 import { proxy } from "@/proxy";
+
 // --- Helpers ---------------------------------------------------------------
 
-
-/** Runs the proxy for a path, with or without the refresh cookie. */
+/**
+ * Runs the proxy for a path, with or without the refresh cookie, and returns
+ * where it redirects to (path + query), or null when it lets the request pass.
+ */
 async function visit(path: string, withCookie: boolean) {
   const request = new NextRequest(new URL(path, "http://localhost:3000"), {
     headers: withCookie ? { cookie: "refresh_tk=some-token" } : {},
@@ -21,38 +24,75 @@ async function visit(path: string, withCookie: boolean) {
 
 describe("proxy", () => {
   it("sends visitors without a cookie from protected pages to sign-in", async () => {
-    expect(await visit("/my-tickets", false)).toBe("/sign-in");
+    // Act
+    const redirect = await visit("/my-tickets", false);
+
+    // Assert
+    expect(redirect).toBe("/sign-in");
   });
 
   it("does not treat paths that only start like /events as guest pages", async () => {
-    expect(await visit("/events-archive", false)).toBe("/sign-in");
+    // Act
+    const redirect = await visit("/events-archive", false);
+
+    // Assert
+    expect(redirect).toBe("/sign-in");
   });
 
-  it("lets visitors without a cookie browse the events (guest mode)", async () => {
-    expect(await visit("/events", false)).toBeNull();
-    expect(await visit("/events/some-id", false)).toBeNull();
-  });
+  it.each(["/events", "/events/some-id"])(
+    "lets visitors without a cookie browse %s (guest mode)",
+    async (path) => {
+      // Act
+      const redirect = await visit(path, false);
 
-  it("lets visitors without a cookie see the landing and auth pages", async () => {
-    expect(await visit("/", false)).toBeNull();
-    expect(await visit("/sign-in", false)).toBeNull();
-    expect(await visit("/sign-up", false)).toBeNull();
-  });
+      // Assert
+      expect(redirect).toBeNull();
+    },
+  );
 
-  it("forwards signed-in users from the auth pages to the dashboard", async () => {
-    expect(await visit("/sign-in", true)).toBe("/events");
-    expect(await visit("/sign-up", true)).toBe("/events");
-  });
+  it.each(["/", "/sign-in", "/sign-up"])(
+    "lets visitors without a cookie see %s",
+    async (path) => {
+      // Act
+      const redirect = await visit(path, false);
+
+      // Assert
+      expect(redirect).toBeNull();
+    },
+  );
+
+  it.each(["/sign-in", "/sign-up"])(
+    "forwards signed-in users from %s to the dashboard",
+    async (path) => {
+      // Act
+      const redirect = await visit(path, true);
+
+      // Assert
+      expect(redirect).toBe("/events");
+    },
+  );
 
   it("forwards signed-in users from the landing page with the 'redirected' flag", async () => {
-    expect(await visit("/", true)).toBe("/events?redirected=1");
+    // Act
+    const redirect = await visit("/", true);
+
+    // Assert
+    expect(redirect).toBe("/events?redirected=1");
   });
 
   it("lets signed-in users browse the events", async () => {
-    expect(await visit("/events", true)).toBeNull();
+    // Act
+    const redirect = await visit("/events", true);
+
+    // Assert
+    expect(redirect).toBeNull();
   });
 
   it("lets signed-in users through to protected pages", async () => {
-    expect(await visit("/my-tickets", true)).toBeNull();
+    // Act
+    const redirect = await visit("/my-tickets", true);
+
+    // Assert
+    expect(redirect).toBeNull();
   });
 });

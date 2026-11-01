@@ -6,7 +6,8 @@ out of the box.
 | Layer | Tool | Location | What it proves |
 |-------|------|----------|----------------|
 | Backend unit, slice + integration | JUnit 5, Mockito, MockMvc, Spring Security Test | `apps/backend/src/test` | Token logic, key loading, sign-up rules, the auth endpoints, token verification, role-based access, the JWKS endpoint |
-| Web unit | Vitest + Testing Library | `apps/web/__tests__/unit` | Form rules, cookie parsing, route gate (`proxy.ts`), access-token renewal, components |
+| Web unit | Vitest + Testing Library | `apps/web/__tests__/unit` | Form rules, cookie parsing, route gate (`proxy.ts`), components |
+| Web integration | Vitest | `apps/web/__tests__/integration` | Access-token renewal: 401 → refresh → retry through the real store and RTK Query, only the network mocked |
 | Web end-to-end | Playwright (Chromium) | `apps/web/__tests__/e2e` | The real browser flow against the real backend + database |
 
 ---

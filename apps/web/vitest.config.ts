@@ -4,16 +4,24 @@ import path from "path";
 
 /**
  * Vitest config for fast, browser-free unit/component tests (jsdom).
- * Only picks up files under __tests__/unit; the Playwright e2e folder is
- * excluded so the two suites never collide.
+ * Picks up the unit tests (__tests__/unit) and the integration tests
+ * (__tests__/integration: several real units together, only the network
+ * mocked). Both run in the same command; the Playwright e2e folder is
+ * excluded so the suites never collide.
  */
 export default defineConfig({
   plugins: [react()],
   test: {
     environment: "jsdom",
     globals: true,
-    setupFiles: ["./__tests__/unit/setup.ts"],
-    include: ["__tests__/unit/**/*.{test,spec}.{ts,tsx}"],
+    setupFiles: ["./__tests__/setup.ts"],
+    // Puts back every global replaced with vi.stubGlobal (fetch, location …)
+    // after each test, so no fake leaks into the next one.
+    unstubGlobals: true,
+    include: [
+      "__tests__/unit/**/*.{test,spec}.{ts,tsx}",
+      "__tests__/integration/**/*.{test,spec}.{ts,tsx}",
+    ],
     exclude: ["__tests__/e2e/**", "node_modules/**"],
     // Console output plus a JUnit XML file with every test (name, duration,
     // error message of failed ones), locally and on CI. On GitHub Actions
@@ -34,6 +42,9 @@ export default defineConfig({
         "proxy.ts",
         "features/**/*.ts",
         "redux/**/*.ts",
+        // Exception to the .ts rule: the session gate decides between logout
+        // and retry, and the "backend down" case is hard to reach in e2e.
+        "features/auth/components/auth-provider.tsx",
       ],
       exclude: [
         // Only types, no code that could run.

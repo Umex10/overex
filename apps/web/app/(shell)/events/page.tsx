@@ -12,7 +12,8 @@ import { EventCard } from "@/features/event/components/event-card";
 import { EventPagination } from "@/features/event/components/event-pagination";
 import { FeaturedEventCard } from "@/features/event/components/featured-event-card";
 import { useEventList } from "@/features/event/hooks/use-event-list";
-import type { EventDto, EventSort } from "@/features/event/event-types";
+import type { EventSort } from "@/features/event/event-types";
+import { pickFeaturedEvent } from "@/features/event/featured-event";
 import { useAppDispatch } from "@/redux/hooks";
 import { useEffect } from "react";
 import { setShowSearch } from "@/features/shell/route-context-slice";
@@ -36,20 +37,6 @@ const SORT_TOGGLE: Record<
     next: "startsAt,asc",
   },
 };
-
-/**
- * The event whose sale opens next; if every sale has started already, the
- * first event of the list.
- */
-function pickFeaturedEvent(events: EventDto[]): EventDto | undefined {
-  const now = Date.now();
-  return (
-    events
-      .filter((e) => new Date(e.saleStartsAt).getTime() > now)
-      .sort((a, b) => a.saleStartsAt.localeCompare(b.saleStartsAt))[0] ??
-    events[0]
-  );
-}
 
 /**
  * Event overview at `/events`: a featured event on top, below it the event list
