@@ -40,7 +40,11 @@ export async function signOut(page: Page) {
   await expect(page).toHaveURL("/sign-in");
 }
 
-/** The dashboard greets the user and shows the account loaded via GET /me. */
-export async function expectEventFor(page: Page, account: TestAccount) {
+/**
+ * Signed in and on the events page. The sidebar only offers "sign out" once
+ * GET /me has returned the user, so this also proves the session works.
+ */
+export async function expectSignedIn(page: Page) {
   await expect(page).toHaveURL(/\/events/);
+  await expect(page.getByTestId("header-sign-out-button")).toBeVisible();
 }

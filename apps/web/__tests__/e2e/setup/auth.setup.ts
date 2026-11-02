@@ -5,13 +5,15 @@
  */
 import { test as setup } from "@playwright/test";
 import { bootstrapAccount } from "../utils/accounts";
-import { expectEventFor, openSignUp, submitSignUp } from "../utils/flows";
+import { expectSignedIn, openSignUp, submitSignUp } from "../utils/flows";
 
-setup("register the bootstrap account", async ({ page }) => {
+setup("registers the bootstrap account and saves its session", async ({ page }) => {
+  // Act
   await openSignUp(page);
   await submitSignUp(page, bootstrapAccount);
 
-  await expectEventFor(page, bootstrapAccount);
+  // Assert
+  await expectSignedIn(page);
 
   await page.context().storageState({ path: "playwright/.auth/chromium.json" });
 });

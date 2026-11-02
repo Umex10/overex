@@ -1,6 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { bootstrapAccount } from "./utils/accounts";
-import { expectEventFor, signOut } from "./utils/flows";
+import { expectSignedIn, signOut } from "./utils/flows";
 
 /**
  * Specs that start signed in as the bootstrap account (storage state from
@@ -8,45 +7,72 @@ import { expectEventFor, signOut } from "./utils/flows";
  * one test does not affect the others.
  */
 test.describe("Signed in", () => {
-  test("reloading the dashboard keeps the session (silent refresh)", async ({ page }) => {
-    // A full page load starts with an empty Redux cache: the access token is
-    // fetched again with the refresh cookie before GET /me can succeed.
+  test("stays signed in after a reload (silent refresh)", async ({ page }) => {
+    // Arrange
     await page.goto("/events");
-    await expectEventFor(page, bootstrapAccount);
+    await expectSignedIn(page);
 
+    // Act: a full page load starts with an empty Redux cache, so the access
+    // token has to be fetched again with the refresh cookie before GET /me.
     await page.reload();
-    await expectEventFor(page, bootstrapAccount);
+
+    // Assert
+    await expectSignedIn(page);
   });
 
-  test("landing and auth pages forward to event", async ({ page }) => {
-    await page.goto("/sign-in");
-    await expect(page).toHaveURL("/events");
+  for (const path of ["/sign-in", "/sign-up"]) {
+    test(`forwards from ${path} to the events`, async ({ page }) => {
+      // Act
+      await page.goto(path);
 
-    await page.goto("/sign-up");
-    await expect(page).toHaveURL("/events");
+      // Assert
+      await expect(page).toHaveURL("/events");
+    });
+  }
 
+  test("forwards from the landing page to the events with the 'redirected' flag", async ({
+    page,
+  }) => {
+    // Act
     await page.goto("/");
+
+    // Assert
     await expect(page).toHaveURL("/events?redirected=1");
   });
 
-  // test("signing out ends the session", async ({ page, context }) => {
-  //   await page.goto("/events");
-  //   await expectEventFor(page, bootstrapAccount);
-
-  //   await signOut(page);
-
-  //   expect((await context.cookies()).some((c) => c.name === "refresh_tk")).toBe(false);
-  //   await page.goto("/events");
-  //   await expect(page).toHaveURL("/sign-in");
-  // });
-
-  test("the refresh token is out of reach for page scripts", async ({ page, context }) => {
+  test("deletes the refresh cookie and falls back to guest mode when signing out", async ({
+    page,
+    context,
+  }) => {
+    // Arrange
     await page.goto("/events");
-    await expectEventFor(page, bootstrapAccount);
+    await expectSignedIn(page);
 
+    // Act
+    await signOut(page);
+
+    // Assert
+    expect((await context.cookies()).some((c) => c.name === "refresh_tk")).toBe(false);
+    await page.goto("/events");
+    await expect(page).toHaveURL("/events"); 
+    await expect(page.getByTestId("header-sign-out-button")).not.toBeVisible(); // guest mode: no redirect to sign-in
+  });
+
+  test("keeps the refresh cookie HttpOnly and SameSite=Lax, out of reach for page scripts", async ({
+    page,
+    context,
+  }) => {
+    // Arrange
+    await page.goto("/events");
+    await expectSignedIn(page);
+
+    // Act
     const cookie = (await context.cookies()).find((c) => c.name === "refresh_tk");
+    const scriptCookies = await page.evaluate(() => document.cookie);
+
+    // Assert
     expect(cookie?.httpOnly).toBe(true); // XSS cannot read it
     expect(cookie?.sameSite).toBe("Lax"); // not sent with cross-site POSTs (CSRF)
-    expect(await page.evaluate(() => document.cookie)).not.toContain("refresh_tk");
+    expect(scriptCookies).not.toContain("refresh_tk");
   });
 });

@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { bootstrapAccount, newAccount } from "./utils/accounts";
 import {
-  expectEventFor,
+  expectSignedIn,
   openSignIn,
   openSignUp,
   submitSignIn,
@@ -15,92 +15,128 @@ import {
 test.use({ storageState: { cookies: [], origins: [] } });
 
 test.describe("Signed out", () => {
-  test("a protected page sends visitors to sign-in", async ({ page }) => {
+  test("lets a guest browse the events without signing in", async ({ page }) => {
+    // Act
     await page.goto("/events");
 
-    await expect(page).toHaveURL("/sign-in");
+    // Assert
+    await expect(page).toHaveURL("/events");
   });
 
-  test("sign-up creates a USER account and shows it on the dashboard", async ({ page }) => {
+  test("signs a new user up and in, without a field to choose a role", async ({ page }) => {
+    // Arrange
     const account = newAccount();
     await openSignUp(page);
 
-    // Nobody picks their own role: there is no role field to tamper with.
+    // Assert: nobody picks their own role, there is no field to tamper with
     await expect(page.getByTestId("sign-up-role-trigger")).toHaveCount(0);
 
+    // Act
     await submitSignUp(page, account);
 
+    // Assert
     await expect(page.locator(".toast-success")).toBeVisible();
-    await expectEventFor(page, account);
+    await expectSignedIn(page);
   });
 
-  test("the form explains invalid input before anything is sent", async ({ page }) => {
+  test("shows the field errors and sends nothing when the sign-up form is invalid", async ({
+    page,
+  }) => {
+    // Arrange
     await openSignUp(page);
-
     await page.getByTestId("sign-up-email-input").fill("not-an-email");
     await page.getByTestId("sign-up-password-input").fill("short");
+
+    // Act
     await page.getByTestId("sign-up-submit-button").click();
 
+    // Assert
     await expect(page.getByTestId("sign-up-email-error")).toBeVisible();
     await expect(page.getByTestId("sign-up-password-error")).toContainText("8 characters");
     await expect(page.getByTestId("sign-up-terms-error")).toBeVisible();
     await expect(page).toHaveURL("/sign-up");
   });
 
-  test("taken email and phone are marked on the fields and clear on edit", async ({ page }) => {
+  test("marks a taken email and phone, clears the errors on edit and signs up on retry", async ({
+    page,
+  }) => {
+    // Arrange
     const fresh = newAccount();
     await openSignUp(page);
 
-    await submitSignUp(page, { ...fresh, email: bootstrapAccount.email, phone: bootstrapAccount.phone });
+    // Act
+    await submitSignUp(page, {
+      ...fresh,
+      email: bootstrapAccount.email,
+      phone: bootstrapAccount.phone,
+    });
 
+    // Assert
     await expect(page.locator(".toast-error")).toBeVisible();
     await expect(page.getByTestId("sign-up-email-error")).toBeVisible();
     await expect(page.getByTestId("sign-up-phone-error")).toBeVisible();
 
-    // Editing the fields removes the backend's errors, and the retry succeeds.
+    // Act: editing the fields removes the backend's errors
     await page.getByTestId("sign-up-email-input").fill(fresh.email);
     await page.getByTestId("sign-up-phone-input").fill(fresh.phone);
+
+    // Assert
     await expect(page.getByTestId("sign-up-email-error")).toBeHidden();
     await expect(page.getByTestId("sign-up-phone-error")).toBeHidden();
 
+    // Act: the retry with free values succeeds
     await page.getByTestId("sign-up-submit-button").click();
-    await expectEventFor(page, fresh);
+
+    // Assert
+    await expectSignedIn(page);
   });
 
-  test("wrong credentials fail without saying which field was wrong", async ({ page }) => {
+  test("shows only a general error, not which field was wrong, when the password is wrong", async ({
+    page,
+  }) => {
+    // Arrange
     await openSignIn(page);
 
+    // Act
     await submitSignIn(page, bootstrapAccount.email, "wrong-password");
 
+    // Assert
     await expect(page.locator(".toast-error")).toBeVisible();
     await expect(page.getByTestId("sign-in-email-error")).toBeHidden();
     await expect(page.getByTestId("sign-in-password-error")).toBeHidden();
     await expect(page).toHaveURL("/sign-in");
   });
 
-  test("sign-in works regardless of the email's capitalization", async ({ page }) => {
+  test("signs in when the email is typed in upper case", async ({ page }) => {
+    // Arrange
     await openSignIn(page);
 
+    // Act
     await submitSignIn(page, bootstrapAccount.email.toUpperCase(), bootstrapAccount.password);
 
+    // Assert
     await expect(page.locator(".toast-success")).toBeVisible();
-    await expectEventFor(page, bootstrapAccount);
+    await expectSignedIn(page);
   });
 
-  test("a rejected refresh cookie is removed and leads back to sign-in", async ({
+  test("deletes the cookie and redirects to sign-in when the backend rejects the refresh token", async ({
     page,
     context,
   }) => {
-    // E.g. expired, or signed with a key the backend no longer has.
+    // Arrange: e.g. expired, or signed with a key the backend no longer has.
+    // /events is a guest page, so the proxy lets it through; the AuthProvider
+    // still sends the cookie to the backend, which rejects it.
     await context.addCookies([
       { name: "refresh_tk", value: "not-a-valid-token", url: "http://localhost:3001" },
     ]);
 
+    // Act
     await page.goto("/events");
 
+    // Assert
     await expect(page).toHaveURL("/sign-in?session=expired");
     await expect(page.getByText("Your session has expired.", { exact: false })).toBeVisible();
-    // The stale cookie is gone, so the page stays here instead of bouncing back.
+    // The stale cookie is gone, so the proxy does not bounce back to /events.
     expect((await context.cookies()).some((c) => c.name === "refresh_tk")).toBe(false);
   });
 });
