@@ -1,12 +1,12 @@
 import { test, expect } from "@playwright/test";
-import { bootstrapAccount, newAccount } from "./utils/accounts";
+import { bootstrapAccount, newAccount } from "../../utils/accounts";
 import {
   expectSignedIn,
   openSignIn,
   openSignUp,
   submitSignIn,
   submitSignUp,
-} from "./utils/flows";
+} from "../../utils/flows";
 
 /**
  * Specs that start as a visitor without a session: the storage state from
@@ -22,6 +22,15 @@ test.describe("Signed out", () => {
     // Assert
     await expect(page).toHaveURL("/events");
   });
+
+   test("redirects a guest from a protected route to sign-in", async ({ page }) => {
+    // Act
+    await page.goto("/my-tickets");
+
+    // Assert
+    await expect(page).toHaveURL("/sign-in");
+  });
+
 
   test("signs a new user up and in, without a field to choose a role", async ({ page }) => {
     // Arrange

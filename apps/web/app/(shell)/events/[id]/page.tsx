@@ -30,8 +30,12 @@ export default function EventDetailsPage() {
     dispatch(setShowSearch(false));
   }, [dispatch]);
 
-  if (isLoadingEvent || !event) {
+  if (isLoadingEvent) {
     return <p className="w-full text-center">Loading Event...</p>;
+  }
+
+  if (!event) {
+    return <p className="w-full text-center">{`The Event with the id: ${id} doesn't exist.`}</p>;
   }
 
   return (

@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { expectSignedIn, signOut } from "./utils/flows";
+import { expectSignedIn, signOut } from "../../utils/flows";
 
 /**
  * Specs that start signed in as the bootstrap account (storage state from
@@ -54,8 +54,8 @@ test.describe("Signed in", () => {
     // Assert
     expect((await context.cookies()).some((c) => c.name === "refresh_tk")).toBe(false);
     await page.goto("/events");
-    await expect(page).toHaveURL("/events"); 
-    await expect(page.getByTestId("header-sign-out-button")).not.toBeVisible(); // guest mode: no redirect to sign-in
+    await expect(page).toHaveURL("/events"); // guest mode: no redirect to sign-in
+    await expect(page.getByTestId("header-sign-out-button")).not.toBeVisible(); 
   });
 
   test("keeps the refresh cookie HttpOnly and SameSite=Lax, out of reach for page scripts", async ({

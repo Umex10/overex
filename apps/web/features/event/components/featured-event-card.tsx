@@ -47,7 +47,8 @@ export function FeaturedEventCard({
   const saleOpen = saleStartsAt.getTime() <= now;
 
   return (
-    <Link href={`/events/${event.id}`} className="w-full">
+    <Link href={`/events/${event.id}`} className="w-full"
+    data-testid="featured-event">
       <article
         className={cn(
           "flex flex-col overflow-hidden rounded-xl border bg-card text-card-foreground md:flex-row",

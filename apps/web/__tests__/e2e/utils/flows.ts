@@ -28,7 +28,11 @@ export async function submitSignUp(page: Page, account: TestAccount) {
 }
 
 /** Fills the sign-in form (on the current page) and submits it. */
-export async function submitSignIn(page: Page, email: string, password: string) {
+export async function submitSignIn(
+  page: Page,
+  email: string,
+  password: string,
+) {
   await page.getByTestId("sign-in-email-input").fill(email);
   await page.getByTestId("sign-in-password-input").fill(password);
   await page.getByTestId("sign-in-submit-button").click();
@@ -47,4 +51,14 @@ export async function signOut(page: Page) {
 export async function expectSignedIn(page: Page) {
   await expect(page).toHaveURL(/\/events/);
   await expect(page.getByTestId("header-sign-out-button")).toBeVisible();
+}
+
+/** Opens the event list, clicks the card of `event` and waits for its details. */
+export async function openEventDetails(
+  page: Page,
+  event: { id: string; title: string },
+) {
+  await page.goto("/events");
+  await page.getByTestId("event-card").filter({ hasText: event.title }).click();
+  await expect(page).toHaveURL(`/events/${event.id}`);
 }

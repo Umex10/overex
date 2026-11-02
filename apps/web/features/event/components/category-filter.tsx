@@ -37,7 +37,7 @@ export function CategoryFilter({
       className={cn(
         "min-w-0 overflow-x-auto max-md:[scrollbar-width:none]",
         className,
-      )}
+      )} data-testid="categories-toggle-group"
     >
       <ToggleGroup
         type="single"

@@ -13,8 +13,8 @@
     "e2e:db-down": "docker compose -f ../../docker-compose.test.yml down",
     "e2e:backend": "cd ../backend && ./mvnw spring-boot:run -Dspring-boot.run.profiles=e2e",
     "e2e:web": "cross-env NEXT_PUBLIC_BACKEND_URL=http://localhost:8081 NEXT_DIST_DIR=.next-e2e next build && cross-env NEXT_DIST_DIR=.next-e2e next start -p 3001",
-    "test:e2e": "npm run e2e:db-up && playwright test; status=$?; fuser -k 8081/tcp 2>/dev/null; npm run e2e:db-down; exit $status",
-    "test:e2e:ui": "npm run e2e:db-up && playwright test --ui; status=$?; fuser -k 8081/tcp 2>/dev/null; npm run e2e:db-down; exit $status",
+    "test:e2e": "sh scripts/run-e2e.sh",
+    "test:e2e:ui": "sh scripts/run-e2e.sh --ui",
     "typecheck": "tsc --noEmit",
     "test:coverage": "vitest run --coverage"
   },

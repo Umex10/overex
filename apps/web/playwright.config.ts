@@ -18,12 +18,45 @@ import { defineConfig, devices } from "@playwright/test";
  */
 export default defineConfig({
   testDir: "__tests__/e2e",
+  /*
+   * `workers` = how many tests run at the same time at most (one browser
+   * process each). `fullyParallel` = what is handed out to the workers: whole
+   * files (false) or single tests (true).
+   *
+   * Example: file A has the tests A1–A3, file B has B1–B2, each takes 1 s.
+   *
+   *   workers: 1                       W1: A1 → A2 → A3 → B1 → B2      5 s
+   *
+   *   workers: 2, fullyParallel: false W1: A1 → A2 → A3                3 s
+   *     (one file per worker)          W2: B1 → B2 → idle, may not take A3
+   *
+   *   workers: 2, fullyParallel: true  W1: A1 → A3 → B2                3 s
+   *     (any free worker takes the     W2: A2 → B1
+   *      next test, from any file)
+   *
+   * When to use what:
+   * - fullyParallel: true (here) when every test is independent: it creates
+   *   its own data in Arrange (newAccount()) and runs in its own browser
+   *   context. Fastest, and the order never matters. This is the goal.
+   * - Tests that build on each other (e.g. one creates an object, the next
+   *   reads it) are a smell: if the first one fails, all others fail too.
+   *   If it cannot be avoided, mark only that file with
+   *   `test.describe.configure({ mode: "serial" })` (in order, one worker,
+   *   the rest is skipped after a failure) and keep fullyParallel for the rest.
+   * - workers: 1 when parallel runs would get in each other's way (one
+   *   shared backend and database) or the machine is small: on CI here.
+   */
   fullyParallel: true,
+  // `test.only` would silently skip every other test: on CI it fails the run.
+  // `!!` turns the string/undefined of process.env.CI into a real boolean.
   forbidOnly: !!process.env.CI,
   // A test that only passes on retry hides a bug; retries stay for CI only.
   retries: process.env.CI ? 1 : 0,
+  // undefined = Playwright's default: half of the CPU cores.
   workers: process.env.CI ? 1 : undefined,
-  reporter: process.env.CI ? [["list"], ["html", { open: "never" }]] : "html",
+  // Console list plus an HTML report that is never opened on its own (also not
+  // after a failure). Open it by hand with `npx playwright show-report`.
+  reporter: [["list"], ["html", { open: "never" }]],
   use: {
     baseURL: "http://localhost:3001",
     trace: "on-first-retry",

@@ -49,7 +49,8 @@ export function EventCard({
   const lowAvailability = availablePercent <= LOW_AVAILABILITY_PERCENT;
 
   return (
-    <Link href={`/events/${id}`}>
+    <Link href={`/events/${id}`}
+    data-testid="event-card">
       {/* Phones: compact row with a thumbnail on the left. From md on: the
           vertical card with the image on top. */}
       <article
