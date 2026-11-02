@@ -59,36 +59,50 @@ const unknownEventId = "10000000-0000-0000-0000-000000000099";
 // --- Tests -----------------------------------------------------------------
 
 test.describe("events", () => {
-  test.describe("list", () => {
-    test("shows the first page of events, earliest first", async ({ page }) => {
-      // Act
-      await page.goto("/events");
+  // Both visitors reach the same data, but on different paths: a guest has no
+  // token (AuthProvider skips /me, the backend must allow GET /events without
+  // one). Only the start state differs, so the same tests run for both.
+  for (const { visitor, use } of [
+    { visitor: "a guest", use: { storageState: { cookies: [], origins: [] } } },
+    // No override: the features project starts signed in (auth.setup.ts).
+    { visitor: "a signed-in user", use: {} },
+  ]) {
+    test.describe(`as ${visitor}`, () => {
+      test.use(use);
 
-      // Assert
-      const eventCards = page.getByTestId("event-card");
-      await expect(eventCards).toHaveCount(10);
-      await expect(eventCards).toContainText(firstPageEarliestFirst);
+      test("shows the first page of events, earliest first", async ({
+        page,
+      }) => {
+        // Act
+        await page.goto("/events");
+
+        // Assert
+        const eventCards = page.getByTestId("event-card");
+        await expect(eventCards).toHaveCount(10);
+        await expect(eventCards).toContainText(firstPageEarliestFirst);
+      });
+
+      test("opens the details of the clicked event", async ({ page }) => {
+        // Arrange
+        await page.goto("/events");
+
+        // Act
+        await page
+          .getByTestId("event-card")
+          .filter({ hasText: seedEvents.jazzNight.title })
+          .click();
+
+        // Assert
+        await expect(page).toHaveURL(`/events/${seedEvents.jazzNight.id}`);
+        await expect(
+          page.getByRole("heading", { name: seedEvents.jazzNight.title }),
+        ).toBeVisible();
+      });
     });
-  });
+  }
 
-  test.describe("details", () => {
-    test("opens the details of the clicked event", async ({ page }) => {
-      // Arrange
-      await page.goto("/events");
-
-      // Act
-      await page
-        .getByTestId("event-card")
-        .filter({ hasText: seedEvents.jazzNight.title })
-        .click();
-
-      // Assert
-      await expect(page).toHaveURL(`/events/${seedEvents.jazzNight.id}`);
-      await expect(
-        page.getByRole("heading", { name: seedEvents.jazzNight.title }),
-      ).toBeVisible();
-    });
-
+  // Everything else works the same once the data is there: tested signed in.
+  test.describe("as a signed-in user", () => {
     for (const { via, goBack } of [
       {
         via: "the browser's back button",
@@ -129,9 +143,7 @@ test.describe("events", () => {
         ),
       ).toBeVisible();
     });
-  });
 
-  test.describe("featured event", () => {
     test("features the event whose sale opens next and links to it", async ({
       page,
     }) => {
@@ -152,9 +164,7 @@ test.describe("events", () => {
       // Assert
       await expect(page).toHaveURL(`/events/${seedEvents.acousticSessions.id}`);
     });
-  });
 
-  test.describe("category filter", () => {
     test("shows only the events of the selected category", async ({ page }) => {
       // Arrange
       await page.goto("/events");
@@ -193,9 +203,7 @@ test.describe("events", () => {
       // The user can switch back: the filter is still there.
       await expect(page.getByRole("radio", { name: "All" })).toBeVisible();
     });
-  });
 
-  test.describe("sort order", () => {
     test("shows the latest events first after switching the sort order", async ({
       page,
     }) => {
@@ -213,9 +221,7 @@ test.describe("events", () => {
       await expect(eventCards).toHaveCount(10);
       await expect(eventCards).toContainText(firstPageLatestFirst);
     });
-  });
 
-  test.describe("pagination", () => {
     test("shows the remaining events on the next page", async ({ page }) => {
       // Arrange
       await page.goto("/events");
