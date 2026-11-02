@@ -163,7 +163,6 @@ normally-running dev backend on `8080`.
 
 ## In CI
 
-Each layer has its own GitHub Actions workflow (`backend-verify-ci`,
-`web-unit-ci`, `web-e2e-ci`, plus `web-build-ci` for lint, types and the
-build). Their reports are attached to every run as artifacts; see
-[CI.md](CI.md).
+The backend runs in `backend-verify-ci`. The web app runs in `web-checks`: lint,
+types, build and unit tests first, the e2e tests only once those are green.
+Their reports are attached to every run as artifacts; see [CI.md](CI.md).

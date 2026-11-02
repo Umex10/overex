@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "lint:workflows": "docker run --rm -v \"$(git rev-parse --show-toplevel):/repo\" -w /repo rhysd/actionlint:1.7.12 -color",
     "test:unit": "vitest run",
     "test:unit:watch": "vitest",
     "e2e:db-up": "docker compose -f ../../docker-compose.test.yml up -d",

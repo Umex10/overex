@@ -10,6 +10,11 @@
 #   ./mvnw spring-boot:run -Dspring-boot.run.profiles=e2e   (runs on port 8081)
 # =============================================================================
 
+# Own project name: without it, Compose names the project after the folder
+# ("overex"), the same as docker-compose.yml. Both would then share one network,
+# and "down" here would warn about the dev containers as orphans.
+name: overex-test
+
 services:
   db-test:
     image: postgres:17.7

@@ -1,9 +1,7 @@
 # 🎟️ Overex
 
 [![backend](https://github.com/Umex10/overex/actions/workflows/backend-verify-ci.yml/badge.svg?branch=main)](https://github.com/Umex10/overex/actions/workflows/backend-verify-ci.yml)
-[![web build](https://github.com/Umex10/overex/actions/workflows/web-build-ci.yml/badge.svg?branch=main)](https://github.com/Umex10/overex/actions/workflows/web-build-ci.yml)
-[![web unit](https://github.com/Umex10/overex/actions/workflows/web-unit-ci.yml/badge.svg?branch=main)](https://github.com/Umex10/overex/actions/workflows/web-unit-ci.yml)
-[![web e2e](https://github.com/Umex10/overex/actions/workflows/web-e2e-ci.yml/badge.svg?branch=main)](https://github.com/Umex10/overex/actions/workflows/web-e2e-ci.yml)
+[![web checks](https://github.com/Umex10/overex/actions/workflows/web-checks.yml/badge.svg?branch=main)](https://github.com/Umex10/overex/actions/workflows/web-checks.yml)
 [![docker image](https://github.com/Umex10/overex/actions/workflows/docker-publish.yml/badge.svg)](https://github.com/Umex10/overex/pkgs/container/overex-backend)
 
 > A ticketing platform for high-demand events: when thousands of buyers go for a handful of tickets at the same moment, the system must **never sell more tickets than exist** and must **stay available under load**.
