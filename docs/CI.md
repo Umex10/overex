@@ -1,8 +1,9 @@
 # CI, Docker image and releases
 
 Everything runs on GitHub Actions; the workflows live in `.github/workflows/`.
-Each one only starts when files it depends on change, and a newer push to the
-same branch cancels the older run.
+Each one only starts when files it depends on change (except `workflow-lint`,
+which runs on every push), and a newer push to the same branch cancels the
+older run.
 
 ---
 
@@ -14,7 +15,7 @@ same branch cancels the older run.
 | `docker-ci` | every branch except `main` | `apps/backend/**` | Builds the backend image (not pushed) to catch Dockerfile errors before a merge | – |
 | `docker-publish` | `main` and version tags | `apps/backend/**` (tags always) | Builds the backend image and pushes it to ghcr.io | – |
 | `web-checks` | every branch | `apps/web/**`, `apps/backend/**`, `docker-compose.test.yml` | Three jobs: `build` (`npm ci`, ESLint, `tsc --noEmit`, `next build`) and `unit` (Vitest) in parallel, then `e2e` (Playwright against test DB + backend + frontend build) once both are green | `unit-reports` (JUnit XML), `e2e-reports` (Playwright HTML report, traces) |
-| `workflow-lint` | every branch | `.github/workflows/**` | Runs actionlint over all workflow files, the same check as `npm run lint:workflows`; a safety net when it was forgotten locally | – |
+| `workflow-lint` | every branch | every push (no paths filter: it is a required check for `main`, see below) | Runs actionlint over all workflow files, the same check as `npm run lint:workflows`; a safety net when it was forgotten locally | – |
 
 All of them can also be started by hand with **Run workflow** in the Actions tab.
 
@@ -37,6 +38,17 @@ workflow as well. `build` and `unit` then run too: they take about a minute,
 while skipping them per job (a path filter plus `if:` on every job) would make
 `e2e` skip as well, because a job is skipped when one it `needs` was skipped.
 Working around that costs more complexity than the minute it saves.
+
+### Required checks for main
+
+A ruleset on `main` (Settings → Rules → Rulesets) only allows changes through
+a pull request, and only merges it once `actionlint` is green. A required check
+must report a result on the last commit of every pull request. A workflow
+skipped by a `paths` filter reports nothing, so GitHub would wait for it
+forever ("Expected — Waiting for status to be reported") and block the merge.
+That is why `workflow-lint` has no `paths` filter (it takes about 10 seconds),
+and why `backend-verify-ci` and `web-checks`, which keep theirs, are not
+required.
 
 ### Checking workflows locally
 

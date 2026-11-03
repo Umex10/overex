@@ -6,12 +6,11 @@
 name: workflow-lint
 
 on:
+  # Every push on every branch, main included. No paths filter on purpose: it
+  # is a required check for main, and a required check that was skipped by a
+  # paths filter never reports a result, so GitHub would wait for it forever
+  # and block the merge. Running it always costs about 10 seconds.
   push:
-    # No branch filter: the check runs everywhere, main included.
-    # Only workflow files are checked, so only their changes start it. This
-    # file is covered by the pattern as well.
-    paths:
-      - ".github/workflows/**"
   # "Run workflow" button in the Actions tab to start it by hand.
   workflow_dispatch:
 
