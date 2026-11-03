@@ -24,14 +24,34 @@ updates:
     # malicious or broken npm releases are found and removed within days.
     cooldown:
       default-days: 7
-    # One pull request for all minor and patch updates together instead of one
-    # per package. Major updates (possibly breaking) still get their own pull
-    # request each, so they can be checked one by one.
     groups:
+      # vitest and its @vitest/* plugins (coverage-v8) must always have the
+      # same version; separate pull requests would each leave mixed versions
+      # and fail. Includes major updates.
+      vitest:
+        patterns:
+          - "vitest"
+          - "@vitest/*"
+      # One pull request for all other minor and patch updates instead of one
+      # per package. Major updates (possibly breaking) still get their own pull
+      # request each, so they can be checked one by one. The group order alone
+      # does not keep a package out of this broad group (seen with jjwt), so
+      # packages with their own group are excluded explicitly.
       web-minor-and-patch:
         update-types:
           - minor
           - patch
+        exclude-patterns:
+          - "vitest"
+          - "@vitest/*"
+    ignore:
+      # @types/node has to match the Node.js version the app runs on (24 in
+      # CI), not the newest one: types for a newer Node offer functions that do
+      # not exist at runtime. Its major version is raised by hand together
+      # with Node itself; minor and patch updates still come.
+      - dependency-name: "@types/node"
+        update-types:
+          - "version-update:semver-major"
     # At most this many open Dependabot pull requests for npm at the same time.
     open-pull-requests-limit: 5
     # Commit messages like "chore(web): bump next from 16.0.1 to 16.0.3",
@@ -52,7 +72,6 @@ updates:
     # Same reasoning as for npm.
     cooldown:
       default-days: 7
-    # A dependency lands in the first group that matches it.
     groups:
       # jjwt-api, jjwt-impl and jjwt-jackson must always have the same
       # version; separate pull requests would each leave the build with mixed
@@ -61,11 +80,15 @@ updates:
         patterns:
           - "io.jsonwebtoken:*"
       # Everything else: minor and patch updates in one pull request, major
-      # updates (e.g. Spring Boot 4 -> 5) in their own.
+      # updates (e.g. Spring Boot 4 -> 5) in their own. jjwt is excluded
+      # explicitly: without it, jjwt ended up in this group despite the group
+      # above, and its breaking 0.12 update blocked every other update.
       backend-minor-and-patch:
         update-types:
           - minor
           - patch
+        exclude-patterns:
+          - "io.jsonwebtoken:*"
     open-pull-requests-limit: 5
     commit-message:
       prefix: "chore(backend)"
