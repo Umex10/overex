@@ -11,9 +11,9 @@ older run.
 
 | Workflow | Runs on | Triggered by changes in | What it does | Artifact |
 |----------|---------|-------------------------|--------------|----------|
-| `backend-verify-ci` | every branch | `apps/backend/**` | `./mvnw verify`: unit, slice and integration tests, JaCoCo report, jar | `backend-reports` (Surefire + JaCoCo HTML) |
+| `backend-verify-ci` | every branch | `apps/backend/**` | `./mvnw verify`: unit, slice and integration tests, JaCoCo report, jar; also called by `docker-publish` | `backend-reports` (Surefire + JaCoCo HTML) |
 | `docker-ci` | every branch except `main` | `apps/backend/**` | Builds the backend image (not pushed) to catch Dockerfile errors before a merge | – |
-| `docker-publish` | `main` and version tags | `apps/backend/**` (tags always) | Builds the backend image and pushes it to ghcr.io | – |
+| `docker-publish` | `main` and version tags | `apps/backend/**` (tags always) | Runs `backend-verify-ci` as its first job (reusable workflow), then builds the backend image and pushes it to ghcr.io only if the tests are green | – |
 | `web-checks` | every branch | `apps/web/**`, `apps/backend/**`, `docker-compose.test.yml` | Three jobs: `build` (`npm ci`, ESLint, `tsc --noEmit`, `next build`) and `unit` (Vitest) in parallel, then `e2e` (Playwright against test DB + backend + frontend build) once both are green | `unit-reports` (JUnit XML), `e2e-reports` (Playwright HTML report, traces) |
 | `workflow-lint` | every branch | every push (no paths filter: it is a required check for `main`, see below) | Runs actionlint over all workflow files, the same check as `npm run lint:workflows`; a safety net when it was forgotten locally | – |
 
@@ -118,7 +118,15 @@ Then, **from the repository root**:
 gh act -l                 # list the jobs and their order (stage = needs:)
 gh act push -j unit       # run one job as if a push had happened
 gh act push -j e2e        # runs build and unit first (needs:), then e2e
+scripts/act-all.sh        # all workflows except docker-publish, in parallel
 ```
+
+`scripts/act-all.sh` (or `npm run act:all` in `apps/web`) starts one act run
+per workflow in the background, writes each log to its own file and prints ✅
+or ❌ per workflow. A plain `gh act push` without `-W` would run everything, but
+act ignores `branches:` filters, so it would also start `docker-publish`, which
+pushes to ghcr.io when act has a valid token. Never run that one locally;
+`docker-ci` builds the same Dockerfile without pushing.
 
 **`.actrc`** in the repository root is act's configuration file (an "rc" file
 like `.npmrc` or `.zshrc`). act reads it on every start; each line counts as a

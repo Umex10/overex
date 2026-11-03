@@ -3,6 +3,7 @@
 # - on every version tag (v1.0.0, v1.2.3, ...): tags "1.0.0", "1.0", "1" and
 #   "latest", so a release can be pulled by its version number.
 # Feature branches are only built, not pushed (see docker-ci.yml).
+# The backend tests run first; the image is only pushed when they are green.
 name: docker-publish
 
 on:
@@ -41,7 +42,19 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # Runs the whole backend-verify-ci workflow as this job: the same tests as on
+  # every push, defined in one place. Also on tag pushes and by hand, where
+  # backend-verify-ci would not run on its own.
+  verify:
+    uses: ./.github/workflows/backend-verify-ci.yml
+    # The tests only read the code; they do not get "packages: write".
+    permissions:
+      contents: read
+
   publish-image:
+    # Starts only after "verify" succeeded, so a commit with failing tests
+    # never ends up as an image on ghcr.io.
+    needs: verify
     # A fresh Ubuntu machine per run with Docker pre-installed. Java is not
     # needed here: the Dockerfile builds the jar inside the JDK image.
     runs-on: ubuntu-latest
