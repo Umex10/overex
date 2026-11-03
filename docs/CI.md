@@ -248,12 +248,22 @@ pull requests per entry.
 
 | Entry | Folder | Groups (one pull request each) | Commit prefix |
 |-------|--------|--------------------------------|---------------|
-| `npm` | `apps/web` | `web-minor-and-patch`: all minor and patch updates | `chore(web)` |
+| `npm` | `apps/web` | `vitest`: `vitest` and `@vitest/*`, any update type; `web-minor-and-patch`: all other minor and patch updates | `chore(web)` |
 | `maven` | `apps/backend` | `jjwt`: the three `io.jsonwebtoken` artifacts, any update type; `backend-minor-and-patch`: all other minor and patch updates | `chore(backend)` |
 
 Major updates outside a group get one pull request each, so they can be
-checked one by one. A dependency lands in the first group that matches it,
-which is why `jjwt` comes first.
+checked one by one. The broad `*-minor-and-patch` groups exclude the packages
+that have their own group (`exclude-patterns`): the group order alone did not
+keep jjwt out, and the first run put it into `backend-minor-and-patch`, where
+its breaking update blocked all other backend updates.
+
+**Why the `vitest` group:** `vitest` and `@vitest/coverage-v8` must have the
+same version. As separate pull requests, each one had mixed versions and
+failed.
+
+**`@types/node` majors are ignored:** the types must match the Node.js version
+the app runs on (24 in CI), not the newest one. Its major version is raised by
+hand together with Node; minor and patch updates still come.
 
 **Why the `jjwt` group:** `jjwt-api`, `jjwt-impl` and `jjwt-jackson` each have
 their own `<version>` in `pom.xml` but must always match. Separate pull
