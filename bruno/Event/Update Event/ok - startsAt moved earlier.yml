@@ -5,13 +5,14 @@ info:
 
 http:
   method: PATCH
-  url: "{{baseUrl}}/event/{{eventId}}"
+  url: "{{baseUrl}}/events/{{eventId}}"
   body:
     type: json
-    data: |
+    data: |-
       {
         "title": "Frequency Festival 2027",
         "description": "Drei Tage Musik am Traisenpark in St. Pölten. Einlass ab 12:00 Uhr.",
+        "categoryId": "{{categoryId}}",
         "venue": "Green Park St. Pölten",
         "city": "St. Pölten",
         "startsAt": "2027-07-01T14:00:00Z",
@@ -23,13 +24,16 @@ http:
     token: "{{accessTk}}"
 
 runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("stores the earlier start", function () {
+          expect(res.getBody().startsAt).to.equal("2027-07-01T14:00:00Z");
+        });
   assertions:
     - expression: res.status
       operator: eq
       value: "200"
-    - expression: res.body.startsAt
-      operator: eq
-      value: "2027-07-01T14:00:00Z"
 
 settings:
   encodeUrl: true

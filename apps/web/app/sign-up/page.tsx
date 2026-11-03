@@ -14,11 +14,11 @@ import { Label } from "@/components/ui/label";
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Spinner } from "@/components/ui/loader";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { useHydrated } from "@/lib/use-hydrated";
-import { AuthTips } from "@/components/AuthTips";
-import { useSignUpMutation } from "@/redux/api/apis/auth";
-import { signUpSchema, type SignUpFormValues } from "@/lib/validation";
-import type { ApiErrorBody } from "@/types/ApiError";
+import { useHydrated } from "@/hooks/use-hydrated";
+import { AuthTips } from "@/features/auth/components/auth-tips";
+import { useSignUpMutation } from "@/features/auth/auth-api";
+import { signUpSchema, type SignUpFormValues } from "@/features/auth/auth-validation";
+import type { ApiErrorBody } from "@/types/api-error";
 
 /**
  * Sign-up page at `/sign-up`. Submits via `useSignUpMutation`, replays backend
@@ -54,7 +54,7 @@ export default function SignUpPage() {
         id: toastId,
         className: "toast-success",
       });
-      router.push("/dashboard");
+      router.push("/events");
     } catch (error) {
       const apiError = error as ApiErrorBody;
       const message = apiError?.message || "Sign-up failed.";

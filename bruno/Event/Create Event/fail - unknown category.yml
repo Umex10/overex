@@ -1,0 +1,48 @@
+info:
+  name: fail - unknown category
+  type: http
+  seq: 5
+
+http:
+  method: POST
+  url: "{{baseUrl}}/events"
+  body:
+    type: json
+    data: |-
+      {
+        "title": "Frequency Festival 2027",
+        "description": "Drei Tage Musik am Traisenpark in St. Pölten mit internationalen Headlinern.",
+        "categoryId": "00000000-0000-0000-0000-000000000000",
+        "venue": "Green Park",
+        "city": "St. Pölten",
+        "startsAt": "2027-08-12T14:00:00Z",
+        "saleStartsAt": "2026-11-01T10:00:00Z",
+        "imageUrl": "https://images.unsplash.com/photo-1459749411175-04bf5292ceea"
+      }
+  auth:
+    type: bearer
+    token: "{{accessTk}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("names categoryId as the invalid field", function () {
+          const fields = res.getBody().errors.map((e) => e.field);
+          expect(fields).to.include("categoryId");
+        });
+
+        test("explains the error in a message", function () {
+          const error = res.getBody().errors.find((e) => e.field === "categoryId");
+          expect(error.message).to.be.a("string").and.not.be.empty;
+        });
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "400"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

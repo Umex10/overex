@@ -9,7 +9,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
-import java.util.List;
 import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
@@ -17,9 +16,14 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import com.overex.backend.common.exception.ApiError;
 import com.overex.backend.common.exception.OwnException;
+import com.overex.backend.event.Category;
+import com.overex.backend.event.CategoryRepository;
+import com.overex.backend.event.CategoryService;
 import com.overex.backend.event.Event;
 import com.overex.backend.event.EventMapper;
 import com.overex.backend.event.EventRepository;
@@ -52,37 +56,60 @@ public class EventServiceTest {
 	@Mock
 	EventMapper eventMapper;
 
+	@Mock
+	CategoryService categoryService;
+
 	@InjectMocks
 	EventService eventService;
 
 	/** The default event every test works with (see the class comment). */
 	private final Event event = EventTestDataFactory.createDefaultEvent();
 
-	/** The payload is mapped to an entity and that entity is saved. */
+	/** The category the payloads refer to. */
+	private final Category category = EventTestDataFactory.createDefaultCategory();
+
+	/** The payload is mapped to an entity, gets its category and is saved. */
 	@Test
 	void shouldCreateEvent() {
 		CreateEventDto dto = EventTestDataFactory.createCreateEventDto();
 
+		when(categoryService.getCategory(dto.categoryId())).thenReturn(category);
 		when(eventMapper.toEntity(dto)).thenReturn(event);
 		when(eventRepository.save(event)).thenReturn(event);
 
 		Event createdEvent = eventService.createEvent(dto);
 
 		assertSame(event, createdEvent);
+		assertSame(category, createdEvent.getCategory());
 		verify(eventMapper).toEntity(dto);
 		verify(eventRepository).save(event);
 	}
 
 	/** All stored events are returned as they come from the repository. */
 	@Test
-	void shouldGetEvents() {
-		List<Event> events = EventTestDataFactory.createEventList();
+	void shouldGetAllEvents() {
+		Pageable pageable = EventTestDataFactory.createDefaultPageable();
+		Page<Event> page = EventTestDataFactory.createEventPage();
 
-		when(eventRepository.findAll()).thenReturn(events);
+		when(eventRepository.findAll(pageable)).thenReturn(page);
 
-		List<Event> foundEvents = eventService.getEvents();
+		Page<Event> foundPage = eventService.getEvents(null, pageable);
 
-		assertSame(events, foundEvents);
+		assertSame(page, foundPage);
+		verify(eventRepository, never()).findByCategoryId(any(), any());
+	}
+
+	@Test
+	void shouldGetEventsWithCategory() {
+		Pageable pageable = EventTestDataFactory.createDefaultPageable();
+		Page<Event> page = EventTestDataFactory.createFestivalEventPage();
+
+		when(eventRepository.findByCategoryId(EventTestDataFactory.DEFAULT_CATEGORY_ID, pageable)).thenReturn(page);
+
+		Page<Event> foundPage = eventService.getEvents(EventTestDataFactory.DEFAULT_CATEGORY_ID, pageable);
+
+		assertSame(page, foundPage);
+		verify(eventRepository, never()).findAll(any(Pageable.class));
 	}
 
 	@Test
@@ -110,11 +137,13 @@ public class EventServiceTest {
 		UpdateEventDto dto = EventTestDataFactory.createUpdateEventDto();
 
 		when(eventRepository.findById(event.getId())).thenReturn(Optional.of(event));
+		when(categoryService.getCategory(dto.categoryId())).thenReturn(category);
 		when(eventRepository.save(event)).thenReturn(event);
 
 		Event updatedEvent = eventService.updateEvent(dto, event.getId());
 
 		assertSame(event, updatedEvent);
+		assertSame(category, updatedEvent.getCategory());
 		verify(eventMapper).updateEntity(dto, event);
 		verify(eventRepository).save(event);
 	}
@@ -125,6 +154,7 @@ public class EventServiceTest {
 		UpdateEventDto dto = EventTestDataFactory.createUpdateEventDtoWithUnchangedStartsAt();
 
 		when(eventRepository.findById(event.getId())).thenReturn(Optional.of(event));
+		when(categoryService.getCategory(dto.categoryId())).thenReturn(category);
 		when(eventRepository.save(event)).thenReturn(event);
 
 		eventService.updateEvent(dto, event.getId());
@@ -172,7 +202,9 @@ public class EventServiceTest {
 		verify(eventRepository, never()).save(any());
 	}
 
-	/** Boundary: a sale that opens exactly when the event starts is rejected too. */
+	/**
+	 * Boundary: a sale that opens exactly when the event starts is rejected too.
+	 */
 	@Test
 	void shouldNotUpdateEventWithSaleStartingAtEventStart() {
 		when(eventRepository.findById(event.getId())).thenReturn(Optional.of(event));

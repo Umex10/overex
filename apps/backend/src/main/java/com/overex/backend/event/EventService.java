@@ -4,6 +4,8 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,10 +22,16 @@ import lombok.RequiredArgsConstructor;
 public class EventService {
 
     private final EventRepository eventRepository;
+    private final CategoryService categoryService;
     private final EventMapper eventMapper;
 
-    public List<Event> getEvents() {
-        return eventRepository.findAll();
+    public Page<Event> getEvents(UUID categoryId, Pageable pageable) {
+
+        if (categoryId == null) {
+            return eventRepository.findAll(pageable);
+        }
+
+        return eventRepository.findByCategoryId(categoryId, pageable);
     }
 
     public Event getEvent(UUID eventId) {
@@ -33,7 +41,10 @@ public class EventService {
 
     public Event createEvent(CreateEventDto createEventDto) {
 
+        Category category = categoryService.getCategory(createEventDto.categoryId());
+
         Event event = eventMapper.toEntity(createEventDto);
+        event.setCategory(category);
 
         return eventRepository.save(event);
     }
@@ -74,7 +85,10 @@ public class EventService {
             throw fieldError("saleStartsAt", "The sale must start before the event starts.");
         }
 
+        Category category = categoryService.getCategory(updateEventDto.categoryId());
+
         eventMapper.updateEntity(updateEventDto, event);
+        event.setCategory(category);
 
         return eventRepository.save(event);
     }

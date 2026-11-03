@@ -36,3 +36,4 @@ Thumbs.db
 # ===== JWT signing keys, RS256 (apps/backend) =====
 keys/
 *.pem
+coverage/

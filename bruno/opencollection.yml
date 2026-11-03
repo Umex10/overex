@@ -8,3 +8,41 @@ extensions:
     ignore:
       - node_modules
       - .git
+
+request:
+  scripts:
+    - type: before-request
+      code: |-
+        // Makes every request runnable on its own: signs the test user in (or signs it
+        // up first) and picks a category, unless the variables are already set.
+        const baseUrl = bru.getEnvVar("baseUrl");
+        const user = {
+          name: "Mario Test",
+          email: "mario@overex.test",
+          phone: "+436601234567",
+          password: "Kennwort123!",
+        };
+
+        const expiresAt = Number(bru.getVar("accessTkExpiresAt") || 0);
+        if (!bru.getVar("accessTk") || Date.now() > expiresAt) {
+          let res;
+          try {
+            res = await bru.sendRequest({
+              method: "POST",
+              url: `${baseUrl}/auth/sign-in`,
+              data: { email: user.email, password: user.password },
+            });
+          } catch (err) {
+            // 401: the test user does not exist yet in this database.
+            if (err.response?.status !== 401) throw err;
+            res = await bru.sendRequest({ method: "POST", url: `${baseUrl}/auth/sign-up`, data: user });
+          }
+          bru.setVar("accessTk", res.data.accessTk);
+          // Renew 30 s early, so a token never expires in the middle of a request.
+          bru.setVar("accessTkExpiresAt", Date.now() + res.data.expiresIn * 1000 - 30000);
+        }
+
+        if (!bru.getVar("categoryId")) {
+          const res = await bru.sendRequest({ method: "GET", url: `${baseUrl}/categories` });
+          bru.setVar("categoryId", res.data[0].id);
+        }

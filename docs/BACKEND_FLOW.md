@@ -348,7 +348,7 @@ sequenceDiagram
 | Principal lookup | `CustomUserDetailsService` | `auth/security/CustomUserDetailsService.java` |
 | `User` → `UserDetails` adapter | `CustomUserDetails` | `auth/security/CustomUserDetails.java` |
 | Protected example routes | `MeController` | `user/MeController.java` |
-| Entity | `User` | `common/entities/User.java` |
-| Repository | `UserRepository` | `common/repositories/UserRepository.java` |
+| Entity | `User` | `user/User.java` |
+| Repository | `UserRepository` | `user/UserRepository.java` |
 | Error → HTTP mapping | `GlobalExceptionHandler` | `common/exception/GlobalExceptionHandler.java` |
-| Swagger / Authorize button | `OpenApiConfig` | `config/OpenApiConfig.java` |
+| Swagger / Authorize button | `OpenApiConfig` | `common/config/OpenApiConfig.java` |

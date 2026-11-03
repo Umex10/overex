@@ -28,22 +28,37 @@ export async function submitSignUp(page: Page, account: TestAccount) {
 }
 
 /** Fills the sign-in form (on the current page) and submits it. */
-export async function submitSignIn(page: Page, email: string, password: string) {
+export async function submitSignIn(
+  page: Page,
+  email: string,
+  password: string,
+) {
   await page.getByTestId("sign-in-email-input").fill(email);
   await page.getByTestId("sign-in-password-input").fill(password);
   await page.getByTestId("sign-in-submit-button").click();
 }
 
-/** Uses the header button; ends on the landing page. */
+/** Uses the sidebar button; ends on the sign-in page. */
 export async function signOut(page: Page) {
   await page.getByTestId("header-sign-out-button").click();
-  await expect(page).toHaveURL("/");
+  await expect(page).toHaveURL("/sign-in");
 }
 
-/** The dashboard greets the user and shows the account loaded via GET /me. */
-export async function expectDashboardFor(page: Page, account: TestAccount) {
-  await expect(page).toHaveURL(/\/dashboard/);
-  await expect(page.getByTestId("dashboard-welcome")).toContainText(account.name);
-  await expect(page.getByTestId("dashboard-account")).toContainText(account.email);
-  await expect(page.getByTestId("dashboard-account")).toContainText("USER");
+/**
+ * Signed in and on the events page. The sidebar only offers "sign out" once
+ * GET /me has returned the user, so this also proves the session works.
+ */
+export async function expectSignedIn(page: Page) {
+  await expect(page).toHaveURL(/\/events/);
+  await expect(page.getByTestId("header-sign-out-button")).toBeVisible();
+}
+
+/** Opens the event list, clicks the card of `event` and waits for its details. */
+export async function openEventDetails(
+  page: Page,
+  event: { id: string; title: string },
+) {
+  await page.goto("/events");
+  await page.getByTestId("event-card").filter({ hasText: event.title }).click();
+  await expect(page).toHaveURL(`/events/${event.id}`);
 }

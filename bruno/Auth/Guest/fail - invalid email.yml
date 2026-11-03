@@ -1,0 +1,43 @@
+info:
+  name: fail - invalid email
+  type: http
+  seq: 4
+
+http:
+  method: POST
+  url: "{{baseUrl}}/auth/sign-up"
+  body:
+    type: json
+    data: |-
+      {
+        "name": "Bruno Test",
+        "email": "keine-email",
+        "phone": "+436601234567",
+        "password": "Kennwort123!"
+      }
+  auth:
+    type: none
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("names email as the invalid field", function () {
+          const fields = res.getBody().errors.map((e) => e.field);
+          expect(fields).to.include("email");
+        });
+
+        test("explains the error in a message", function () {
+          const error = res.getBody().errors.find((e) => e.field === "email");
+          expect(error.message).to.be.a("string").and.not.be.empty;
+        });
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "400"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

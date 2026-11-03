@@ -8,7 +8,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
-import com.overex.backend.common.entities.User;
+import com.overex.backend.user.User;
 
 import lombok.RequiredArgsConstructor;
 

@@ -1,16 +1,26 @@
 info:
   name: ok - event is gone afterwards
   type: http
-  seq: 2
+  seq: 4
 
 http:
   method: GET
-  url: "{{baseUrl}}/event/{{eventId}}"
+  url: "{{baseUrl}}/events/{{eventId}}"
   auth:
     type: bearer
     token: "{{accessTk}}"
 
 runtime:
+  scripts:
+    - type: after-response
+      code: |-
+        // The event is gone: the next run creates a new one instead of reusing this id.
+        bru.deleteVar("eventId");
+    - type: tests
+      code: |-
+        test("the deleted event can no longer be loaded", function () {
+          expect(res.getBody().error).to.equal("Not Found");
+        });
   assertions:
     - expression: res.status
       operator: eq

@@ -9,7 +9,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jayway.jsonpath.JsonPath;
 import com.overex.backend.auth.dto.requests.SignInAccountRequestDto;
 import com.overex.backend.auth.dto.requests.SignUpAccountRequestDto;
-import com.overex.backend.common.entities.User;
+import com.overex.backend.user.User;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;

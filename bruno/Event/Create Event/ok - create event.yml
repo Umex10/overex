@@ -5,13 +5,14 @@ info:
 
 http:
   method: POST
-  url: "{{baseUrl}}/event"
+  url: "{{baseUrl}}/events"
   body:
     type: json
-    data: |
+    data: |-
       {
         "title": "Frequency Festival 2027",
         "description": "Drei Tage Musik am Traisenpark in St. Pölten mit internationalen Headlinern.",
+        "categoryId": "{{categoryId}}",
         "venue": "Green Park",
         "city": "St. Pölten",
         "startsAt": "2027-08-12T14:00:00Z",
@@ -23,27 +24,35 @@ http:
     token: "{{accessTk}}"
 
 runtime:
-  actions:
-    - type: set-variable
-      phase: after-response
-      selector:
-        expression: res.body.id
-        method: jsonq
-      variable:
-        name: eventId
-        scope: runtime
+  scripts:
+    - type: after-response
+      code: |-
+        bru.setVar("eventId", res.getBody().id);
+    - type: tests
+      code: |-
+        const event = res.getBody();
+
+        test("returns the new event with an id", function () {
+          expect(event.id).to.match(/^[0-9a-f-]{36}$/);
+        });
+
+        test("starts as a draft", function () {
+          expect(event.status).to.equal("DRAFT");
+        });
+
+        test("stores the sent values", function () {
+          expect(event.title).to.equal("Frequency Festival 2027");
+          expect(event.city).to.equal("St. Pölten");
+          expect(event.startsAt).to.equal("2027-08-12T14:00:00Z");
+        });
+
+        test("links the chosen category", function () {
+          expect(event.category.id).to.equal(bru.getVar("categoryId"));
+        });
   assertions:
     - expression: res.status
       operator: eq
       value: "201"
-    - expression: res.body.status
-      operator: eq
-      value: "DRAFT"
-    - expression: res.body.title
-      operator: eq
-      value: "Frequency Festival 2027"
-    - expression: res.body.id
-      operator: isString
 
 settings:
   encodeUrl: true

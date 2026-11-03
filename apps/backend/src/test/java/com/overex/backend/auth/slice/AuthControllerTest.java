@@ -24,7 +24,7 @@ import com.overex.backend.auth.AuthService;
 import com.overex.backend.auth.JwtService;
 import com.overex.backend.auth.dto.requests.SignInAccountRequestDto;
 import com.overex.backend.auth.dto.requests.SignUpAccountRequestDto;
-import com.overex.backend.common.entities.User;
+import com.overex.backend.user.User;
 import com.overex.backend.common.exception.ApiError;
 import com.overex.backend.common.exception.OwnException;
 import com.overex.backend.auth.utils.AuthTestDataFactory;

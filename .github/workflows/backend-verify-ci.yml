@@ -1,6 +1,8 @@
 # Runs the backend tests and builds the jar (./mvnw verify) on every push, on
 # every branch including main, so broken code is noticed before and after a
-# merge. Independent of the Docker workflows, which run in parallel.
+# merge. Independent of docker-ci, which runs in parallel. docker-publish also
+# calls this workflow as its first job and only pushes the image once it is
+# green (see workflow_call below).
 name: backend-verify-ci
 
 on:
@@ -12,6 +14,10 @@ on:
       - ".github/workflows/backend-verify-ci.yml"
   # "Run workflow" button in the Actions tab to start it by hand.
   workflow_dispatch:
+  # Lets another workflow run this one as a job ("uses:" on a job), so the
+  # test steps are defined only here. docker-publish uses it. The paths filter
+  # above does not apply to such calls.
+  workflow_call:
 
 # Least privilege: the job only needs to read the repository.
 permissions:
@@ -21,10 +27,12 @@ permissions:
 concurrency:
   # The name of a queue. Runs with the same group name affect each other,
   # runs with different names run in parallel. github.ref is the branch
-  # (e.g. refs/heads/feature/docker), so every branch gets its own queue; the
-  # workflow-name prefix keeps this workflow apart from the other workflows
-  # running on the same branch.
-  group: backend-verify-ci-${{ github.ref }}
+  # (e.g. refs/heads/feature/docker), so every branch gets its own queue.
+  # github.workflow is the name of the workflow that started the run: here
+  # "backend-verify-ci", but "docker-publish" when docker-publish calls this
+  # file. A fixed "backend-verify-ci-" prefix would put both runs of a push to
+  # main into the same queue, and one would cancel the other.
+  group: ${{ github.workflow }}-${{ github.ref }}
   # A newer run in the same group cancels the running one of the older commit.
   cancel-in-progress: true
 
@@ -73,7 +81,9 @@ jobs:
         # would be skipped after failing tests, exactly when the reports matter.
         # !cancelled() runs it after success and after failure, but not when
         # the run was cancelled (e.g. by a newer push, see concurrency above).
-        if: ${{ !cancelled() }}
+        # !env.ACT skips it when the workflow runs locally with act (which sets
+        # ACT=true): act's artifact server does not support upload-artifact@v7.
+        if: ${{ !cancelled() && !env.ACT }}
         uses: actions/upload-artifact@v7
         with:
           # Name of the download on the run page.

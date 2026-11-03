@@ -1,0 +1,28 @@
+info:
+  name: fail - no access token
+  type: http
+  seq: 1
+
+http:
+  method: DELETE
+  url: "{{baseUrl}}/events/00000000-0000-0000-0000-000000000000"
+  auth:
+    type: none
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("rejects the request without a valid access token", function () {
+          expect(res.getStatus()).to.equal(401);
+        });
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "401"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

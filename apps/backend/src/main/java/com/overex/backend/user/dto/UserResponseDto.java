@@ -1,7 +1,7 @@
 package com.overex.backend.user.dto;
 
-import com.overex.backend.common.entities.Role;
-import com.overex.backend.common.entities.User;
+import com.overex.backend.user.Role;
+import com.overex.backend.user.User;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

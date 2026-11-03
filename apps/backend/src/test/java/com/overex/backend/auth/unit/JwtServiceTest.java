@@ -26,8 +26,8 @@ import org.springframework.security.authentication.BadCredentialsException;
 
 import com.overex.backend.auth.JwtService;
 import com.overex.backend.auth.config.RsaKeyFiles;
-import com.overex.backend.common.entities.User;
-import com.overex.backend.common.repositories.UserRepository;
+import com.overex.backend.user.User;
+import com.overex.backend.user.UserRepository;
 import com.overex.backend.auth.utils.AuthTestDataFactory;
 import com.overex.backend.auth.utils.TestRsaKeys;
 import com.nimbusds.jwt.JWTClaimsSet;

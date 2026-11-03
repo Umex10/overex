@@ -34,7 +34,7 @@ protected route.
 
 ## How it's wired
 
-- `config/OpenApiConfig.java` declares the API info and the `bearerAuth`
+- `common/config/OpenApiConfig.java` declares the API info and the `bearerAuth`
   `@SecurityScheme` — that single annotation is what makes the Authorize button
   appear.
 - Controllers opt a route into the lock icon with

@@ -1,0 +1,42 @@
+# Checks every workflow file with actionlint, the same check as
+# "npm run lint:workflows" in apps/web: a safety net for when it was forgotten
+# locally. Runs in parallel to the other workflows; it cannot stop them
+# (needs: only works between jobs of one workflow). Making it a required check
+# for main in the branch protection keeps a broken workflow out of main.
+name: workflow-lint
+
+on:
+  # Every push on every branch, main included. No paths filter on purpose: it
+  # is a required check for main, and a required check that was skipped by a
+  # paths filter never reports a result, so GitHub would wait for it forever
+  # and block the merge. Running it always costs about 10 seconds.
+  push:
+  # "Run workflow" button in the Actions tab to start it by hand.
+  workflow_dispatch:
+
+# Least privilege: the job only needs to read the repository.
+permissions:
+  contents: read
+
+# One queue per branch for this workflow; a newer push cancels the run of the
+# older commit (same idea as in backend-verify-ci.yml).
+concurrency:
+  group: workflow-lint-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  actionlint:
+    # Docker is pre-installed on the machine; nothing else is needed.
+    runs-on: ubuntu-latest
+    steps:
+      # Clones the commit that triggered the run.
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      # Same image and version as the npm script, so local and CI check the
+      # same way (the image also brings shellcheck for "run:" blocks).
+      # The repository root is mounted as /repo; actionlint finds
+      # .github/workflows there. Findings print with file and line and give a
+      # non-zero exit code, which fails the step.
+      - name: Run actionlint
+        run: docker run --rm -v "$PWD:/repo" -w /repo rhysd/actionlint:1.7.12 -color

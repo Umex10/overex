@@ -1,5 +1,6 @@
 import { configureStore } from "@reduxjs/toolkit";
-import { apiSlice } from "./api/apiSlice";
+import { apiSlice } from "./api-slice";
+import { routeContextSlice } from "@/features/shell/route-context-slice";
 
 /**
  * Creates the Redux store for the web app.
@@ -16,6 +17,7 @@ export const makeStore = () =>
   configureStore({
     reducer: {
       [apiSlice.reducerPath]: apiSlice.reducer,
+      routeContext: routeContextSlice.reducer
     },
     middleware: (getDefaultMiddleware) =>
       getDefaultMiddleware().concat(apiSlice.middleware),

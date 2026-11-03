@@ -1,5 +1,6 @@
 package com.overex.backend.event.slice;
 
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.hasSize;
@@ -23,12 +24,14 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.overex.backend.auth.config.JacksonConfig;
+import com.overex.backend.common.config.JacksonConfig;
 import com.overex.backend.common.exception.ApiError;
 import com.overex.backend.common.exception.OwnException;
 import com.overex.backend.event.Event;
@@ -39,7 +42,6 @@ import com.overex.backend.event.dto.requests.UpdateEventDto;
 import com.overex.backend.event.utils.EventTestDataFactory;
 
 import jakarta.persistence.EntityNotFoundException;
-
 
 /**
  * Slice tests for {@link EventController}: only the web layer runs
@@ -72,42 +74,101 @@ public class EventControllerTest {
         private final Event event = EventTestDataFactory.createDefaultEvent();
 
         @Test
-        void shouldGetEvents() throws Exception {
-                List<Event> events = EventTestDataFactory.createEventList();
-                when(eventService.getEvents()).thenReturn(events);
+        void shouldGetEventsWithDefaultPageableAndWithoutCategory() throws Exception {
 
-                mockMvc.perform(get("/event"))
+                Pageable pageable = EventTestDataFactory.createDefaultPageable();
+                Page<Event> page = EventTestDataFactory.createEventPage();
+                List<Event> events = page.getContent();
+                when(eventService.getEvents(null, pageable)).thenReturn(page);
+
+                // the mocked service returns the factory page as it is, so id and
+                // timestamps are fixed values and compared exactly
+                mockMvc.perform(get("/events"))
                                 .andExpect(status().isOk())
-                                .andExpect(jsonPath("$", hasSize(events.size())))
-                                .andExpect(jsonPath("$[*].title").value(containsInAnyOrder(
-                                                events.stream().map(Event::getTitle).toArray())))
-                                .andExpect(jsonPath("$[*].description").value(containsInAnyOrder(
-                                                events.stream().map(Event::getDescription).toArray())))
-                                .andExpect(jsonPath("$[*].venue").value(containsInAnyOrder(
-                                                events.stream().map(Event::getVenue).toArray())))
-                                .andExpect(jsonPath("$[*].city").value(containsInAnyOrder(
-                                                events.stream().map(Event::getCity).toArray())))
-                                .andExpect(jsonPath("$[*].startsAt").value(containsInAnyOrder(
-                                                events.stream().map(e -> e.getStartsAt().toString()).toArray())))
-                                .andExpect(jsonPath("$[*].saleStartsAt").value(containsInAnyOrder(
-                                                events.stream().map(e -> e.getSaleStartsAt().toString()).toArray())))
-                                .andExpect(jsonPath("$[*].imageUrl").value(containsInAnyOrder(
-                                                events.stream().map(Event::getImageUrl).toArray())))
-                                .andExpect(jsonPath("$[*].status").value(containsInAnyOrder(
-                                                events.stream().map(e -> e.getStatus().name()).toArray())))
-                                .andExpect(jsonPath("$[*].id").value(containsInAnyOrder(
+                                .andExpect(jsonPath("$.content", hasSize(events.size())))
+                                .andExpect(jsonPath("$.content[*].id").value(contains(
                                                 events.stream().map(e -> e.getId().toString()).toArray())))
-                                .andExpect(jsonPath("$[*].createdAt").value(containsInAnyOrder(
+                                .andExpect(jsonPath("$.content[*].title").value(contains(
+                                                events.stream().map(Event::getTitle).toArray())))
+                                .andExpect(jsonPath("$.content[*].description").value(containsInAnyOrder(
+                                                events.stream().map(Event::getDescription).toArray())))
+                                .andExpect(jsonPath("$.content[*].venue").value(containsInAnyOrder(
+                                                events.stream().map(Event::getVenue).toArray())))
+                                .andExpect(jsonPath("$.content[*].city").value(containsInAnyOrder(
+                                                events.stream().map(Event::getCity).toArray())))
+                                .andExpect(jsonPath("$.content[*].startsAt").value(contains(
+                                                events.stream().map(e -> e.getStartsAt().toString()).toArray())))
+                                .andExpect(jsonPath("$.content[*].saleStartsAt").value(containsInAnyOrder(
+                                                events.stream().map(e -> e.getSaleStartsAt().toString()).toArray())))
+                                .andExpect(jsonPath("$.content[*].imageUrl").value(containsInAnyOrder(
+                                                events.stream().map(Event::getImageUrl).toArray())))
+                                // no POST involved, so the factory events keep their own status
+                                .andExpect(jsonPath("$.content[*].status").value(containsInAnyOrder(
+                                                events.stream().map(e -> e.getStatus().name()).toArray())))
+                                .andExpect(jsonPath("$.content[*].createdAt").value(contains(
                                                 events.stream().map(e -> e.getCreatedAt().toString()).toArray())))
-                                .andExpect(jsonPath("$[*].updatedAt").value(containsInAnyOrder(
-                                                events.stream().map(e -> e.getUpdatedAt().toString()).toArray())));
+                                .andExpect(jsonPath("$.content[*].updatedAt").value(contains(
+                                                events.stream().map(e -> e.getUpdatedAt().toString()).toArray())))
+
+                                .andExpect(jsonPath("$.page.size").value(EventTestDataFactory.DEFAULT_PAGE_SIZE))
+                                .andExpect(jsonPath("$.page.number").value(EventTestDataFactory.DEFAULT_PAGE))
+                                .andExpect(jsonPath("$.page.totalElements").value(events.size()))
+                                .andExpect(jsonPath("$.page.totalPages").value(
+                                                Math.ceilDiv(events.size(), EventTestDataFactory.DEFAULT_PAGE_SIZE)));
+        }
+
+        @Test
+        void shouldGetEventsWithDefaultPageableAndWithCategory() throws Exception {
+
+                Pageable pageable = EventTestDataFactory.createDefaultPageable();
+                Page<Event> page = EventTestDataFactory.createFestivalEventPage();
+                List<Event> events = page.getContent();
+
+                when(eventService.getEvents(EventTestDataFactory.DEFAULT_CATEGORY_ID, pageable)).thenReturn(page);
+
+                // the mocked service returns the factory page as it is, so id and
+                // timestamps are fixed values and compared exactly
+                mockMvc.perform(get(String.format("/events?categoryId=%s", EventTestDataFactory.DEFAULT_CATEGORY_ID)))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.content", hasSize(events.size())))
+                                .andExpect(jsonPath("$.content[*].id").value(contains(
+                                                events.stream().map(e -> e.getId().toString()).toArray())))
+                                .andExpect(jsonPath("$.content[*].category.id").value(containsInAnyOrder(
+                                                events.stream().map(e -> e.getCategory().getId().toString()).toArray())))
+                                .andExpect(jsonPath("$.content[*].title").value(contains(
+                                                events.stream().map(Event::getTitle).toArray())))
+                                .andExpect(jsonPath("$.content[*].description").value(containsInAnyOrder(
+                                                events.stream().map(Event::getDescription).toArray())))
+                                .andExpect(jsonPath("$.content[*].venue").value(containsInAnyOrder(
+                                                events.stream().map(Event::getVenue).toArray())))
+                                .andExpect(jsonPath("$.content[*].city").value(containsInAnyOrder(
+                                                events.stream().map(Event::getCity).toArray())))
+                                .andExpect(jsonPath("$.content[*].startsAt").value(contains(
+                                                events.stream().map(e -> e.getStartsAt().toString()).toArray())))
+                                .andExpect(jsonPath("$.content[*].saleStartsAt").value(containsInAnyOrder(
+                                                events.stream().map(e -> e.getSaleStartsAt().toString()).toArray())))
+                                .andExpect(jsonPath("$.content[*].imageUrl").value(containsInAnyOrder(
+                                                events.stream().map(Event::getImageUrl).toArray())))
+                                // no POST involved, so the factory events keep their own status
+                                .andExpect(jsonPath("$.content[*].status").value(containsInAnyOrder(
+                                                events.stream().map(e -> e.getStatus().name()).toArray())))
+                                .andExpect(jsonPath("$.content[*].createdAt").value(contains(
+                                                events.stream().map(e -> e.getCreatedAt().toString()).toArray())))
+                                .andExpect(jsonPath("$.content[*].updatedAt").value(contains(
+                                                events.stream().map(e -> e.getUpdatedAt().toString()).toArray())))
+
+                                .andExpect(jsonPath("$.page.size").value(EventTestDataFactory.DEFAULT_PAGE_SIZE))
+                                .andExpect(jsonPath("$.page.number").value(EventTestDataFactory.DEFAULT_PAGE))
+                                .andExpect(jsonPath("$.page.totalElements").value(events.size()))
+                                .andExpect(jsonPath("$.page.totalPages").value(
+                                                Math.ceilDiv(events.size(), EventTestDataFactory.DEFAULT_PAGE_SIZE)));
         }
 
         @Test
         void shouldGetEvent() throws Exception {
                 when(eventService.getEvent(any())).thenReturn(event);
 
-                mockMvc.perform(get("/event/{eventId}", event.getId()))
+                mockMvc.perform(get("/events/{eventId}", event.getId()))
                                 .andExpect(status().isOk())
                                 .andExpect(jsonPath("$.id").value(event.getId().toString()))
                                 .andExpect(jsonPath("$.title").value(event.getTitle()))
@@ -128,18 +189,18 @@ public class EventControllerTest {
                 when(eventService.getEvent(any()))
                                 .thenThrow(new EntityNotFoundException("The Event with the given id was not found"));
 
-                mockMvc.perform(get("/event/{eventId}", event.getId()))
+                mockMvc.perform(get("/events/{eventId}", event.getId()))
                                 .andExpect(status().isNotFound())
                                 .andExpect(jsonPath("$.status").value(404))
                                 .andExpect(jsonPath("$.error").value("Not Found"))
                                 .andExpect(jsonPath("$.message").value("The Event with the given id was not found"))
-                                .andExpect(jsonPath("$.path").value("/event/" + event.getId()));
+                                .andExpect(jsonPath("$.path").value("/events/" + event.getId()));
         }
 
         /** An id that is no UUID is a client error (400), not the catch-all 500. */
         @Test
         void shouldRejectEventIdThatIsNoUuid() throws Exception {
-                mockMvc.perform(get("/event/{eventId}", "abc"))
+                mockMvc.perform(get("/events/{eventId}", "abc"))
                                 .andExpect(status().isBadRequest())
                                 .andExpect(jsonPath("$.status").value(400))
                                 .andExpect(jsonPath("$.message").value("Validation failed"))
@@ -156,7 +217,7 @@ public class EventControllerTest {
 
                 when(eventService.createEvent(createEventDto)).thenReturn(event);
 
-                mockMvc.perform(post("/event")
+                mockMvc.perform(post("/events")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(jsonRequest))
                                 .andExpect(status().isCreated())
@@ -179,15 +240,15 @@ public class EventControllerTest {
 
                 String jsonRequest = objectMapper.writeValueAsString(createEventDto);
 
-                mockMvc.perform(post("/event")
+                mockMvc.perform(post("/events")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(jsonRequest))
                                 .andExpect(status().isBadRequest())
                                 .andExpect(jsonPath("$.status").value(400))
                                 .andExpect(jsonPath("$.message").value("Validation failed"))
                                 .andExpect(jsonPath("$.errors[*].field").value(hasItems(
-                                                "title", "description", "venue", "city", "startsAt", "saleStartsAt",
-                                                "imageUrl")));
+                                                "title", "description", "categoryId", "venue", "city", "startsAt",
+                                                "saleStartsAt", "imageUrl")));
 
                 // @Valid rejects the request before the controller method runs
                 verify(eventService, never()).createEvent(any());
@@ -197,7 +258,7 @@ public class EventControllerTest {
         void shouldDeleteEvent() throws Exception {
                 doNothing().when(eventService).deleteEvent(any());
 
-                mockMvc.perform(delete("/event/{eventId}", event.getId()))
+                mockMvc.perform(delete("/events/{eventId}", event.getId()))
                                 .andExpect(status().isNoContent())
                                 .andExpect(content().string(""));
         }
@@ -208,12 +269,12 @@ public class EventControllerTest {
                 doThrow(new EntityNotFoundException("The Event with the given id was not found")).when(eventService)
                                 .deleteEvent(any());
 
-                mockMvc.perform(delete("/event/{eventId}", event.getId()))
+                mockMvc.perform(delete("/events/{eventId}", event.getId()))
                                 .andExpect(status().isNotFound())
                                 .andExpect(jsonPath("$.status").value(404))
                                 .andExpect(jsonPath("$.error").value("Not Found"))
                                 .andExpect(jsonPath("$.message").value("The Event with the given id was not found"))
-                                .andExpect(jsonPath("$.path").value("/event/" + event.getId()));
+                                .andExpect(jsonPath("$.path").value("/events/" + event.getId()));
         }
 
         @Test
@@ -225,7 +286,7 @@ public class EventControllerTest {
 
                 when(eventService.updateEvent(updateEventDto, event.getId())).thenReturn(updatedEvent);
 
-                mockMvc.perform(patch("/event/{eventId}", event.getId())
+                mockMvc.perform(patch("/events/{eventId}", event.getId())
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(jsonRequest))
                                 .andExpect(status().isOk())
@@ -247,15 +308,15 @@ public class EventControllerTest {
                 String jsonRequest = objectMapper
                                 .writeValueAsString(EventTestDataFactory.createInvalidUpdateEventDto());
 
-                mockMvc.perform(patch("/event/{eventId}", event.getId())
+                mockMvc.perform(patch("/events/{eventId}", event.getId())
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(jsonRequest))
                                 .andExpect(status().isBadRequest())
                                 .andExpect(jsonPath("$.status").value(400))
                                 .andExpect(jsonPath("$.message").value("Validation failed"))
                                 .andExpect(jsonPath("$.errors[*].field").value(hasItems(
-                                                "title", "description", "venue", "city", "startsAt", "saleStartsAt",
-                                                "imageUrl")));
+                                                "title", "description", "categoryId", "venue", "city", "startsAt",
+                                                "saleStartsAt", "imageUrl")));
 
                 // @Valid rejects the request before the controller method runs
                 verify(eventService, never()).updateEvent(any(), any());
@@ -268,14 +329,14 @@ public class EventControllerTest {
                 when(eventService.updateEvent(any(), any()))
                                 .thenThrow(new EntityNotFoundException("The Event with the given id was not found"));
 
-                mockMvc.perform(patch("/event/{eventId}", event.getId())
+                mockMvc.perform(patch("/events/{eventId}", event.getId())
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(jsonRequest))
                                 .andExpect(status().isNotFound())
                                 .andExpect(jsonPath("$.status").value(404))
                                 .andExpect(jsonPath("$.error").value("Not Found"))
                                 .andExpect(jsonPath("$.message").value("The Event with the given id was not found"))
-                                .andExpect(jsonPath("$.path").value("/event/" + event.getId()));
+                                .andExpect(jsonPath("$.path").value("/events/" + event.getId()));
         }
 
         /**
@@ -292,7 +353,7 @@ public class EventControllerTest {
                                                 new ApiError.FieldError("saleStartsAt",
                                                                 "The sale must start before the event starts."))));
 
-                mockMvc.perform(patch("/event/{eventId}", event.getId())
+                mockMvc.perform(patch("/events/{eventId}", event.getId())
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(jsonRequest))
                                 .andExpect(status().isBadRequest())

@@ -6,7 +6,8 @@ out of the box.
 | Layer | Tool | Location | What it proves |
 |-------|------|----------|----------------|
 | Backend unit, slice + integration | JUnit 5, Mockito, MockMvc, Spring Security Test | `apps/backend/src/test` | Token logic, key loading, sign-up rules, the auth endpoints, token verification, role-based access, the JWKS endpoint |
-| Web unit | Vitest + Testing Library | `apps/web/__tests__/unit` | Form rules, cookie parsing, route gate (`proxy.ts`), access-token renewal, components |
+| Web unit | Vitest + Testing Library | `apps/web/__tests__/unit` | Form rules, cookie parsing, route gate (`proxy.ts`), components |
+| Web integration | Vitest | `apps/web/__tests__/integration` | Access-token renewal: 401 → refresh → retry through the real store and RTK Query, only the network mocked |
 | Web end-to-end | Playwright (Chromium) | `apps/web/__tests__/e2e` | The real browser flow against the real backend + database |
 
 ---
@@ -46,7 +47,7 @@ main packages). Inside each feature they are split into three layers, plus a
 - `auth/slice/AuthControllerTest`: the three `/auth` endpoints, error envelopes, bean validation
 - `auth/slice/JwksControllerTest`: the public JWKS endpoint, without any private key material
 - `user/slice/MeControllerTest`: `/me` and `/admin/ping` through the real `SecurityConfig`, with real signed tokens and `@PreAuthorize`
-- `event/slice/EventControllerTest`: the `/event` CRUD endpoints, 404 and 400 (bean validation and business rules) error envelopes
+- `event/slice/EventControllerTest`: the `/events` CRUD endpoints, 404 and 400 (bean validation and business rules) error envelopes
 
 **Integration** (`<feature>/integration/`, the whole app, nothing mocked):
 - `auth/integration/AuthIntegrationTest`: the real `KeyConfig` loads keys
@@ -162,7 +163,6 @@ normally-running dev backend on `8080`.
 
 ## In CI
 
-Each layer has its own GitHub Actions workflow (`backend-verify-ci`,
-`web-unit-ci`, `web-e2e-ci`, plus `web-build-ci` for lint, types and the
-build). Their reports are attached to every run as artifacts; see
-[CI.md](CI.md).
+The backend runs in `backend-verify-ci`. The web app runs in `web-checks`: lint,
+types, build and unit tests first, the e2e tests only once those are green.
+Their reports are attached to every run as artifacts; see [CI.md](CI.md).

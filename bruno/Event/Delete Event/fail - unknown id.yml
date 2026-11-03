@@ -1,23 +1,30 @@
 info:
   name: fail - unknown id
   type: http
-  seq: 3
+  seq: 2
 
 http:
   method: DELETE
-  url: "{{baseUrl}}/event/00000000-0000-0000-0000-000000000000"
+  url: "{{baseUrl}}/events/00000000-0000-0000-0000-000000000000"
   auth:
     type: bearer
     token: "{{accessTk}}"
 
 runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("answers with Not Found", function () {
+          expect(res.getBody().error).to.equal("Not Found");
+        });
+
+        test("names the missing event in the message", function () {
+          expect(res.getBody().message).to.include("00000000-0000-0000-0000-000000000000");
+        });
   assertions:
     - expression: res.status
       operator: eq
       value: "404"
-    - expression: res.body.error
-      operator: eq
-      value: "Not Found"
 
 settings:
   encodeUrl: true

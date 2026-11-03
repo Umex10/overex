@@ -20,8 +20,8 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 
 import com.overex.backend.auth.security.CustomUserDetails;
 import com.overex.backend.auth.security.CustomUserDetailsService;
-import com.overex.backend.common.entities.User;
-import com.overex.backend.common.repositories.UserRepository;
+import com.overex.backend.user.User;
+import com.overex.backend.user.UserRepository;
 import com.overex.backend.auth.utils.AuthTestDataFactory;
 
 /**

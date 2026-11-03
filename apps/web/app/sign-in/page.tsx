@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { Suspense, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
@@ -12,11 +12,12 @@ import { Input } from "@/components/ui/input";
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Spinner } from "@/components/ui/loader";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { useHydrated } from "@/lib/use-hydrated";
-import { AuthTips } from "@/components/AuthTips";
-import { useSignInMutation } from "@/redux/api/apis/auth";
-import { signInSchema, type SignInFormValues } from "@/lib/validation";
-import type { ApiErrorBody } from "@/types/ApiError";
+import { SearchParamToast } from "@/components/search-param-toast";
+import { useHydrated } from "@/hooks/use-hydrated";
+import { AuthTips } from "@/features/auth/components/auth-tips";
+import { useSignInMutation } from "@/features/auth/auth-api";
+import { signInSchema, type SignInFormValues } from "@/features/auth/auth-validation";
+import type { ApiErrorBody } from "@/types/api-error";
 
 /**
  * Sign-in page at `/sign-in`. Wires a Zod-validated react-hook-form to the
@@ -44,7 +45,7 @@ export default function SignInPage() {
         id: toastId,
         className: "toast-success",
       });
-      router.push("/dashboard");
+      router.push("/events");
     } catch (error) {
       const message = (error as ApiErrorBody)?.message || "Sign-in failed.";
       toast.error(message, { id: toastId, className: "toast-error" });
@@ -75,9 +76,14 @@ export default function SignInPage() {
             </p>
           </div>
 
-          <Suspense fallback={null}>
-            <SessionExpiredNote />
-          </Suspense>
+          {/* Set by AuthProvider when the session could not be renewed
+              (refresh cookie expired, signed with an old key, or the account
+              is gone). The stale cookie has already been removed. */}
+          <SearchParamToast
+            param="session"
+            value="expired"
+            message="Your session has expired. Please sign in again."
+          />
 
           {/* method="post": should the browser ever submit the form itself, the
               password goes into the request body, never into the URL.
@@ -178,26 +184,6 @@ export default function SignInPage() {
 
       {/* Tips panel (desktop only) */}
       <AuthTips variant="sign-in" />
-    </div>
-  );
-}
-
-/**
- * Shown when the dashboard sent the user here because their session could not
- * be renewed (refresh cookie expired, signed with an old key, or the account is
- * gone). The stale cookie has already been removed, so signing in again works.
- */
-function SessionExpiredNote() {
-  const expired = useSearchParams().get("session") === "expired";
-  if (!expired) return null;
-
-  return (
-    <div
-      role="status"
-      data-testid="sign-in-session-expired-note"
-      className="mb-6 rounded-xl border border-primary/30 bg-primary/10 px-4 py-3 text-sm text-foreground"
-    >
-      Your session has expired. Please sign in again.
     </div>
   );
 }

@@ -1,0 +1,237 @@
+# All checks of the Next.js app in one workflow, as three jobs:
+#
+#   build (lint, types, next build) ─┐
+#                                    ├─> e2e (Playwright against DB + backend)
+#   unit  (Vitest)                  ─┘
+#
+# build and unit are fast and run in parallel. e2e is slow (database, Spring,
+# a second production build, a browser), so it only starts once both are
+# green: no point in waiting for it when a cheaper check has already failed.
+# Each job still shows up as its own check with its own log on GitHub.
+name: web-checks
+
+on:
+  push:
+    # No branch filter: the checks run everywhere, main included.
+    # One set of paths for all jobs: the e2e suite drives the real backend, so
+    # a backend change can break the user flow without touching the frontend.
+    # build and unit then run as well; they take a minute, and filtering them
+    # per job would add more complexity than it saves (see docs/CI.md).
+    paths:
+      - "apps/web/**"
+      - "apps/backend/**"
+      - "docker-compose.test.yml"
+      - ".github/workflows/web-checks.yml"
+  # "Run workflow" button in the Actions tab to start it by hand.
+  workflow_dispatch:
+
+# Least privilege: the jobs only need to read the repository.
+permissions:
+  contents: read
+
+# One queue per branch for this workflow; a newer push cancels the run of the
+# older commit (same idea as in backend-verify-ci.yml).
+concurrency:
+  group: web-checks-${{ github.ref }}
+  cancel-in-progress: true
+
+# Every "run" step starts in apps/web instead of the repository root, where
+# package.json lives.
+defaults:
+  run:
+    working-directory: apps/web
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      # Clones the commit that triggered the run.
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      # Installs Node.js and caches npm's download folder (~/.npm) between runs.
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          # Current LTS line; quoted so YAML reads it as text.
+          node-version: "24"
+          # Restores ~/.npm from the GitHub cache at the start and saves it at
+          # the end, so packages are not downloaded again on every run.
+          cache: npm
+          # The cache key is derived from the lockfile: a fresh download only
+          # when the dependencies change. Needed because the lockfile is not in
+          # the repository root.
+          cache-dependency-path: apps/web/package-lock.json
+
+      # Installs exactly the versions from package-lock.json into a fresh
+      # node_modules. Unlike "npm install" it never changes the lockfile and
+      # fails if it does not match package.json.
+      - name: Install dependencies
+        run: npm ci
+
+      # ESLint with the Next.js rules (eslint.config.mjs).
+      - name: Lint
+        run: npm run lint
+
+      # TypeScript only checks the types (tsc --noEmit: no JavaScript output),
+      # for every .ts/.tsx file in tsconfig.json, tests and Playwright helpers
+      # included. Fails fast with a clear list, before the slower build starts.
+      - name: Type check
+        run: npm run typecheck
+
+      # The production build, as it would be deployed. Fails on compile errors,
+      # type errors in the app code and pages that cannot be prerendered.
+      - name: Build
+        run: npm run build
+        env:
+          # Next.js collects anonymous usage data during the build; not wanted
+          # on CI machines.
+          NEXT_TELEMETRY_DISABLED: "1"
+
+  unit:
+    runs-on: ubuntu-latest
+    # Vitest needs well under a minute; a run that hangs is stopped early.
+    timeout-minutes: 10
+    steps:
+      # Clones the commit that triggered the run.
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      # Installs Node.js and caches npm's download folder (~/.npm) between runs.
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          # Current LTS line; quoted so YAML reads it as text.
+          node-version: "24"
+          # Restores ~/.npm from the GitHub cache at the start and saves it at
+          # the end, so packages are not downloaded again on every run.
+          cache: npm
+          # The cache key is derived from the lockfile: a fresh download only
+          # when the dependencies change. Needed because the lockfile is not in
+          # the repository root.
+          cache-dependency-path: apps/web/package-lock.json
+
+      # Installs exactly the versions from package-lock.json into a fresh
+      # node_modules. Unlike "npm install" it never changes the lockfile and
+      # fails if it does not match package.json.
+      - name: Install dependencies
+        run: npm ci
+
+      # Runs Vitest once (vitest run). vitest.config.ts writes the results to
+      # test-reports/junit.xml as well and, on GitHub, marks failed tests on
+      # the run page.
+      - name: Unit tests
+        run: npm run test:unit
+
+      # Keeps the report as an artifact: a zip attached to this run,
+      # downloadable at the bottom of the run page. Without this step the
+      # file would be deleted together with the machine.
+      - name: Upload Vitest report
+        # By default a step only runs if all previous steps succeeded, so it
+        # would be skipped after failing tests, exactly when the report matters.
+        # !cancelled() runs it after success and after failure, but not when
+        # the run was cancelled (e.g. by a newer push, see concurrency above).
+        # !env.ACT skips it when the workflow runs locally with act (which sets
+        # ACT=true): act's artifact server does not support upload-artifact@v7.
+        if: ${{ !cancelled() && !env.ACT }}
+        uses: actions/upload-artifact@v7
+        with:
+          # Name of the download on the run page.
+          name: unit-reports
+          # The JUnit XML written by the test step above.
+          path: apps/web/test-reports/
+          # If the folder is missing (e.g. npm ci failed before the tests ran),
+          # stay quiet. The default "warn" would only log a warning; "error"
+          # would fail the step. The real cause is already shown above.
+          if-no-files-found: ignore
+          # Delete the artifact after 14 days to save storage.
+          retention-days: 14
+
+  e2e:
+    runs-on: ubuntu-latest
+    needs: [build, unit]
+    # Stop a hanging run (e.g. a server that never comes up) after 20 minutes
+    # instead of GitHub's default of 6 hours.
+    timeout-minutes: 20
+    steps:
+      # Clones the commit that triggered the run.
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      # Installs Node.js and caches npm's download folder (~/.npm) between runs.
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          # Current LTS line; quoted so YAML reads it as text.
+          node-version: "24"
+          # Restores ~/.npm from the GitHub cache at the start and saves it at
+          # the end, so packages are not downloaded again on every run.
+          cache: npm
+          # The cache key is derived from the lockfile: a fresh download only
+          # when the dependencies change. Needed because the lockfile is not in
+          # the repository root.
+          cache-dependency-path: apps/web/package-lock.json
+
+      # The backend runs directly on this machine (./mvnw spring-boot:run,
+      # started by Playwright), so the machine needs a JDK. Same setup as in
+      # backend-verify-ci.yml: JDK 25 (Eclipse Temurin) plus the cached Maven
+      # repository (~/.m2/repository), keyed by pom.xml.
+      - name: Set up JDK 25
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          # Quoted so YAML reads it as text, not as a number.
+          java-version: "25"
+          cache: maven
+          cache-dependency-path: apps/backend/pom.xml
+
+      # Installs exactly the versions from package-lock.json into a fresh
+      # node_modules. Unlike "npm install" it never changes the lockfile and
+      # fails if it does not match package.json.
+      - name: Install dependencies
+        run: npm ci
+
+      # npm ci only installs the Playwright package, not a browser. This
+      # downloads Chromium (the only browser the config uses); --with-deps also
+      # installs the Linux libraries it needs to start.
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      # test:e2e starts the test database (Docker is preinstalled on the
+      # runner), lets Playwright start the backend (port 8081; it creates its
+      # own JWT keys on startup) and build + start the frontend (port 3001),
+      # runs the specs and removes the database again. It exits with
+      # Playwright's result, so failing tests turn this step red. GitHub sets
+      # CI=true, which the Playwright config uses for 1 retry and 1 worker.
+      - name: E2E tests
+        run: npm run test:e2e
+        env:
+          # No anonymous usage data from the Next.js build on CI machines.
+          NEXT_TELEMETRY_DISABLED: "1"
+
+      # Keeps the reports as an artifact: a zip attached to this run,
+      # downloadable at the bottom of the run page. Without this step the
+      # files would be deleted together with the machine.
+      - name: Upload Playwright reports
+        # By default a step only runs if all previous steps succeeded, so it
+        # would be skipped after failing tests, exactly when the reports matter.
+        # !cancelled() runs it after success and after failure, but not when
+        # the run was cancelled (e.g. by a newer push, see concurrency above).
+        # !env.ACT skips it when the workflow runs locally with act (which sets
+        # ACT=true): act's artifact server does not support upload-artifact@v7.
+        if: ${{ !cancelled() && !env.ACT }}
+        uses: actions/upload-artifact@v7
+        with:
+          # Name of the download on the run page.
+          name: e2e-reports
+          # The HTML report (open index.html) and, for failed tests, the
+          # screenshots and traces Playwright recorded.
+          path: |
+            apps/web/playwright-report/
+            apps/web/test-results/
+          # If the folders are missing (e.g. a server did not start), stay quiet.
+          # The default "warn" would only log a warning; "error" would fail the
+          # step. The real cause is already shown in the step above.
+          if-no-files-found: ignore
+          # Delete the artifact after 14 days to save storage.
+          retention-days: 14
