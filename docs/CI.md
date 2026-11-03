@@ -14,6 +14,7 @@ same branch cancels the older run.
 | `docker-ci` | every branch except `main` | `apps/backend/**` | Builds the backend image (not pushed) to catch Dockerfile errors before a merge | – |
 | `docker-publish` | `main` and version tags | `apps/backend/**` (tags always) | Builds the backend image and pushes it to ghcr.io | – |
 | `web-checks` | every branch | `apps/web/**`, `apps/backend/**`, `docker-compose.test.yml` | Three jobs: `build` (`npm ci`, ESLint, `tsc --noEmit`, `next build`) and `unit` (Vitest) in parallel, then `e2e` (Playwright against test DB + backend + frontend build) once both are green | `unit-reports` (JUnit XML), `e2e-reports` (Playwright HTML report, traces) |
+| `workflow-lint` | every branch | `.github/workflows/**` | Runs actionlint over all workflow files, the same check as `npm run lint:workflows`; a safety net when it was forgotten locally | – |
 
 All of them can also be started by hand with **Run workflow** in the Actions tab.
 
