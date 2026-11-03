@@ -1,4 +1,4 @@
-# CI, Docker image and releases
+# CI, Docker image, releases and dependency updates
 
 Everything runs on GitHub Actions; the workflows live in `.github/workflows/`.
 Each one only starts when files it depends on change (except `workflow-lint`,
@@ -207,3 +207,76 @@ The image contains no keys and never creates any. Mount a key pair and point
 Versions follow [Semantic Versioning](https://semver.org): MAJOR for breaking
 API changes (e.g. a changed token format), MINOR for new features, PATCH for
 fixes.
+
+---
+
+## Dependency updates (Dependabot)
+
+[Dependabot](https://docs.github.com/code-security/dependabot) is built into
+GitHub. It reads the files that list the dependencies, asks the registry
+(npmjs.com, Maven Central) for newer versions and opens a pull request against
+`main` that changes those files. It installs nothing and does not judge
+compatibility: the CI workflows run on its branch like on any other push, and a
+green run is the sign that the update breaks nothing.
+
+It has three parts; only the last one is configured in the repository:
+
+| Part | What it does | Where |
+|------|--------------|-------|
+| Alerts | Reports known vulnerabilities in the dependencies | Settings → Code security |
+| Security updates | Opens a pull request right away that only lifts the vulnerable dependency | Settings → Code security |
+| Version updates | Checks every dependency on a schedule and opens pull requests for newer versions | `.github/dependabot.yml` |
+
+`dependabot.yml` is only read from the default branch (`main`). Its status and
+a "Check for updates" button are under Insights → Dependency graph →
+Dependabot.
+
+### Why update regularly
+
+- Small steps: a weekly minor update is usually trivial, a jump over several
+  major versions brings many breaking changes at once.
+- A security fix usually only ships in the newest version. Being far behind
+  turns "apply the patch" into a large upgrade, at the worst possible time.
+- Old versions reach end of life (Spring Boot, Node, Next.js) and get no fixes.
+
+### Configuration
+
+Both entries check every Monday and only propose a version once it has been
+published for 7 days (`cooldown`): most malicious or broken releases are found
+and removed within days. Security updates are not delayed. At most 5 open
+pull requests per entry.
+
+| Entry | Folder | Groups (one pull request each) | Commit prefix |
+|-------|--------|--------------------------------|---------------|
+| `npm` | `apps/web` | `web-minor-and-patch`: all minor and patch updates | `chore(web)` |
+| `maven` | `apps/backend` | `jjwt`: the three `io.jsonwebtoken` artifacts, any update type; `backend-minor-and-patch`: all other minor and patch updates | `chore(backend)` |
+
+Major updates outside a group get one pull request each, so they can be
+checked one by one. A dependency lands in the first group that matches it,
+which is why `jjwt` comes first.
+
+**Why the `jjwt` group:** `jjwt-api`, `jjwt-impl` and `jjwt-jackson` each have
+their own `<version>` in `pom.xml` but must always match. Separate pull
+requests would each leave the build with mixed versions. Below 1.0, even a
+minor jump can break the API (0.11 → 0.12 did), so read that pull request
+carefully.
+
+### Maven specifics
+
+- **No lock file.** npm has `package.json` (allowed ranges) and
+  `package-lock.json` (exact versions). Maven only has `pom.xml`, with one
+  fixed version per entry.
+- **Where versions live**, all of which Dependabot updates: the parent
+  (`spring-boot-starter-parent`), explicit `<version>` tags (jjwt, springdoc),
+  version properties (`${mapstruct.version}`, so `mapstruct` and
+  `mapstruct-processor` move together) and plugin versions (JaCoCo).
+- **The parent.** For Dependabot the parent is an ordinary artifact: it asks
+  Maven Central for newer versions and changes the number. The compatibility
+  knowledge lives in the parent itself: its `<dependencyManagement>` lists
+  versions for hundreds of libraries that the Spring team tested together.
+  Dependencies without a `<version>` (starters, `postgresql`, `h2`, Jackson)
+  take theirs from that list, so one parent bump updates all of them.
+- **Rule:** never add a `<version>` to a dependency Spring Boot already
+  manages. Dependabot would then bump it on its own and leave the tested
+  combination. Explicit versions belong only to libraries Spring Boot does not
+  know (jjwt, mapstruct, springdoc).

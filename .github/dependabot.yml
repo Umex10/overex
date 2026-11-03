@@ -1,0 +1,71 @@
+# Dependabot version updates: checks the dependencies on a schedule and opens
+# a pull request against main when a newer version exists. The CI workflows run
+# on that pull request's branch like on any other push, so a green run is a
+# good sign that the update breaks nothing.
+#
+# GitHub only reads this file from the default branch (main); on a feature
+# branch it has no effect yet.
+#
+# Security updates (a pull request as soon as a dependency has a known
+# vulnerability) are separate: they are switched on under Settings → Code
+# security and work without this file.
+version: 2
+
+updates:
+  # Next.js app: package.json and package-lock.json in apps/web.
+  - package-ecosystem: npm
+    # Folder with the manifest, relative to the repository root.
+    directory: /apps/web
+    schedule:
+      # Once a week, on Monday (time in UTC).
+      interval: weekly
+      day: monday
+    # Only propose a version once it has been published for 7 days. Most
+    # malicious or broken npm releases are found and removed within days.
+    cooldown:
+      default-days: 7
+    # One pull request for all minor and patch updates together instead of one
+    # per package. Major updates (possibly breaking) still get their own pull
+    # request each, so they can be checked one by one.
+    groups:
+      web-minor-and-patch:
+        update-types:
+          - minor
+          - patch
+    # At most this many open Dependabot pull requests for npm at the same time.
+    open-pull-requests-limit: 5
+    # Commit messages like "chore(web): bump next from 16.0.1 to 16.0.3",
+    # matching the scope used in this repository.
+    commit-message:
+      prefix: "chore(web)"
+
+  # Spring Boot backend: pom.xml in apps/backend. Maven has no lock file; the
+  # versions in pom.xml are the whole truth. Dependabot updates the parent
+  # (spring-boot-starter-parent), explicit <version> tags, version properties
+  # like ${mapstruct.version} and plugin versions. Starters without a version
+  # are managed by the parent and move along with it.
+  - package-ecosystem: maven
+    directory: /apps/backend
+    schedule:
+      interval: weekly
+      day: monday
+    # Same reasoning as for npm.
+    cooldown:
+      default-days: 7
+    # A dependency lands in the first group that matches it.
+    groups:
+      # jjwt-api, jjwt-impl and jjwt-jackson must always have the same
+      # version; separate pull requests would each leave the build with mixed
+      # versions. Includes major updates.
+      jjwt:
+        patterns:
+          - "io.jsonwebtoken:*"
+      # Everything else: minor and patch updates in one pull request, major
+      # updates (e.g. Spring Boot 4 -> 5) in their own.
+      backend-minor-and-patch:
+        update-types:
+          - minor
+          - patch
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "chore(backend)"
