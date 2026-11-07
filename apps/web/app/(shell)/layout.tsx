@@ -36,15 +36,20 @@ export default function ShellLayout({
 
   return (
     <AuthProvider>
-      <SidebarProvider>
+      {/* The whole app (sidebar + content) is capped at --app-max-width and
+          centred; on wider screens empty space appears left and right. */}
+      <SidebarProvider
+        style={{ "--app-max-width": "96rem" } as React.CSSProperties}
+        className="mx-auto max-w-(--app-max-width)"
+      >
         <AppSidebar />
         {/* flex-1: takes the space right of the sidebar; min-w-0 lets wide
               content shrink instead of pushing the layout wider. */}
-        <div className="min-w-0 flex-1 flex flex-row overflow-x-hidden">
+        <div className="min-w-0 flex-1 flex flex-row overflow-x-clip">
           <div className="w-full flex flex-col">
             <header
               className={cn(
-                "w-full items-center border-b py-2 px-4",
+                "w-full items-center border-b p-4",
                 // Phones: three columns, the outer two always equally wide, so
                 // the logo in the middle column sits exactly in the centre.
                 isMobile
@@ -54,7 +59,7 @@ export default function ShellLayout({
             >
               {isMobile ? (
                 <>
-                  <SidebarTrigger className="size-auto justify-self-start hover:cursor-pointer" />
+                  <SidebarTrigger className="size-auto justify-self-start hover:cursor-pointer [&_svg]:size-6!" />
                   <SidebarLogo />
                   {!me && (
                     <SignInButton className="justify-self-end"></SignInButton>
@@ -67,7 +72,7 @@ export default function ShellLayout({
                   <div className="flex flex-row shrink-0 items-center gap-2">
                     {/* size-auto: the button shrinks to the icon instead of the
                         fixed size-7 square, so there is no empty space around it. */}
-                    <SidebarTrigger className="size-auto hover:cursor-pointer" />
+                    <SidebarTrigger className="size-auto hover:cursor-pointer [&_svg]:size-6!" />
 
                     {/* Vertical line between trigger and title. Fixed height
                         instead of the default self-stretch, so it stays
@@ -86,7 +91,7 @@ export default function ShellLayout({
                 </>
               )}
             </header>
-            <main className="w-full flex justify-center items-center p-4">
+            <main className="relative w-full flex justify-center items-center p-4">
               {children}
             </main>
           </div>

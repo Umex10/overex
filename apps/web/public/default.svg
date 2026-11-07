@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" width="1600" height="900">
+  <defs>
+    <pattern id="stripes" width="56" height="56" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+      <rect width="56" height="56" fill="#1c1c1f"/>
+      <rect width="28" height="56" fill="#222226"/>
+    </pattern>
+  </defs>
+  <rect width="1600" height="900" fill="url(#stripes)"/>
+  <text x="800" y="465" text-anchor="middle"
+        font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace"
+        font-style="italic" font-size="44" fill="#6b6b73">event-bild</text>
+</svg>

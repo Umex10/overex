@@ -7,7 +7,7 @@ const SignInButton = ({className}: {className?: string}) => {
     <Button
       asChild
       className={cn(
-        "h-9 rounded-lg bg-white text-zinc-950 transition-all duration-150 hover:bg-zinc-200 hover:shadow-md active:scale-[0.98]",
+        "h-10 rounded-lg bg-white text-zinc-950 transition-all duration-150 hover:bg-zinc-200 hover:shadow-md active:scale-[0.98]",
         className
       )}
     >

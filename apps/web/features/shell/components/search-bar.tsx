@@ -1,4 +1,4 @@
-import { MagnifyingGlassIcon } from "@phosphor-icons/react/dist/ssr";
+import { SearchIcon } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
@@ -16,16 +16,16 @@ export function SearchBar({
 }: React.ComponentProps<typeof Input>) {
   return (
     <div className={cn("relative w-full min-w-0", className)}>
-      <MagnifyingGlassIcon
+      <SearchIcon
         aria-hidden
-        className="hover:cursor-pointer absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground"
+        className="hover:cursor-pointer absolute top-1/2 left-3.5 size-5 -translate-y-1/2 text-muted-foreground"
       />
       <Input
         type="search"
         aria-label="Search events"
         placeholder="Events, Artists, Venue..."
         {...props}
-        className="w-full rounded-xl pl-8"
+        className="w-full rounded-xl pl-11"
       />
     </div>
   );

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import { BellIcon, CalendarBlankIcon, MapPinIcon } from "@phosphor-icons/react";
+import { BellIcon, CalendarIcon, MapPinIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CountdownCards } from "@/features/event/components/countdown-cards";
@@ -66,7 +66,7 @@ export function FeaturedEventCard({
           />
         </div>
 
-        <div className="flex w-full flex-col gap-5 p-5">
+        <div className="flex w-full flex-col gap-5 p-5 md:p-6">
           <div className="flex flex-col items-start gap-2">
             <div className="flex items-center gap-2">
               <Badge
@@ -86,8 +86,8 @@ export function FeaturedEventCard({
               {event.title}
             </h2>
 
-            <div className="flex flex-col gap-1 text-xs text-muted-foreground sm:flex-row sm:gap-4">
-              <EventMetaItem icon={CalendarBlankIcon} className="gap-1.5">
+            <div className="flex flex-col gap-1.5 text-sm text-muted-foreground sm:flex-row sm:gap-4">
+              <EventMetaItem icon={CalendarIcon} className="gap-1.5">
                 <DateFormat dateToFormat={event.startsAt} weekdayType="short" />{" "}
                 · <TimeFormat timeToFormat={event.startsAt} />
               </EventMetaItem>
@@ -98,7 +98,7 @@ export function FeaturedEventCard({
           </div>
 
           <div className="flex flex-col gap-2">
-             <p className="text-xs text-muted-foreground">
+             <p className="text-sm text-muted-foreground">
                 Verkaufsstart:{" "}
                 <DateFormat dateToFormat={event.saleStartsAt} weekdayType="short" />{" "}
                 · <TimeFormat timeToFormat={event.saleStartsAt} />
@@ -113,7 +113,7 @@ export function FeaturedEventCard({
 
           <div className="mt-auto flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             {(ticketCount !== undefined || priceFromCents !== undefined) && (
-              <p className="text-xs text-muted-foreground">
+              <p className="text-sm text-muted-foreground">
                 {ticketCount !== undefined && (
                   <>{numberFormat.format(ticketCount)} Tickets</>
                 )}
@@ -123,7 +123,7 @@ export function FeaturedEventCard({
                 {priceFromCents !== undefined && (
                   <>
                     ab{" "}
-                    <span className="text-base font-bold text-foreground">
+                    <span className="text-lg font-bold text-foreground">
                       <PriceFormat priceInCents={priceFromCents} />
                     </span>
                   </>
@@ -132,15 +132,15 @@ export function FeaturedEventCard({
             )}
 
             <div className="w-full flex flex-col items-center gap-2">
-              <Button className="w-full h-9 rounded-lg px-4 text-xs hover:cursor-pointer">
+              <Button size="lg" className="w-full hover:cursor-pointer">
                 Zum Event
               </Button>
 
               {!saleOpen && (
                 <Button
                   variant="outline"
-                  className="w-full h-9 rounded-lg bg-transparent text-xs
-                hover:cursor-pointer"
+                  size="lg"
+                  className="w-full bg-transparent hover:cursor-pointer"
                 >
                   <BellIcon />
                   Erinnerung aktivieren
