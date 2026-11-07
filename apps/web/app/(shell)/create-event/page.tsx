@@ -24,7 +24,16 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { useGetCategoriesQuery } from "@/features/event/category-api";
+import {
+  useCheckImageUrlMutation,
+  useCreateEventMutation,
+} from "@/features/event/event-api";
+import { Skeleton } from "@/components/ui/skeleton";
+import type { ApiErrorBody } from "@/types/api-error";
+import type { CreateEventDto } from "@/features/event/event-types";
 import { CreateEventButtons } from "@/features/event/components/create-event-buttons";
 import { DateTimeFields } from "@/features/event/components/date-time-fields";
 import {
@@ -47,9 +56,26 @@ import EventMetaItem from "@/features/event/components/event-meta-item";
 import DateFormat from "@/features/event/components/date-format";
 import TimeFormat from "@/features/event/components/time-format";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useEffect, useState } from "react";
+
+/** Statuses a new event can be created with (CANCELED only comes later). */
+type CreateStatus = Extract<CreateEventDto["status"], "DRAFT" | "PUBLISHED">;
+
+/** Backend field names that differ from the form's field names. */
+const BACKEND_TO_FORM_FIELD: Record<string, keyof CreateEventFormInput> = {
+  startsAt: "startDate",
+  saleStartsAt: "saleDate",
+};
+
+/** Shown in the preview until a typed image URL has loaded successfully. */
+const DEFAULT_IMAGE = "/default.svg";
+/** Debounce: the image is only checked after the user stopped typing this long. */
+const IMAGE_CHECK_DELAY_MS = 600;
 
 /** One card per section (Grunddaten, Verkaufsstart). */
 const SECTION_CLASS = "rounded-lg border p-4";
+/** Width of the right column (live preview and the buttons above it). */
+const SIDE_COLUMN_CLASS = "lg:w-80 lg:shrink-0 xl:w-96";
 
 export default function CreateEventPage() {
   const { data: categories = [] } = useGetCategoriesQuery();
@@ -82,9 +108,13 @@ export default function CreateEventPage() {
     useWatch({ control: form.control, name: "description" }) ||
     "Beschreibung des Events";
   const rawImageUrl = useWatch({ control: form.control, name: "imageUrl" });
-  // Only a complete URL is shown, half-typed input ("htt…") keeps the default.
-  const imageUrl =
-    rawImageUrl && URL.canParse(rawImageUrl) ? rawImageUrl : "/default.svg";
+  // Only a complete URL is worth checking, half-typed input ("htt…") isn't.
+  const candidateImageUrl =
+    rawImageUrl && URL.canParse(rawImageUrl) ? rawImageUrl : undefined;
+  // The last URL that really loaded an image.
+  const [verifiedImageUrl, setVerifiedImageUrl] = useState<string>();
+  const [checkImage, { isLoading: isCheckingImage }] =
+    useCheckImageUrlMutation();
   const startDate = useWatch({ control: form.control, name: "startDate" });
   const startTime = useWatch({ control: form.control, name: "startTime" });
   // One point in time for DateFormat / TimeFormat, only once both are picked.
@@ -105,10 +135,82 @@ export default function CreateEventPage() {
 
   const categorySelected = categories.find((c) => c.id === categoryId);
 
-  // Only called once every rule in createEventSchema passed (step 9: send it).
-  const onSubmit = (values: CreateEventFormValues) => {
-    console.log("create event", values);
+  const router = useRouter();
+  const [createEvent] = useCreateEventMutation();
+
+  // Debounced image check: every keystroke restarts the timer (cleanup
+  // below), so the check only runs once the user paused typing.
+  useEffect(() => {
+    if (!candidateImageUrl) return;
+
+    // Set by the cleanup when the URL changed in the meantime, so an older,
+    // slower check can't overwrite the result of a newer one.
+    let cancelled = false;
+
+    const timer = setTimeout(async () => {
+      try {
+        const url = await checkImage(candidateImageUrl).unwrap();
+        if (!cancelled) setVerifiedImageUrl(url);
+      } catch {
+        // Not an image or not reachable: the preview keeps the default.
+      }
+    }, IMAGE_CHECK_DELAY_MS);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [candidateImageUrl, checkImage]);
+
+  // Only the URL in the field right now counts, an older verified one doesn't.
+  const previewImageUrl =
+    candidateImageUrl && verifiedImageUrl === candidateImageUrl
+      ? candidateImageUrl
+      : DEFAULT_IMAGE;
+
+  // Sends the validated values with the status of the clicked button.
+  // `values` already has the shape of CreateEventDto minus the status
+  // (startsAt / saleStartsAt as ISO strings).
+  const submitEvent = async (
+    values: CreateEventFormValues,
+    status: CreateStatus,
+  ) => {
+    const isDraft = status === "DRAFT";
+    const toastId = toast.loading(
+      isDraft ? "Entwurf wird gespeichert …" : "Event wird veröffentlicht …",
+      { className: "toast-loading" },
+    );
+    try {
+      // unwrap(): returns the created event, or throws the error response.
+      const created = await createEvent({ ...values, status }).unwrap();
+      toast.success(isDraft ? "Entwurf gespeichert!" : "Event veröffentlicht!", {
+        id: toastId,
+        className: "toast-success",
+      });
+      router.push(`/events/${created.id}`);
+    } catch (error) {
+      // RTK Query puts the backend's error body into `data`.
+      const apiError = (error as { data?: ApiErrorBody }).data;
+      toast.error(apiError?.message || "Das Event konnte nicht erstellt werden.", {
+        id: toastId,
+        className: "toast-error",
+      });
+
+      // Show backend field errors under the matching input. The backend knows
+      // startsAt / saleStartsAt, the form has date and time separately.
+      apiError?.errors?.forEach(({ field, message }) => {
+        const formField = BACKEND_TO_FORM_FIELD[field] ?? field;
+        form.setError(formField as keyof CreateEventFormInput, { message });
+      });
+    }
   };
+
+  // handleSubmit returns a function: it validates with zod first and only
+  // calls submitEvent when everything is valid. One per button.
+  const saveDraft = form.handleSubmit((values) => submitEvent(values, "DRAFT"));
+  const publish = form.handleSubmit((values) =>
+    submitEvent(values, "PUBLISHED"),
+  );
 
   return (
     <div className="w-full flex w-full flex-col gap-3">
@@ -121,8 +223,12 @@ export default function CreateEventPage() {
         <div className="w-full flex flex-row justify-between items-center">
           <h3 className="text-lg font-extrabold">All Events</h3>
 
-          <div className="flex flex-row gap-2">
-            <CreateEventButtons />
+          <div className={cn("flex flex-row gap-2", SIDE_COLUMN_CLASS)}>
+            <CreateEventButtons
+              onSaveDraft={saveDraft}
+              onPublish={publish}
+              disabled={form.formState.isSubmitting}
+            />
           </div>
         </div>
       )}
@@ -132,7 +238,7 @@ export default function CreateEventPage() {
         <form
           id="create-event-form"
           noValidate
-          onSubmit={form.handleSubmit(onSubmit)}
+          onSubmit={saveDraft}
           className="flex w-full min-w-0 flex-col gap-4"
         >
           {/* ---------- Grunddaten ---------- */}
@@ -331,7 +437,8 @@ export default function CreateEventPage() {
         <div
           className={cn(
             SECTION_CLASS,
-            "flex w-full flex-col gap-2 lg:sticky lg:top-0 lg:w-80 lg:shrink-0 xl:w-96",
+            "flex w-full flex-col gap-2 lg:sticky lg:top-0",
+            SIDE_COLUMN_CLASS,
           )}
         >
           <div className="flex flex-row justify-between items-center opacity-70">
@@ -350,13 +457,19 @@ export default function CreateEventPage() {
           {/* Same structure and sizes as the card view of EventCard. */}
           <div className="flex flex-col overflow-hidden rounded-xl border bg-card text-card-foreground">
             <div className="relative aspect-video w-full shrink-0 overflow-hidden">
-              <Image
-                src={imageUrl}
-                alt=""
-                fill
-                sizes="(min-width: 1280px) 384px, (min-width: 1024px) 320px, 100vw"
-                className="object-cover"
-              />
+              {isCheckingImage ? (
+                <Skeleton className="size-full" />
+              ) : (
+                <Image
+                  src={previewImageUrl}
+                  alt="Image of the Event"
+                  fill
+                  // unoptimized: the browser loads the picture directly, so
+                  // any host works here, not only the ones in next.config.
+                  unoptimized
+                  className="object-cover"
+                />
+              )}
             </div>
 
             <div className="flex min-w-0 flex-col gap-1.5 p-4">
@@ -406,7 +519,11 @@ export default function CreateEventPage() {
         {isMobile && (
           <div className="sticky bottom-0 -mx-4 -mb-4 border-t bg-background p-4">
             <div className="grid grid-cols-2 gap-2 items-center">
-              <CreateEventButtons />
+              <CreateEventButtons
+              onSaveDraft={saveDraft}
+              onPublish={publish}
+              disabled={form.formState.isSubmitting}
+            />
             </div>
           </div>
         )}

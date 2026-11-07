@@ -26,6 +26,18 @@ export interface EventDto {
   updatedAt: string;
 }
 
+export interface CreateEventDto {
+  title: string;
+  categoryId: string;
+  description: string;
+  imageUrl: string;
+  startsAt: string;
+  saleStartsAt: string;
+  venue: string;
+  city: string;
+  status: "DRAFT" | "PUBLISHED" | "CANCELED";
+}
+
 /** Sort order of `GET /events`, in Spring's `property,direction` format. */
 export type EventSort = "startsAt,asc" | "startsAt,desc";
 
