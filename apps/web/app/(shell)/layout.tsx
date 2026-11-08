@@ -14,6 +14,7 @@ import { useAppSelector } from "@/redux/hooks";
 
 import BreadcrumbsContainer from "@/features/shell/components/breadcrumbs-container";
 import { useGetMeQuery } from "@/features/user/user-api";
+import { useGetAccessTkQuery } from "@/features/auth/auth-api";
 
 /**
  * Layout for every protected route under `(shell)`.
@@ -32,7 +33,8 @@ export default function ShellLayout({
   const isMobile = useIsMobile();
   const { showSearch } = useAppSelector((state) => state.routeContext);
 
-  const { data: me, isLoading: isLoadingMe } = useGetMeQuery();
+  const tk = useGetAccessTkQuery(undefined);
+  const me = useGetMeQuery(undefined, { skip: !tk.data });
 
   return (
     <AuthProvider>
