@@ -1,13 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import {
-  ArrowDownIcon,
-  ArrowUpIcon,
-  LayoutGridIcon,
-  ListIcon,
-  type LucideIcon,
-} from "lucide-react";
+import { LayoutGridIcon, ListIcon, type LucideIcon } from "lucide-react";
 import {
   AnimatePresence,
   MotionConfig,
@@ -19,7 +13,7 @@ import { Spinner } from "@/components/ui/loader";
 import { SearchBar } from "@/features/shell/components/search-bar";
 import { SearchParamToast } from "@/components/search-param-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { CategoryFilter } from "@/features/event/components/category-filter";
+import { EventListFilters } from "@/features/event/components/event-list-filters";
 import {
   EventCard,
   type EventCardLayout,
@@ -27,31 +21,10 @@ import {
 import { EventPagination } from "@/features/event/components/event-pagination";
 import { FeaturedEventCard } from "@/features/event/components/featured-event-card";
 import { useEventList } from "@/features/event/hooks/use-event-list";
-import type { EventSort } from "@/features/event/event-types";
 import { pickFeaturedEvent } from "@/features/event/featured-event";
 import { useAppDispatch } from "@/redux/hooks";
 import { useEffect } from "react";
 import { setShowSearch } from "@/features/shell/route-context-slice";
-
-/**
- * The sort button shows the current order; a click switches to `next`.
- * `label` is read out by screen readers and shown on hover.
- */
-const SORT_TOGGLE: Record<
-  EventSort,
-  { icon: LucideIcon; label: string; next: EventSort }
-> = {
-  "startsAt,asc": {
-    icon: ArrowUpIcon,
-    label: "Earliest first",
-    next: "startsAt,desc",
-  },
-  "startsAt,desc": {
-    icon: ArrowDownIcon,
-    label: "Latest first",
-    next: "startsAt,asc",
-  },
-};
 
 /**
  * Phones only: the view button switches between the compact list ("auto",
@@ -125,7 +98,6 @@ export default function EventPage() {
   }
 
   const featured = events && pickFeaturedEvent(events.content);
-  const sortToggle = SORT_TOGGLE[sort];
   const viewToggle = VIEW_TOGGLE[view];
 
   function changePage(newPage: number) {
@@ -164,42 +136,25 @@ export default function EventPage() {
             <h4 className="text-sm text-muted-foreground">{`${events?.page.totalElements ?? 0} Events`}</h4>
           </div>
 
-          {/* min-w-0 lets this row get narrower than its content; the filter
-              takes the remaining space and scrolls, the sort button keeps its
-              size (shrink-0) and stays on the right. */}
-          <div className="min-w-0 flex flex-row items-center gap-4">
-            <CategoryFilter
-              categories={categories}
-              categoryId={categoryId}
-              onChange={changeCategory}
-              className="flex-1"
-            />
-
-            <div className="flex flex-row gap-1 items-center">
-              <Button
-                variant="outline"
-                size="icon"
-                aria-label={sortToggle.label}
-                title={sortToggle.label}
-                onClick={() => changeSort(sortToggle.next)}
-                className="shrink-0 rounded-lg hover:cursor-pointer"
-              >
-                <sortToggle.icon />
-              </Button>
-
-              {/* Phones only: from md on the list is cards anyway. */}
-              <Button
-                variant="outline"
-                size="icon"
-                aria-label={viewToggle.label}
-                title={viewToggle.label}
-                onClick={() => setView(viewToggle.next)}
-                className="shrink-0 rounded-lg hover:cursor-pointer md:hidden"
-              >
-                <viewToggle.icon />
-              </Button>
-            </div>
-          </div>
+          <EventListFilters
+            categories={categories}
+            categoryId={categoryId}
+            onCategoryChange={changeCategory}
+            sort={sort}
+            onSortChange={changeSort}
+          >
+            {/* Phones only: from md on the list is cards anyway. */}
+            <Button
+              variant="outline"
+              size="icon"
+              aria-label={viewToggle.label}
+              title={viewToggle.label}
+              onClick={() => setView(viewToggle.next)}
+              className="shrink-0 rounded-lg hover:cursor-pointer md:hidden"
+            >
+              <viewToggle.icon />
+            </Button>
+          </EventListFilters>
         </div>
 
         {/* Only the list is replaced when it's empty: filter and sort stay, so
