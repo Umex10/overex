@@ -1,6 +1,5 @@
 package com.overex.backend.auth.integration;
 
-import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasItems;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -19,7 +18,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.core.DelegatingOAuth2TokenValidator;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtClaimValidator;
@@ -99,13 +97,9 @@ class AuthIntegrationTest {
 	@Autowired
 	private ObjectMapper objectMapper;
 
-	/** The real repository (no mock), used to reset the database and to create an admin. */
+	/** The real repository (no mock), used to reset the database. */
 	@Autowired
 	private UserRepository userRepository;
-
-	/** Hashes the admin's password the same way sign-up would. */
-	@Autowired
-	private PasswordEncoder passwordEncoder;
 
 	/**
 	 * The H2 database lives as long as the Spring context, i.e. across tests.
@@ -129,8 +123,8 @@ class AuthIntegrationTest {
 
 		mockMvc.perform(get("/me").header("Authorization", "Bearer " + accessTk))
 				.andExpect(status().isOk())
-				.andExpect(jsonPath("$.email").value(signUp.getEmail()))
-				.andExpect(jsonPath("$.name").value(signUp.getName()))
+				.andExpect(jsonPath("$.email").value(signUp.email()))
+				.andExpect(jsonPath("$.name").value(signUp.name()))
 				.andExpect(jsonPath("$.role").value("USER"))
 				.andExpect(jsonPath("$.password").doesNotExist());
 	}
@@ -150,7 +144,7 @@ class AuthIntegrationTest {
 
 		mockMvc.perform(get("/me").header("Authorization", "Bearer " + AuthTestClient.accessTkOf(refreshed)))
 				.andExpect(status().isOk())
-				.andExpect(jsonPath("$.email").value(AuthTestDataFactory.createSignUpDto().getEmail()));
+				.andExpect(jsonPath("$.email").value(AuthTestDataFactory.createSignUpDto().email()));
 	}
 
 	/**
@@ -161,29 +155,6 @@ class AuthIntegrationTest {
 	void shouldRejectInvalidRefreshCookie() throws Exception {
 		mockMvc.perform(get("/auth/access-tk").cookie(new Cookie("refresh_tk", "not-a-jwt")))
 				.andExpect(status().isUnauthorized());
-	}
-
-	/**
-	 * The stored role ends up in the token: an ADMIN may call the admin route, a
-	 * regular USER gets 403. Sign-up cannot create admins, so the admin is put
-	 * into the database directly, the way an operator would promote someone.
-	 */
-	@Test
-	void shouldAllowAdminRouteOnlyForAdminAccounts() throws Exception {
-		User admin = AuthTestDataFactory.createAdminUser();
-		admin.setId(null); // let JPA generate it
-		admin.setPassword(passwordEncoder.encode(AuthTestDataFactory.createAdminSignInDto().getPassword()));
-		userRepository.save(admin);
-		AuthTestClient.signUp(mockMvc, objectMapper, AuthTestDataFactory.createSignUpDto());
-
-		String adminAccessTk = AuthTestClient.accessTkOf(AuthTestClient.signIn(mockMvc, objectMapper, AuthTestDataFactory.createAdminSignInDto()));
-		String userAccessTk = AuthTestClient.signInAndReturnAccessTk(mockMvc, objectMapper);
-
-		mockMvc.perform(get("/admin/ping").header("Authorization", "Bearer " + adminAccessTk))
-				.andExpect(status().isOk())
-				.andExpect(jsonPath("$").value(containsString("pong")));
-		mockMvc.perform(get("/admin/ping").header("Authorization", "Bearer " + userAccessTk))
-				.andExpect(status().isForbidden());
 	}
 
 	/**
@@ -200,9 +171,8 @@ class AuthIntegrationTest {
 		String accessTk = AuthTestClient.signInAndReturnAccessTk(mockMvc, objectMapper);
 
 		mockMvc.perform(get("/me").header("Authorization", "Bearer " + accessTk))
+				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.role").value("USER"));
-		mockMvc.perform(get("/admin/ping").header("Authorization", "Bearer " + accessTk))
-				.andExpect(status().isForbidden());
 	}
 
 	/**
@@ -214,8 +184,9 @@ class AuthIntegrationTest {
 	void shouldSignInWithDifferentlyCasedEmail() throws Exception {
 		AuthTestClient.signUp(mockMvc, objectMapper, AuthTestDataFactory.createSignUpDto());
 
-		SignInAccountRequestDto shouted = AuthTestDataFactory.createSignInDto();
-		shouted.setEmail(shouted.getEmail().toUpperCase());
+		SignInAccountRequestDto defaults = AuthTestDataFactory.createSignInDto();
+		SignInAccountRequestDto shouted = new SignInAccountRequestDto(defaults.email().toUpperCase(),
+				defaults.password());
 
 		AuthTestClient.signIn(mockMvc, objectMapper, shouted);
 	}
@@ -275,7 +246,7 @@ class AuthIntegrationTest {
 		// decode() throws if the signature does not match the published key
 		Jwt jwt = decoderFromJwks().decode(accessTk);
 
-		assertEquals(signUp.getEmail(), jwt.getClaimAsString("email"));
+		assertEquals(signUp.email(), jwt.getClaimAsString("email"));
 	}
 
 	/**

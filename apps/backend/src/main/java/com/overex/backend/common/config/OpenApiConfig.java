@@ -21,7 +21,7 @@ import org.springframework.context.annotation.Configuration;
  *
  * <p>Endpoints opt in to the lock icon by annotating their controller/method
  * with {@code @SecurityRequirement(name = "bearerAuth")} (see
- * {@link com.overex.backend.user.MeController}). The public {@code /auth/**}
+ * {@link com.overex.backend.user.UserController}). The public {@code /auth/**}
  * routes deliberately leave it off.
  */
 @Configuration

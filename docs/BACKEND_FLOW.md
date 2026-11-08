@@ -18,7 +18,7 @@ grouped by layer.
 flowchart TD
     subgraph web["Web layer (controllers)"]
         AC["AuthController<br/>/auth/**"]
-        MC["MeController<br/>/me, /admin/**"]
+        MC["UserController<br/>/me, /admin/**"]
         JC["JwksController<br/>/.well-known/jwks.json"]
         GEH["GlobalExceptionHandler<br/>@RestControllerAdvice"]
     end
@@ -277,7 +277,8 @@ sequenceDiagram
     participant JD as JwtDecoder
     participant JAC as JwtAuthenticationConverter
     participant SCH as SecurityContextHolder
-    participant MC as MeController
+    participant MC as UserController
+    participant US as UserService
     participant UR as UserRepository
     participant DB as PostgreSQL
     participant GEH as GlobalExceptionHandler
@@ -292,13 +293,15 @@ sequenceDiagram
         BTAF->>JAC: convert(jwt) → roles claim → ROLE_*
         BTAF->>SCH: setAuthentication(JwtAuthenticationToken)
         BTAF->>MC: continue chain → me(@AuthenticationPrincipal Jwt)
-        MC->>UR: findById(UUID.fromString(jwt.getSubject()))
+        MC->>US: getCurrentUser(UUID.fromString(jwt.getSubject()))
+        US->>UR: findById(userId)
         UR->>DB: SELECT … WHERE id = ?
         alt user deleted meanwhile
-            MC->>GEH: throw EntityNotFoundException
+            US->>GEH: throw EntityNotFoundException
             GEH-->>C: 404 ErrorResponse
         else found
-            DB-->>MC: User
+            DB-->>US: User
+            US-->>MC: User
             MC->>MC: UserResponseDto.from(user)  (drops the password)
             MC-->>C: 200 { name, email, phone, role }
         end
@@ -315,12 +318,12 @@ sequenceDiagram
     participant C as Client
     participant BTAF as BearerTokenAuthenticationFilter
     participant MSI as "@PreAuthorize interceptor"
-    participant MC as MeController
+    participant MC as UserController
     participant GEH as GlobalExceptionHandler
 
     C->>BTAF: GET /admin/ping (Bearer accessTk)
     Note over BTAF: authenticates as in §5,<br/>authorities from the roles claim = ROLE_USER or ROLE_ADMIN
-    BTAF->>MSI: invoke MeController.adminPing()
+    BTAF->>MSI: invoke UserController.adminPing()
     Note over MSI: @PreAuthorize("hasRole('ADMIN')")
     alt role is ADMIN
         MSI->>MC: proceed
@@ -347,7 +350,8 @@ sequenceDiagram
 | Public key for other services | `JwksController` | `auth/JwksController.java` |
 | Principal lookup | `CustomUserDetailsService` | `auth/security/CustomUserDetailsService.java` |
 | `User` → `UserDetails` adapter | `CustomUserDetails` | `auth/security/CustomUserDetails.java` |
-| Protected example routes | `MeController` | `user/MeController.java` |
+| Routes of the signed-in user | `UserController` | `user/UserController.java` |
+| Loading the signed-in user | `UserService` | `user/UserService.java` |
 | Entity | `User` | `user/User.java` |
 | Repository | `UserRepository` | `user/UserRepository.java` |
 | Error → HTTP mapping | `GlobalExceptionHandler` | `common/exception/GlobalExceptionHandler.java` |

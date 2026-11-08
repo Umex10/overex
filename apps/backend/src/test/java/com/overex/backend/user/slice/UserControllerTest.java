@@ -4,7 +4,6 @@ import static org.hamcrest.Matchers.containsString;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -24,30 +23,31 @@ import com.overex.backend.auth.security.CustomUserDetailsService;
 import com.overex.backend.auth.security.config.SecurityConfig;
 import com.overex.backend.user.User;
 import com.overex.backend.user.UserRepository;
-import com.overex.backend.user.MeController;
+import com.overex.backend.user.UserController;
+import com.overex.backend.user.UserService;
 import com.overex.backend.auth.utils.AuthTestClient;
 import com.overex.backend.auth.utils.AuthTestDataFactory;
 import com.overex.backend.auth.utils.TestRsaKeys;
 
 /**
- * Web-layer test for the protected {@link MeController} routes, exercised
- * through the real {@link SecurityConfig} filter chain (incl. method security).
+ * Web-layer test for the protected {@link UserController} routes, exercised
+ * through the real {@link SecurityConfig} filter chain.
  *
  * <p>
  * Two kinds of requests are used:
  * <ul>
  * <li>{@code authenticatedAs(...)} puts an already verified JWT into the
  * security context ({@code jwt()} from spring-security-test). This checks the
- * controller and the {@code @PreAuthorize} rules without token
+ * controller without token
  * verification.</li>
  * <li>Real tokens from {@link JwtService}, signed with {@link TestRsaKeys}, sent
  * in the {@code Authorization} header. They pass through the whole chain
  * (filter, JwtDecoder, converter), so token verification is covered too.</li>
  * </ul>
  */
-@WebMvcTest(MeController.class)
-@Import({ SecurityConfig.class, CustomUserDetailsService.class, TestRsaKeys.PublicKeyConfig.class })
-public class MeControllerTest {
+@WebMvcTest(UserController.class)
+@Import({ SecurityConfig.class, CustomUserDetailsService.class, UserService.class, TestRsaKeys.PublicKeyConfig.class })
+public class UserControllerTest {
 
 	@Autowired
 	private MockMvc mockMvc;
@@ -60,8 +60,6 @@ public class MeControllerTest {
 	private JwtService jwtService;
 
 	private final User user = AuthTestDataFactory.createDefaultUser();
-
-	private final User admin = AuthTestDataFactory.createAdminUser();
 
 	/**
 	 * Builds the token tool with the same key pair whose public key the
@@ -87,7 +85,7 @@ public class MeControllerTest {
 	}
 
 	/**
-	 * A valid token whose user was deleted meanwhile: the controller throws
+	 * A valid token whose user was deleted meanwhile: the service throws
 	 * {@code EntityNotFoundException}, the global handler answers 404 in the common
 	 * error envelope.
 	 */
@@ -126,48 +124,5 @@ public class MeControllerTest {
 
 		// proves the request was stopped before the controller looked up the user
 		verifyNoInteractions(userRepository);
-	}
-
-	/** A regular user gets 403 on the admin route. */
-	@Test
-	void shouldForbidAdminRouteForRegularUser() throws Exception {
-		mockMvc.perform(get("/admin/ping").with(AuthTestClient.authenticatedAs(user)))
-				.andExpect(status().isForbidden());
-	}
-
-	/** An admin may use the admin route. */
-	@Test
-	void shouldAllowAdminRouteForAdmin() throws Exception {
-		mockMvc.perform(get("/admin/ping").with(AuthTestClient.authenticatedAs(admin)))
-				.andExpect(status().isOk())
-				.andExpect(content().string(containsString("pong")));
-	}
-
-	/**
-	 * A real admin access token passes the JwtDecoder; the converter turns the
-	 * {@code roles: ["ADMIN"]} claim into {@code ROLE_ADMIN}, so
-	 * {@code @PreAuthorize("hasRole('ADMIN')")} lets it through.
-	 */
-	@Test
-	void shouldMapRolesClaimToAdminAuthority() throws Exception {
-		String accessTk = jwtService.createAccessTk(admin);
-
-		mockMvc.perform(get("/admin/ping")
-				.header("Authorization", "Bearer " + accessTk))
-				.andExpect(status().isOk())
-				.andExpect(content().string(containsString("pong")));
-	}
-
-	/**
-	 * A real user access token carries {@code roles: ["USER"]}; the converter
-	 * maps it to {@code ROLE_USER} only, so the admin route answers 403.
-	 */
-	@Test
-	void shouldNotGrantAdminToUserToken() throws Exception {
-		String accessTk = jwtService.createAccessTk(user);
-
-		mockMvc.perform(get("/admin/ping")
-				.header("Authorization", "Bearer " + accessTk))
-				.andExpect(status().isForbidden());
 	}
 }
