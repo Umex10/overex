@@ -70,7 +70,7 @@ public class AuthServiceTest {
 		when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
 		// The encoder turns the clear password into "hashed-password", so the last
 		// assert proves the hash is stored, not the clear text.
-		when(encoder.encode(dto.getPassword())).thenReturn(user.getPassword());
+		when(encoder.encode(dto.password())).thenReturn(user.getPassword());
 
 		User savedUser = authService.signUp(dto);
 
@@ -83,8 +83,9 @@ public class AuthServiceTest {
 	/** The email is stored trimmed and in lower case, and checked for duplicates that way. */
 	@Test
 	void shouldNormalizeEmailOnSignUp() {
-		SignUpAccountRequestDto dto = AuthTestDataFactory.createSignUpDto();
-		dto.setEmail("  Test@MAIL.com ");
+		SignUpAccountRequestDto defaults = AuthTestDataFactory.createSignUpDto();
+		SignUpAccountRequestDto dto = new SignUpAccountRequestDto(defaults.name(), "  Test@MAIL.com ",
+				defaults.phone(), defaults.password());
 
 		when(userRepository.findByEmail("test@mail.com")).thenReturn(Optional.empty());
 		when(userRepository.findByPhone(user.getPhone())).thenReturn(Optional.empty());

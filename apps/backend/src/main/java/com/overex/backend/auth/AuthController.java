@@ -91,8 +91,8 @@ public class AuthController {
 			HttpServletResponse response) {
 
 		User user = authService.authenticate(
-				signInAccountRequestDto.getEmail(),
-				signInAccountRequestDto.getPassword());
+				signInAccountRequestDto.email(),
+				signInAccountRequestDto.password());
 
 		AuthResponseDto authResponseDto = createAuthResponseDto(user, response);
 
