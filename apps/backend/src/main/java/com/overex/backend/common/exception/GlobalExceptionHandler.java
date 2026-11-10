@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -11,24 +12,23 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
-
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
-import lombok.NonNull;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Centralised translation of thrown exceptions into HTTP error responses.
  *
  * <p>
- * Maps domain and framework exceptions to the appropriate status codes and
- * response shapes so controllers stay free of error-handling boilerplate. Two
- * envelope shapes coexist: {@link ErrorResponse} (used for generic 404/500
- * errors) and {@link ApiError} (used for validation and authentication errors
- * where per-field details matter).
+ * Maps domain and framework exceptions to the appropriate status codes so
+ * controllers stay free of error-handling boilerplate. Every handler answers
+ * with the same {@link ApiError} body, built by {@link #build}: the frontend
+ * only has to know one error shape.
  *
  * @see OwnException
  * @see ApiError
  */
+@Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
@@ -36,28 +36,24 @@ public class GlobalExceptionHandler {
 	 * Translates {@link OwnException} (our business-rule violations, e.g.
 	 * duplicate email/phone) into a 400 response with field-level details.
 	 *
-	 * @return a 400 response carrying the validation {@link ApiError}
+	 * @return a 400 response carrying one field error per broken rule
 	 */
 	@ExceptionHandler(OwnException.class)
-	public ResponseEntity<ApiError> handleOwnException(OwnException ex) {
-		ApiError error = ApiError.builder()
-				.status(HttpStatus.BAD_REQUEST.value())
-				.message(ex.getMessage())
-				.errors(ex.getErrors())
-				.build();
-		return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
+	public ResponseEntity<ApiError> handleOwnException(OwnException ex, HttpServletRequest request) {
+		return build(HttpStatus.BAD_REQUEST, ex.getMessage(), ex.getErrors(), request);
 	}
 
 	/**
 	 * Translates Jakarta Bean Validation failures (e.g. {@code @Email},
-	 * {@code @Size} on the request DTOs) into the same {@link ApiError} shape as
+	 * {@code @Size} on the request DTOs) into the same shape as
 	 * {@link OwnException}, so the frontend can replay every field error the same
 	 * way regardless of where it originated.
 	 *
 	 * @return a 400 response carrying one field error per invalid field
 	 */
 	@ExceptionHandler(MethodArgumentNotValidException.class)
-	public ResponseEntity<ApiError> handleValidation(MethodArgumentNotValidException ex) {
+	public ResponseEntity<ApiError> handleValidation(MethodArgumentNotValidException ex,
+			HttpServletRequest request) {
 		List<ApiError.FieldError> fieldErrors = ex.getBindingResult().getFieldErrors().stream()
 				.map(fe -> ApiError.FieldError.builder()
 						.field(fe.getField())
@@ -65,12 +61,7 @@ public class GlobalExceptionHandler {
 						.build())
 				.toList();
 
-		ApiError error = ApiError.builder()
-				.status(HttpStatus.BAD_REQUEST.value())
-				.message("Validation failed")
-				.errors(fieldErrors)
-				.build();
-		return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
+		return build(HttpStatus.BAD_REQUEST, "Validation failed", fieldErrors, request);
 	}
 
 	/**
@@ -79,19 +70,17 @@ public class GlobalExceptionHandler {
 	 * parameter. Without this handler the catch-all below would answer with a
 	 * misleading 500, although the client sent a bad request.
 	 *
-	 * @return a 400 response carrying the validation {@link ApiError}
+	 * @return a 400 response carrying one field error for the parameter
 	 */
 	@ExceptionHandler(MethodArgumentTypeMismatchException.class)
-	public ResponseEntity<ApiError> handleTypeMismatch(MethodArgumentTypeMismatchException ex) {
-		ApiError error = ApiError.builder()
-				.status(HttpStatus.BAD_REQUEST.value())
-				.message("Validation failed")
-				.errors(List.of(ApiError.FieldError.builder()
-						.field(ex.getName())
-						.message("The value '" + ex.getValue() + "' has the wrong format.")
-						.build()))
-				.build();
-		return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
+	public ResponseEntity<ApiError> handleTypeMismatch(MethodArgumentTypeMismatchException ex,
+			HttpServletRequest request) {
+		List<ApiError.FieldError> fieldErrors = List.of(ApiError.FieldError.builder()
+				.field(ex.getName())
+				.message("The value '" + ex.getValue() + "' has the wrong format.")
+				.build());
+
+		return build(HttpStatus.BAD_REQUEST, "Validation failed", fieldErrors, request);
 	}
 
 	/**
@@ -102,12 +91,9 @@ public class GlobalExceptionHandler {
 	 * @return a 401 response with a generic credential-failure message
 	 */
 	@ExceptionHandler(AuthenticationException.class)
-	public ResponseEntity<ApiError> handleAuthenticationException(AuthenticationException ex) {
-		ApiError error = ApiError.builder()
-				.status(HttpStatus.UNAUTHORIZED.value())
-				.message("The credentials are incorrect.")
-				.build();
-		return new ResponseEntity<>(error, HttpStatus.UNAUTHORIZED);
+	public ResponseEntity<ApiError> handleAuthenticationException(AuthenticationException ex,
+			HttpServletRequest request) {
+		return build(HttpStatus.UNAUTHORIZED, "The credentials are incorrect.", List.of(), request);
 	}
 
 	/**
@@ -122,36 +108,73 @@ public class GlobalExceptionHandler {
 	 * @return a 403 response with a generic permission-denied message
 	 */
 	@ExceptionHandler(AccessDeniedException.class)
-	public ResponseEntity<ApiError> handleAccessDenied(AccessDeniedException ex) {
-		ApiError error = ApiError.builder()
-				.status(HttpStatus.FORBIDDEN.value())
-				.message("You do not have permission to access this resource.")
-				.build();
-		return new ResponseEntity<>(error, HttpStatus.FORBIDDEN);
+	public ResponseEntity<ApiError> handleAccessDenied(AccessDeniedException ex, HttpServletRequest request) {
+		return build(HttpStatus.FORBIDDEN, "You do not have permission to access this resource.", List.of(),
+				request);
 	}
 
 	/**
-	 * Translates {@link EntityNotFoundException} into a 404 response with the
-	 * standard {@link ErrorResponse} envelope.
+	 * Translates {@link EntityNotFoundException} into a 404. Its message names
+	 * the missing entity (e.g. "Event '…' was not found") and is safe to show.
 	 *
-	 * @return a 404 response carrying the not-found error body
+	 * @return a 404 response carrying the not-found message
 	 */
 	@ExceptionHandler(EntityNotFoundException.class)
-	public ResponseEntity<@NonNull ErrorResponse> handleNotFound(EntityNotFoundException ex,
-			HttpServletRequest request) {
-		return ResponseEntity.status(404).body(
-				ErrorResponseFactory.notFound(ex.getMessage(), request.getRequestURI()));
+	public ResponseEntity<ApiError> handleNotFound(EntityNotFoundException ex, HttpServletRequest request) {
+		return build(HttpStatus.NOT_FOUND, ex.getMessage(), List.of(), request);
 	}
-	
+
+	/**
+	 * Translates a lost-update conflict into a 409. Thrown by hand when the
+	 * client's version is outdated, and by Hibernate when another transaction
+	 * saved in the moment between loading and saving.
+	 *
+	 * <p>
+	 * The exception's own message is technical, so a fixed one is sent instead.
+	 *
+	 * @return a 409 response asking the client to reload
+	 */
+	@ExceptionHandler(ObjectOptimisticLockingFailureException.class)
+	public ResponseEntity<ApiError> handleOptimisticLock(ObjectOptimisticLockingFailureException ex,
+			HttpServletRequest request) {
+		return build(HttpStatus.CONFLICT, "This resource was changed in the meantime. Reload it and try again.",
+				List.of(), request);
+	}
+
 	/**
 	 * Catch-all handler that maps any unhandled exception to a 500 response.
 	 *
-	 * @return a 500 response carrying the generic error envelope
+	 * <p>
+	 * The real message can contain internals (SQL, class names), so it only goes
+	 * to the log; the client gets a fixed text.
+	 *
+	 * @return a 500 response with a generic message
 	 */
 	@ExceptionHandler(Exception.class)
-	public ResponseEntity<@NonNull ErrorResponse> handleGeneric(Exception ex, HttpServletRequest request) {
-		return ResponseEntity.status(500).body(
-				ErrorResponseFactory.internalServerError(ex.getMessage(), request.getRequestURI()));
+	public ResponseEntity<ApiError> handleGeneric(Exception ex, HttpServletRequest request) {
+		log.error("Unhandled exception on {}", request.getRequestURI(), ex);
+		return build(HttpStatus.INTERNAL_SERVER_ERROR, "Something went wrong. Please try again later.", List.of(),
+				request);
+	}
+
+	/**
+	 * Builds the response every handler above returns: an {@link ApiError} with
+	 * all four fields set, wrapped in a {@link ResponseEntity} with the matching
+	 * HTTP status.
+	 *
+	 * @param errors the rejected fields, or {@code List.of()} when no single
+	 *               field is to blame
+	 * @return the response with status code and error body
+	 */
+	private ResponseEntity<ApiError> build(HttpStatus status, String message, List<ApiError.FieldError> errors,
+			HttpServletRequest request) {
+		ApiError error = ApiError.builder()
+				.status(status.value())
+				.message(message)
+				.path(request.getRequestURI())
+				.errors(errors)
+				.build();
+		return new ResponseEntity<>(error, status);
 	}
 
 }
