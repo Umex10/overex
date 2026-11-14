@@ -60,6 +60,7 @@ public final class EventTestDataFactory {
 	public static final Instant DEFAULT_SALE_STARTS_AT = Instant.parse("2099-03-01T10:00:00Z");
 	public static final String DEFAULT_IMAGE_URL = "https://example.com/images/summer-festival.png";
 	public static final Instant DEFAULT_CREATED_AT = Instant.parse("2026-01-01T12:00:00Z");
+	/** Version of a freshly created event; Hibernate starts counting at 0. */
 
 	// Values of the update payload; each one differs from its default counterpart.
 	public static final String UPDATED_TITLE = "Winter Festival";

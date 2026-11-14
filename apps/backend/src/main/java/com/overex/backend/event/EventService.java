@@ -1,11 +1,15 @@
 package com.overex.backend.event;
 
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -13,6 +17,12 @@ import com.overex.backend.common.exception.ApiError;
 import com.overex.backend.common.exception.OwnException;
 import com.overex.backend.event.dto.requests.CreateEventDto;
 import com.overex.backend.event.dto.requests.UpdateEventDto;
+import com.overex.backend.event.dto.responses.CountsOfEventsDto;
+import com.overex.backend.event.dto.responses.EventDetailsResponseDto;
+import com.overex.backend.event.dto.responses.EventResponseDto;
+import com.overex.backend.event.dto.responses.StatusOption;
+import com.overex.backend.user.User;
+import com.overex.backend.user.UserService;
 
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -22,41 +32,92 @@ import lombok.RequiredArgsConstructor;
 public class EventService {
 
     private final EventRepository eventRepository;
+    private final UserService userService;
     private final CategoryService categoryService;
     private final EventMapper eventMapper;
 
-    public Page<Event> getEvents(UUID categoryId, Pageable pageable) {
+    public Page<EventResponseDto> getEvents(UUID categoryId, Pageable pageable) {
 
-        if (categoryId == null) {
-            return eventRepository.findAll(pageable);
-        }
+        Page<Event> events = categoryId == null
+                ? eventRepository.findAll(pageable)
+                : eventRepository.findByCategoryId(categoryId, pageable);
 
-        return eventRepository.findByCategoryId(categoryId, pageable);
+        // Converts every event on the page; page number, size and total stay.
+        return events.map(eventMapper::toEventResponseDto);
     }
 
-    public Event getEvent(UUID eventId) {
-        return eventRepository.findById(eventId)
+    public Page<EventResponseDto> getMyEvents(UUID userId, UUID categoryId, Status status, Pageable pageable) {
+
+        userService.ensureUserExists(userId);
+
+        return eventRepository.findMyEvents(userId, status, categoryId, pageable)
+                .map(eventMapper::toEventResponseDto);
+    }
+
+    public EventDetailsResponseDto getEvent(UUID eventId) {
+        Event event = eventRepository.findById(eventId)
                 .orElseThrow(() -> new EntityNotFoundException(String.format("Event '%s' was not found", eventId)));
+
+        Map<Status, StatusOption> statusOptions = EventStatusRules.statusOptions(event, Instant.now());
+
+        EventResponseDto eventResponseDto = eventMapper.toEventResponseDto(event);
+
+        return new EventDetailsResponseDto(eventResponseDto, statusOptions);
     }
 
-    public Event createEvent(CreateEventDto createEventDto) {
+    public CountsOfEventsDto getCountsOfEvents(UUID userId) {
 
+        userService.ensureUserExists(userId);
+        User user = userService.getReference(userId);
+
+        long countOfCancelEvents = eventRepository.countByCreatedByIdAndStatus(user.getId(), Status.CANCELED);
+        long countOfDraftEvents = eventRepository.countByCreatedByIdAndStatus(user.getId(), Status.DRAFT);
+        long countOfPublishEvents = eventRepository.countByCreatedByIdAndStatus(userId, Status.PUBLISHED);
+
+        CountsOfEventsDto countEventDto = CountsOfEventsDto.builder()
+                .countOfAllEvents(countOfCancelEvents + countOfDraftEvents + countOfPublishEvents)
+                .countOfCanceledEvents(countOfCancelEvents)
+                .countOfDraftEvents(countOfDraftEvents)
+                .countOfPublishedEvents(countOfPublishEvents)
+                .build();
+
+        return countEventDto;
+    }
+
+    public EventResponseDto createEvent(UUID userId, CreateEventDto createEventDto) {
+        userService.ensureUserExists(userId);
+        User user = userService.getReference(userId);
         Category category = categoryService.getCategory(createEventDto.categoryId());
 
         Event event = eventMapper.toEntity(createEventDto);
         event.setCategory(category);
+        event.setCreatedBy(user);
 
-        return eventRepository.save(event);
+        return eventMapper.toEventResponseDto(eventRepository.save(event));
     }
 
     @Transactional
-    public Event updateEvent(UpdateEventDto updateEventDto, UUID eventId) {
+    public EventResponseDto updateEvent(UpdateEventDto updateEventDto, UUID eventId) {
 
         Event event = eventRepository.findById(eventId)
                 .orElseThrow(() -> new EntityNotFoundException(String.format("Event '%s' was not found", eventId)));
 
+        // Optimistic locking: findById loads the current version, so Hibernate's
+        // own "WHERE version = ?" check would always pass. The version the
+        // client loaded comes with the DTO, so it is compared here by hand.
+        // Loaded version 3, stored version 3 → ok, nobody saved in between
+        // Loaded version 3, stored version 4 → rejected with 409
+        if (!Objects.equals(event.getVersion(), updateEventDto.version())) {
+            throw new ObjectOptimisticLockingFailureException(Event.class, eventId);
+        }
+
         Instant now = Instant.now();
 
+        StatusOption statusOption = EventStatusRules.check(event, updateEventDto.status(), now);
+
+        if (statusOption.disabled()) {
+            throw fieldError("status", statusOption.why());
+        }
         // All checks run before the mapping: first validate, then change the event.
 
         // Today is Aug 1:
@@ -90,7 +151,7 @@ public class EventService {
         eventMapper.updateEntity(updateEventDto, event);
         event.setCategory(category);
 
-        return eventRepository.save(event);
+        return eventMapper.toEventResponseDto(eventRepository.save(event));
     }
 
     public void deleteEvent(UUID eventId) {

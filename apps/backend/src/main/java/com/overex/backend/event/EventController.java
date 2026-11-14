@@ -10,6 +10,8 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.data.web.SortDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -22,6 +24,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.overex.backend.event.dto.requests.CreateEventDto;
 import com.overex.backend.event.dto.requests.UpdateEventDto;
+import com.overex.backend.event.dto.responses.EventDetailsResponseDto;
+import com.overex.backend.event.dto.responses.EventResponseDto;
 import org.springframework.data.domain.Sort;
 
 import jakarta.validation.Valid;
@@ -35,33 +39,36 @@ public class EventController {
     private final EventService eventService;
 
     @GetMapping
-    public ResponseEntity<Page<Event>> getEvents(@RequestParam(required = false) UUID categoryId,
+    public ResponseEntity<Page<EventResponseDto>> getEvents(@RequestParam(required = false) UUID categoryId,
             @PageableDefault(size = 10, sort = "startsAt", direction = Sort.Direction.ASC) Pageable pageable) {
-        Page<Event> events = eventService.getEvents(categoryId, pageable);
-        return new ResponseEntity<Page<Event>>(events, HttpStatus.OK);
+        Page<EventResponseDto> events = eventService.getEvents(categoryId, pageable);
+        return new ResponseEntity<Page<EventResponseDto>>(events, HttpStatus.OK);
     }
 
     @GetMapping("/{eventId}")
-    public ResponseEntity<Event> getEvent(@PathVariable UUID eventId) {
-        Event event = eventService.getEvent(eventId);
-        return new ResponseEntity<Event>(event, HttpStatus.OK);
+    public ResponseEntity<EventDetailsResponseDto> getEvent(@PathVariable UUID eventId) {
+        EventDetailsResponseDto event = eventService.getEvent(eventId);
+        return new ResponseEntity<EventDetailsResponseDto>(event, HttpStatus.OK);
     }
 
     @PostMapping
-    public ResponseEntity<Event> createEvent(@Valid @RequestBody CreateEventDto createEventDto) {
+    public ResponseEntity<EventResponseDto> createEvent(@AuthenticationPrincipal Jwt jwt,
+            @Valid @RequestBody CreateEventDto createEventDto) {
 
-        Event event = eventService.createEvent(createEventDto);
+        UUID userId = UUID.fromString(jwt.getSubject());
 
-        return new ResponseEntity<Event>(event, HttpStatus.CREATED);
+        EventResponseDto event = eventService.createEvent(userId, createEventDto);
+
+        return new ResponseEntity<EventResponseDto>(event, HttpStatus.CREATED);
 
     }
 
     @PatchMapping("/{eventId}")
-    public ResponseEntity<Event> updateEvent(@Valid @RequestBody UpdateEventDto updateEventDto,
+    public ResponseEntity<EventResponseDto> updateEvent(@Valid @RequestBody UpdateEventDto updateEventDto,
             @PathVariable UUID eventId) {
-        Event event = eventService.updateEvent(updateEventDto, eventId);
+        EventResponseDto event = eventService.updateEvent(updateEventDto, eventId);
 
-        return new ResponseEntity<Event>(event, HttpStatus.OK);
+        return new ResponseEntity<EventResponseDto>(event, HttpStatus.OK);
     }
 
     @DeleteMapping("/{eventId}")

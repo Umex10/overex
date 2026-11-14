@@ -5,6 +5,8 @@ import java.util.UUID;
 
 import org.hibernate.validator.constraints.URL;
 
+import com.overex.backend.event.Status;
+
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -40,7 +42,15 @@ public record UpdateEventDto(
         @NotBlank(message = "Image URL is required")
         @Size(max = 500, message = "Image URL must be at most {max} characters.")
         @URL(message = "Please enter a valid image URL.")
-        String imageUrl
+        String imageUrl,
+
+        // Target status; EventService checks whether the change is allowed.
+        @NotNull(message = "Status is required")
+        Status status,
+
+        // The version the client loaded; a different stored one means 409.
+        @NotNull(message = "Version is required")
+        Long version
 
 ) {
 }
