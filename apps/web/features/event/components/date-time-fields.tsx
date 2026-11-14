@@ -7,8 +7,8 @@ import { RequiredMark } from "@/components/required-mark";
 import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import type {
-  CreateEventFormInput,
-  CreateEventFormValues,
+  EventFormInput,
+  EventFormValues,
 } from "@/features/event/event-validation";
 
 /**
@@ -27,7 +27,7 @@ export function DateTimeFields({
   dateLabel,
   timeLabel,
 }: {
-  control: Control<CreateEventFormInput, unknown, CreateEventFormValues>;
+  control: Control<EventFormInput, unknown, EventFormValues>;
   dateName: "startDate" | "saleDate";
   timeName: "startTime" | "saleTime";
   idPrefix: string;

@@ -16,7 +16,27 @@ export function combineDateAndTime(date: Date, time: string): Date {
   return combined;
 }
 
-export const createEventSchema = z
+/**
+ * Opposite of {@link combineDateAndTime}: splits a point in time (e.g. an
+ * ISO `Instant` from the backend) into the local day and an "HH:mm" string,
+ * so it can fill the date picker and the time input of the form.
+ */
+export function uncombineDateAndTime(value: Date | string): {
+  date: Date;
+  time: string;
+} {
+  const source = new Date(value);
+
+  const date = new Date(source);
+  date.setHours(0, 0, 0, 0);
+
+  const hours = String(source.getHours()).padStart(2, "0");
+  const minutes = String(source.getMinutes()).padStart(2, "0");
+
+  return { date, time: `${hours}:${minutes}` };
+}
+
+export const eventSchema = z
   .object({
     title: z
       .string()
@@ -48,6 +68,11 @@ export const createEventSchema = z
 
     saleDate: z.date({ error: "Please choose a date." }),
     saleTime: z.string().min(1, "Please choose a time."),
+
+    // Same values as the backend's `Status` enum (see EventStatus).
+    status: z.enum(["DRAFT", "PUBLISHED", "CANCELED"], {
+      error: "Please choose a status.",
+    }),
   })
   // Rules that need more than one field. They only run once every single
   // field above is valid, so date and time are guaranteed to be set here.
@@ -81,6 +106,6 @@ export const createEventSchema = z
   }));
 
 /** What the form fields hold: date and time still separate. */
-export type CreateEventFormInput = z.input<typeof createEventSchema>;
+export type EventFormInput = z.input<typeof eventSchema>;
 /** What `onSubmit` receives: validated, with startsAt / saleStartsAt as ISO strings. */
-export type CreateEventFormValues = z.output<typeof createEventSchema>;
+export type EventFormValues = z.output<typeof eventSchema>;
