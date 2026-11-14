@@ -18,7 +18,7 @@ import EventMetaItem from "@/features/event/components/event-meta-item";
 
 export default function EventDetailsPage() {
   const { id } = useParams<{ id: string }>();
-  const { data: event, isLoading: isLoadingEvent } = useGetEventQuery(id);
+  const { data, isLoading: isLoadingEvent } = useGetEventQuery(id);
 
   const dispatch = useAppDispatch();
 
@@ -34,9 +34,11 @@ export default function EventDetailsPage() {
     return <p className="w-full text-center">Loading Event...</p>;
   }
 
-  if (!event) {
+  if (!data) {
     return <p className="w-full text-center">{`The Event with the id: ${id} doesn't exist.`}</p>;
   }
+  
+  const event = data.event;
 
   return (
     <div className="w-full flex flex-col justify-start gap-4">

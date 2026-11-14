@@ -22,6 +22,7 @@ import {
   ZapIcon,
   CirclePlusIcon,
   TicketIcon,
+  CalendarRangeIcon,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -47,6 +48,11 @@ const NAV_ITEMS: NavItem[] = [
     icon: TicketIcon,
     title: "My Tickets",
     href: "/my-tickets",
+  },
+  {
+    icon: CalendarRangeIcon,
+    title: "Meine Events",
+    href: "/my-events",
   },
   {
     icon: CirclePlusIcon,
@@ -82,7 +88,7 @@ export function AppSidebar() {
     >
       <SidebarHeader className="group-data-[state=expanded]:px-0">
         <SidebarMenu>
-          <SidebarMenuItem>
+          <SidebarMenuItem onClick={() => isMobile && setOpenMobile(false)}>
             <SidebarMenuButton
               asChild
               size="lg"

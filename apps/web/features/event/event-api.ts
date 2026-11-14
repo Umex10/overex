@@ -1,12 +1,20 @@
 import { apiSlice } from "@/redux/api-slice";
-import type { CreateEventDto, EventDto, EventQuery } from "@/features/event/event-types";
+import type {
+  CountsOfEvents,
+  CreateEventDto,
+  EventDetailsDto,
+  EventDto,
+  EventQuery,
+  MyEventsQuery,
+  UpdateEventDto,
+} from "@/features/event/event-types";
 import type { Page } from "@/types/page";
 
 /**
  * Event endpoints. They call the backend directly from the browser; the access
  * token is attached by the shared `prepareHeaders` in {@link apiSlice}.
  */
-const eventApi = apiSlice.injectEndpoints({
+export const eventApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     /**
      * `GET /events`: one page of events, optionally of one category only.
@@ -24,8 +32,10 @@ const eventApi = apiSlice.injectEndpoints({
       providesTags: ["Event"],
     }),
 
-    getEvent: builder.query<EventDto, string>({
-      query: (eventId) => `/events/${eventId}`
+    /** `GET /events/{id}`: the event and its allowed status changes. */
+    getEvent: builder.query<EventDetailsDto, string>({
+      query: (eventId) => `/events/${eventId}`,
+      providesTags: ["Event"],
     }),
 
     /**
@@ -40,6 +50,54 @@ const eventApi = apiSlice.injectEndpoints({
         url: "/events",
         method: "POST",
         body,
+      }),
+      invalidatesTags: ["Event"],
+    }),
+
+    /**
+     * `GET /me/events`: one page of the signed-in admin's own events, drafts
+     * included. Without `status` the backend returns all statuses; an empty
+     * `categoryId` is left out, like in getEvents.
+     */
+    getMyEvents: builder.query<Page<EventDto>, MyEventsQuery>({
+      query: ({ categoryId, ...rest }) => ({
+        url: "/me/events",
+        params: { ...rest, categoryId: categoryId || undefined },
+      }),
+      providesTags: ["Event"],
+    }),
+
+    getCountsOfEvents: builder.query<CountsOfEvents, void>({
+      query: () => ({
+        url: "/me/events/counts",
+      }),
+      providesTags: ["Event"],
+    }),
+
+    /**
+     * `PATCH /events/{id}`: changes an event (admins only). Answers 200 with
+     * the stored event. Refetches every cached event list afterwards.
+     */
+    updateEvent: builder.mutation<
+      EventDto,
+      { eventId: string; body: UpdateEventDto }
+    >({
+      query: ({ eventId, body }) => ({
+        url: `/events/${eventId}`,
+        method: "PATCH",
+        body,
+      }),
+      invalidatesTags: ["Event"],
+    }),
+
+    /**
+     * `DELETE /events/{id}`: deletes an event (admins only). Answers 204
+     * without a body. Refetches every cached event list afterwards.
+     */
+    deleteEvent: builder.mutation<void, string>({
+      query: (eventId) => ({
+        url: `/events/${eventId}`,
+        method: "DELETE",
       }),
       invalidatesTags: ["Event"],
     }),
@@ -75,6 +133,11 @@ const eventApi = apiSlice.injectEndpoints({
 export const {
   useGetEventsQuery,
   useGetEventQuery,
+  useGetMyEventsQuery,
+  useGetCountsOfEventsQuery,
   useCreateEventMutation,
+  useUpdateEventMutation,
+  useDeleteEventMutation,
   useCheckImageUrlMutation,
+  usePrefetch,
 } = eventApi;
