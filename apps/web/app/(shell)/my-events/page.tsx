@@ -8,10 +8,8 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useIsMobile } from "@/hooks/use-mobile";
 import BreadcrumbsContainer from "@/features/shell/components/breadcrumbs-container";
 import { MyEventItem } from "@/features/event/components/my-event-item";
-import {
-  useGetCountsOfEventsQuery,
-} from "@/features/event/event-api";
-import type { EventDto, StatusFilter } from "@/features/event/event-types";
+import { useGetCountsOfEventsQuery } from "@/features/event/event-api";
+import type { EventDto, MyEventFilter, StatusFilter } from "@/features/event/event-types";
 import { EventPagination } from "@/features/event/components/event-pagination";
 import { useMyEventList } from "@/features/event/hooks/use-my-event-list";
 import { EventListFilters } from "@/features/event/components/event-list-filters";
@@ -36,13 +34,13 @@ export default function MyEventsPage() {
     setPage,
     changeCategory,
     changeSort,
-    status,
-    setStatus,
+    filter,
+    setFilter,
   } = useMyEventList();
 
   const listStartRef = useRef<HTMLDivElement>(null);
 
-  const STATUS_TABS: { value: StatusFilter; label: string; count: number }[] = [
+  const STATUS_TABS: { value: MyEventFilter; label: string; count: number }[] = [
     {
       value: "",
       label: "Alle",
@@ -62,6 +60,11 @@ export default function MyEventsPage() {
       value: "CANCELED",
       label: "Abgesagt",
       count: countsOfEvents?.countOfCanceledEvents ?? 0,
+    },
+      {
+      value: "FINISHED",
+      label: "Beendet",
+      count: countsOfEvents?.countOfFinishedEvents ?? 0,
     },
   ];
 
@@ -100,8 +103,8 @@ export default function MyEventsPage() {
 
       <div className="flex flex-col gap-2">
         <Tabs
-          value={status}
-          onValueChange={(value) => setStatus(value as StatusFilter)}
+          value={filter}
+          onValueChange={(value) => setFilter(value as StatusFilter)}
         >
           {/* Phones: the tabs keep their width and the row scrolls sideways
             (like the category filter on /events). justify-start, otherwise

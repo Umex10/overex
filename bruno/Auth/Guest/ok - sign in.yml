@@ -10,11 +10,9 @@ http:
     type: json
     data: |-
       {
-        "email": "mario@overex.test",
-        "password": "Kennwort123!"
+        "email": "mario@mail.com",
+        "password": "Mario+123"
       }
-  auth:
-    type: none
 
 runtime:
   scripts:

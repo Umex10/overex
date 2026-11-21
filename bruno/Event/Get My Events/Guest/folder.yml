@@ -1,0 +1,7 @@
+info:
+  name: Guest
+  type: folder
+  seq: 100
+
+request:
+  auth: inherit

@@ -1,13 +1,13 @@
 package com.overex.backend.event;
 
 import java.time.Instant;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
@@ -46,11 +46,16 @@ public class EventService {
         return events.map(eventMapper::toEventResponseDto);
     }
 
-    public Page<EventResponseDto> getMyEvents(UUID userId, UUID categoryId, Status status, Pageable pageable) {
+    public Page<EventResponseDto> getMyEvents(UUID userId, UUID categoryId, MyEventsFilter filter,
+            Pageable pageable) {
 
         userService.ensureUserExists(userId);
 
-        return eventRepository.findMyEvents(userId, status, categoryId, pageable)
+        MyEventCriteria myEventCriteria = MyEventCriteria.of(filter, Instant.now());
+
+        return eventRepository.findMyEvents(userId,
+                myEventCriteria.getStatus(),
+                categoryId, myEventCriteria.getStartsAfter(), myEventCriteria.getStartsBeforeOrAt(), pageable)
                 .map(eventMapper::toEventResponseDto);
     }
 
@@ -66,22 +71,16 @@ public class EventService {
     }
 
     public CountsOfEventsDto getCountsOfEvents(UUID userId) {
-
         userService.ensureUserExists(userId);
-        User user = userService.getReference(userId);
+        Instant now = Instant.now();
 
-        long countOfCancelEvents = eventRepository.countByCreatedByIdAndStatus(user.getId(), Status.CANCELED);
-        long countOfDraftEvents = eventRepository.countByCreatedByIdAndStatus(user.getId(), Status.DRAFT);
-        long countOfPublishEvents = eventRepository.countByCreatedByIdAndStatus(userId, Status.PUBLISHED);
-
-        CountsOfEventsDto countEventDto = CountsOfEventsDto.builder()
-                .countOfAllEvents(countOfCancelEvents + countOfDraftEvents + countOfPublishEvents)
-                .countOfCanceledEvents(countOfCancelEvents)
-                .countOfDraftEvents(countOfDraftEvents)
-                .countOfPublishedEvents(countOfPublishEvents)
+        return CountsOfEventsDto.builder()
+                .countOfAllEvents(count(userId, MyEventsFilter.ALL, now))
+                .countOfDraftEvents(count(userId, MyEventsFilter.DRAFT, now))
+                .countOfPublishedEvents(count(userId, MyEventsFilter.PUBLISHED, now))
+                .countOfCanceledEvents(count(userId, MyEventsFilter.CANCELED, now))
+                .countOfFinishedEvents(count(userId, MyEventsFilter.FINISHED, now))
                 .build();
-
-        return countEventDto;
     }
 
     public EventResponseDto createEvent(UUID userId, CreateEventDto createEventDto) {
@@ -164,6 +163,18 @@ public class EventService {
 
     private static OwnException fieldError(String field, String message) {
         return new OwnException(List.of(new ApiError.FieldError(field, message)));
+    }
+
+    /**
+     * How many events the tab {@code filter} shows: the same query as the list,
+     * only counted.
+     */
+    private long count(UUID userId, MyEventsFilter filter, Instant now) {
+        MyEventCriteria c = MyEventCriteria.of(filter, now);
+        return eventRepository
+                .findMyEvents(userId, c.getStatus(), null, c.getStartsAfter(), c.getStartsBeforeOrAt(),
+                        PageRequest.of(0, 1))
+                .getTotalElements();
     }
 
 }

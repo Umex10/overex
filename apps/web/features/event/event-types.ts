@@ -7,6 +7,8 @@
 /** Lifecycle of an event, like the backend's `Status` enum. */
 export type EventStatus = "DRAFT" | "PUBLISHED" | "CANCELED";
 
+export type MyEventFilter = EventStatus | "FINISHED" | "";
+
 /**
  * Selected status tab on "Meine Events": one status, or "" for all of them.
  * Only for the UI; the query gets `undefined` instead of "".
@@ -78,6 +80,7 @@ export interface CountsOfEvents {
   countOfCanceledEvents: number;
   countOfDraftEvents: number;
   countOfPublishedEvents: number;
+  countOfFinishedEvents: number
 }
 
 /**
@@ -112,5 +115,5 @@ export interface EventQuery {
  * statuses.
  */
 export interface MyEventsQuery extends EventQuery {
-  status?: EventStatus;
+  filter?: MyEventFilter;
 }

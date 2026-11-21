@@ -20,6 +20,7 @@ import com.overex.backend.event.dto.responses.EventResponseDto;
 
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.log4j.Log4j2;
 
 /**
  * The signed-in user's own view of events: the events they created, drafts
@@ -43,16 +44,17 @@ public class MyEventsController {
      * {@code GET /me/events}: one page of the signed-in user's events.
      *
      * @param jwt      the verified access token; its subject is the user id
-     * @param status   only events with this status; {@code null} means all
+     * @param filter   which tab: a status, FINISHED (published and already started) or ALL (default)
      * @param pageable page, size and sort from the query string
      */
     @GetMapping
     public ResponseEntity<Page<EventResponseDto>> getMyEvents(@AuthenticationPrincipal Jwt jwt,
             @RequestParam(required = false) UUID categoryId,
-            @RequestParam(required = false) Status status,
+            @RequestParam(defaultValue = "ALL") MyEventsFilter filter,
             @PageableDefault(size = 10, sort = "startsAt", direction = Sort.Direction.ASC) Pageable pageable) {
         UUID userId = UUID.fromString(jwt.getSubject());
-        Page<EventResponseDto> events = eventService.getMyEvents(userId, categoryId, status, pageable);
+
+        Page<EventResponseDto> events = eventService.getMyEvents(userId, categoryId, filter, pageable);
         return new ResponseEntity<Page<EventResponseDto>>(events, HttpStatus.OK);
     }
 
