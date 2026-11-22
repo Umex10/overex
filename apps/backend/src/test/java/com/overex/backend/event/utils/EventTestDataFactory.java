@@ -1,8 +1,11 @@
 package com.overex.backend.event.utils;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.EnumMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import org.springframework.data.domain.Page;
@@ -11,27 +14,24 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 
+import com.overex.backend.auth.utils.AuthTestDataFactory;
 import com.overex.backend.event.Category;
 import com.overex.backend.event.Event;
+import com.overex.backend.event.MyEventsFilter;
 import com.overex.backend.event.Status;
 import com.overex.backend.event.dto.requests.CreateEventDto;
 import com.overex.backend.event.dto.requests.UpdateEventDto;
+import com.overex.backend.event.dto.responses.CategoryResponseDto;
+import com.overex.backend.event.dto.responses.CountsOfEventsDto;
+import com.overex.backend.event.dto.responses.EventDetailsResponseDto;
+import com.overex.backend.event.dto.responses.EventResponseDto;
+import com.overex.backend.event.dto.responses.StatusOption;
 
-/**
- * Reusable event fixtures.
- *
- * <p>
- * Every value is defined once as a constant below and only referenced by the
- * factory methods, so an entity and the payload it is built from always match.
- * The future timestamps lie far ahead, so payloads always pass the
- * {@code @Future} check on {@link CreateEventDto#startsAt()}.
- */
 public final class EventTestDataFactory {
 
 	private EventTestDataFactory() {
 	}
 
-	/** A fixed id so tests can assert against path variables and responses. */
 	public static final UUID DEFAULT_EVENT_ID = UUID.fromString("33333333-3333-3333-3333-333333333333");
 
 	// The category every event and payload refers to.
@@ -48,9 +48,6 @@ public final class EventTestDataFactory {
 	public static final int DEFAULT_PAGE_SIZE = 10;
 	public static final String DEFAULT_SORT_PROPERTY = "startsAt";
 
-	// A page size smaller than the list, so the three events span two pages.
-	public static final int SMALL_PAGE_SIZE = 2;
-
 	// Values of the default event and the create payload.
 	public static final String DEFAULT_TITLE = "Summer Festival";
 	public static final String DEFAULT_DESCRIPTION = "Open-air festival with live bands.";
@@ -60,7 +57,8 @@ public final class EventTestDataFactory {
 	public static final Instant DEFAULT_SALE_STARTS_AT = Instant.parse("2099-03-01T10:00:00Z");
 	public static final String DEFAULT_IMAGE_URL = "https://example.com/images/summer-festival.png";
 	public static final Instant DEFAULT_CREATED_AT = Instant.parse("2026-01-01T12:00:00Z");
-	/** Version of a freshly created event; Hibernate starts counting at 0. */
+	public static final Long DEFAULT_VERSION = 0L;
+	public static final Long OTHER_VERSION = DEFAULT_VERSION + 1;
 
 	// Values of the update payload; each one differs from its default counterpart.
 	public static final String UPDATED_TITLE = "Winter Festival";
@@ -97,30 +95,51 @@ public final class EventTestDataFactory {
 	public static final Instant THIRD_SALE_STARTS_AT = Instant.parse("2099-01-15T08:00:00Z");
 	public static final String THIRD_IMAGE_URL = "https://example.com/images/rock-am-berg.png";
 
-	/** A persisted-looking category (with id). */
+	// Values of the finished event of "My events": published, but its start lies
+	// in the past. Only part of createMyEventList(), not of createEventList().
+	public static final UUID FINISHED_EVENT_ID = UUID.fromString("66666666-6666-6666-6666-666666666666");
+	public static final String FINISHED_TITLE = "Herbstkonzert";
+	public static final String FINISHED_DESCRIPTION = "Classical concert in the old town hall.";
+	public static final String FINISHED_VENUE = "Alte Stadthalle";
+	public static final String FINISHED_CITY = "Linz";
+	public static final String FINISHED_IMAGE_URL = "https://example.com/images/herbstkonzert.png";
+
+	public static final UUID DEFAULT_USER_ID = AuthTestDataFactory.DEFAULT_USER_ID;
+
+	// Reasons of EventStatusRules for the changes that are blocked even far before
+	// the start (the default event starts in 2099).
+	public static final String DRAFT_CANCEL_BLOCKED_WHY = "A draft was never public, so there is nothing to cancel. Delete it instead.";
+	public static final String CANCELED_PUBLISH_BLOCKED_WHY = "A canceled event can't be published again.";
+	public static final String CANCELED_DRAFT_BLOCKED_WHY = "A canceled event can't be turned back into a draft.";
+	// Reasons that only show up once the start or the sale lies in the past.
+	public static final String STARTED_PUBLISH_BLOCKED_WHY = "This event has already started, so it can't be published anymore.";
+	public static final String STARTED_CANCEL_BLOCKED_WHY = "This event has already started, so it can't be canceled anymore.";
+	public static final String SALE_STARTED_DRAFT_BLOCKED_WHY = "The ticket sale has already started, so the event can't go back to draft.";
+
+	// ---------------------------------------------------------------------------
+	// Categories
+	// ---------------------------------------------------------------------------
+
 	public static Category createDefaultCategory() {
 		return CategoryTestDataFactory.createDefaultCategory();
 	}
 
-	/**
-	 * The second category; only the second event of {@link #createEventList()}
-	 * belongs to it.
-	 */
 	public static Category createConcertCategory() {
 		return CategoryTestDataFactory.createConcertCategory();
 	}
 
-	/** A new category without id, ready to be saved by a repository. */
 	public static Category createUnsavedCategory(String title) {
 		return CategoryTestDataFactory.createUnsavedCategory(title);
 	}
 
-	/**
-	 * A persisted-looking event (with id and timestamps) in {@code DRAFT} status.
-	 */
+	// ---------------------------------------------------------------------------
+	// Entities (what the repository returns)
+	// ---------------------------------------------------------------------------
+
 	public static Event createDefaultEvent() {
 		return Event.builder()
 				.id(DEFAULT_EVENT_ID)
+				.version(DEFAULT_VERSION)
 				.category(createDefaultCategory())
 				.title(DEFAULT_TITLE)
 				.description(DEFAULT_DESCRIPTION)
@@ -135,29 +154,22 @@ public final class EventTestDataFactory {
 				.build();
 	}
 
-	/** Same as {@link #createDefaultEvent()} but in {@code PUBLISHED} status. */
-	public static Event createPublishedEvent() {
+	public static Event createUpdatedEvent() {
 		Event event = createDefaultEvent();
-		event.setStatus(Status.PUBLISHED);
+		event.setTitle(UPDATED_TITLE);
+		event.setDescription(UPDATED_DESCRIPTION);
+		event.setVenue(UPDATED_VENUE);
+		event.setCity(UPDATED_CITY);
+		event.setStartsAt(UPDATED_STARTS_AT);
+		event.setSaleStartsAt(UPDATED_SALE_STARTS_AT);
+		event.setImageUrl(UPDATED_IMAGE_URL);
 		return event;
 	}
 
-	/** Same as {@link #createDefaultEvent()} but in {@code CANCELED} status. */
-	public static Event createCanceledEvent() {
-		Event event = createDefaultEvent();
-		event.setStatus(Status.CANCELED);
-		return event;
-	}
-
-	/**
-	 * Three different events for list endpoints: {@link #createDefaultEvent()}
-	 * ({@code DRAFT}), a {@code PUBLISHED} and a {@code CANCELED} one. The first
-	 * and third are festivals, the second is a concert. Each call returns new
-	 * instances, so tests can change them freely.
-	 */
 	public static List<Event> createEventList() {
 		Event secondEvent = Event.builder()
 				.id(SECOND_EVENT_ID)
+				.version(DEFAULT_VERSION)
 				.category(createConcertCategory())
 				.title(SECOND_TITLE)
 				.description(SECOND_DESCRIPTION)
@@ -173,6 +185,7 @@ public final class EventTestDataFactory {
 
 		Event thirdEvent = Event.builder()
 				.id(THIRD_EVENT_ID)
+				.version(DEFAULT_VERSION)
 				.category(createDefaultCategory())
 				.title(THIRD_TITLE)
 				.description(THIRD_DESCRIPTION)
@@ -189,119 +202,30 @@ public final class EventTestDataFactory {
 		return List.of(createDefaultEvent(), secondEvent, thirdEvent);
 	}
 
-	/**
-	 * The pageable the controller resolves when the request has no paging
-	 * parameters ({@code GET /events}), see {@link #createPageable(int, int)}.
-	 */
+	// ---------------------------------------------------------------------------
+	// Paging
+	// ---------------------------------------------------------------------------
+
 	public static Pageable createDefaultPageable() {
 		return createPageable(DEFAULT_PAGE, DEFAULT_PAGE_SIZE);
 	}
 
-	/**
-	 * Any page and size, sorted like the controller default ({@code startsAt}
-	 * ascending).
-	 *
-	 * <p>
-	 * Spring builds a {@link Pageable} from the query parameters of the request;
-	 * missing ones come from {@code @PageableDefault} on the controller:
-	 *
-	 * <pre>
-	 * GET /events                                  → page 0, size 10, sort startsAt ASC
-	 * GET /events?page=1&amp;size=2                    → page 1, size 2,  sort startsAt ASC
-	 * GET /events?page=0&amp;size=5&amp;sort=title,desc     → page 0, size 5,  sort title DESC
-	 * GET /events?categoryId=2222…&amp;page=0&amp;size=2   → categoryId is its own parameter, not part of the Pageable
-	 * </pre>
-	 *
-	 * <p>
-	 * The object itself (here {@code createPageable(1, 2)}), as {@code toString()}
-	 * prints it:
-	 *
-	 * <pre>
-	 * Page request [number: 1, size 2, sort: startsAt: ASC]
-	 *
-	 *   getPageNumber() → 1   (0-based: the second page)
-	 *   getPageSize()   → 2
-	 *   getOffset()     → 2   (page * size: how many entries are skipped)
-	 *   getSort()       → startsAt: ASC
-	 * </pre>
-	 *
-	 * <p>
-	 * Two pageables with the same page, size and sort are {@code equals}, so the
-	 * one the controller resolves matches the one passed to {@code when(...)}.
-	 */
 	public static Pageable createPageable(int page, int size) {
 		return PageRequest.of(page, size, Sort.by(Sort.Direction.ASC, DEFAULT_SORT_PROPERTY));
 	}
 
-	/**
-	 * All events on one page, as {@code getEvents(null, createDefaultPageable())}
-	 * returns them. 
-	 */
+	// ---------------------------------------------------------------------------
+	// Entity pages (what the repository returns)
+	// ---------------------------------------------------------------------------
+
 	public static Page<Event> createEventPage() {
 		return createEventPage(null, createDefaultPageable());
 	}
 
-	/** Only the festivals (first and third event). */
 	public static Page<Event> createFestivalEventPage() {
 		return createEventPage(DEFAULT_CATEGORY_ID, createDefaultPageable());
 	}
 
-	/** Only the concert (second event). */
-	public static Page<Event> createConcertEventPage() {
-		return createEventPage(CONCERT_CATEGORY_ID, createDefaultPageable());
-	}
-
-	/** No event matches, e.g. a category without events. */
-	public static Page<Event> createEmptyEventPage() {
-		return new PageImpl<>(List.of(), createDefaultPageable(), 0);
-	}
-
-	/**
-	 * The page {@code EventService#getEvents(categoryId, pageable)} would return
-	 * for {@link #createEventList()}: filtered by category ({@code null} = all),
-	 * sorted by {@code startsAt} and cut to the requested page. The total counts
-	 * every matching event, so {@code totalElements} and {@code totalPages} are
-	 * correct on every page.
-	 *
-	 * <p>
-	 * Example {@code createEventPage(null, createPageable(0, 2))}: three events
-	 * exist, the page holds the first two by {@code startsAt}.
-	 *
-	 * <pre>
-	 * Page&lt;Event&gt; (Java)
-	 *   getContent()       → [Summer Festival (Jun 20), Rock am Berg (Jul 4)]
-	 *   getNumber()        → 0      which page this is (0-based)
-	 *   getSize()          → 2      requested page size
-	 *   getTotalElements() → 3      all matching events, not just this page
-	 *   getTotalPages()    → 2      ceil(3 / 2)
-	 *   isFirst() / isLast() / hasNext() → true / false / true
-	 *
-	 * JSON response of GET /events?page=0&amp;size=2
-	 * (spring.data.web.pageable.serialization-mode=via-dto)
-	 * {
-	 *   "content": [
-	 *     {
-	 *       "id": "33333333-3333-3333-3333-333333333333",
-	 *       "category": { "id": "22222222-…", "title": "Festival" },
-	 *       "title": "Summer Festival",
-	 *       "description": "Open-air festival with live bands.",
-	 *       "venue": "Donauinsel",
-	 *       "city": "Wien",
-	 *       "startsAt": "2099-06-20T19:00:00Z",
-	 *       "saleStartsAt": "2099-03-01T10:00:00Z",
-	 *       "imageUrl": "https://example.com/images/summer-festival.png",
-	 *       "status": "DRAFT",
-	 *       "createdAt": "2026-01-01T12:00:00Z",
-	 *       "updatedAt": "2026-01-01T12:00:00Z"
-	 *     },
-	 *     { "id": "55555555-…", "title": "Rock am Berg", … }
-	 *   ],
-	 *   "page": { "size": 2, "number": 0, "totalElements": 3, "totalPages": 2 }
-	 * }
-	 * </pre>
-	 *
-	 * In tests: {@code $.content[*].title}, {@code $.page.totalElements} etc.
-	 */
 	public static Page<Event> createEventPage(UUID categoryId, Pageable pageable) {
 		List<Event> matching = createEventList().stream()
 				.filter(event -> categoryId == null || categoryId.equals(event.getCategory().getId()))
@@ -314,42 +238,248 @@ public final class EventTestDataFactory {
 		return new PageImpl<>(matching.subList(from, to), pageable, matching.size());
 	}
 
-	/**
-	 * {@link #createDefaultEvent()} after {@link #createUpdateEventDto()} was
-	 * applied.
-	 */
-	public static Event createUpdatedEvent() {
+	// ---------------------------------------------------------------------------
+	// Response DTOs (what the service returns and the controller sends)
+	// ---------------------------------------------------------------------------
+
+	public static EventResponseDto createDefaultEventResponseDto() {
+		return createDefaultEventResponseDto(Status.DRAFT);
+	}
+
+	public static EventResponseDto createDefaultEventResponseDto(Status status) {
 		Event event = createDefaultEvent();
-		event.setTitle(UPDATED_TITLE);
-		event.setDescription(UPDATED_DESCRIPTION);
-		event.setVenue(UPDATED_VENUE);
-		event.setCity(UPDATED_CITY);
-		event.setStartsAt(UPDATED_STARTS_AT);
-		event.setSaleStartsAt(UPDATED_SALE_STARTS_AT);
-		event.setImageUrl(UPDATED_IMAGE_URL);
+		event.setStatus(status);
+		return toEventResponseDto(event);
+	}
+
+	public static EventResponseDto createUpdatedEventResponseDto() {
+		return toEventResponseDto(createUpdatedEvent());
+	}
+
+	public static EventDetailsResponseDto createEventDetailsResponseDto() {
+		return createEventDetailsResponseDto(Status.DRAFT);
+	}
+
+	// GET /events/{id} for the default event (starts 2099, sale 2099) in the given
+	// status. Written out by hand, not with EventStatusRules:
+	//
+	// stored \ to   DRAFT     PUBLISHED   CANCELED
+	// DRAFT         allowed   allowed     blocked
+	// PUBLISHED     allowed   allowed     allowed
+	// CANCELED      blocked   blocked     allowed
+	public static EventDetailsResponseDto createEventDetailsResponseDto(Status status) {
+		Map<Status, StatusOption> statusOptions = new EnumMap<>(Status.class);
+
+		switch (status) {
+			case DRAFT -> {
+				statusOptions.put(Status.DRAFT, StatusOption.allowed());
+				statusOptions.put(Status.PUBLISHED, StatusOption.allowed());
+				statusOptions.put(Status.CANCELED, StatusOption.blocked(DRAFT_CANCEL_BLOCKED_WHY));
+			}
+			case PUBLISHED -> {
+				statusOptions.put(Status.DRAFT, StatusOption.allowed());
+				statusOptions.put(Status.PUBLISHED, StatusOption.allowed());
+				statusOptions.put(Status.CANCELED, StatusOption.allowed());
+			}
+			case CANCELED -> {
+				statusOptions.put(Status.DRAFT, StatusOption.blocked(CANCELED_DRAFT_BLOCKED_WHY));
+				statusOptions.put(Status.PUBLISHED, StatusOption.blocked(CANCELED_PUBLISH_BLOCKED_WHY));
+				statusOptions.put(Status.CANCELED, StatusOption.allowed());
+			}
+		}
+
+		return new EventDetailsResponseDto(createDefaultEventResponseDto(status), statusOptions);
+	}
+
+	// ---------------------------------------------------------------------------
+	// Status rules (EventStatusRules, reached through getEvent and updateEvent)
+	// ---------------------------------------------------------------------------
+
+	// One stored event and the status options it must get. The dates lie in 2020
+	// (over) or 2099 (ahead), so EventService's real Instant.now() always decides
+	// the same way.
+	public record StatusRuleCase(String name, Event event, Map<Status, StatusOption> expectedOptions) {
+	}
+
+	// stored status, start, sale         → to DRAFT       to PUBLISHED    to CANCELED
+	public static List<StatusRuleCase> createStatusRuleCases() {
+		return List.of(
+				new StatusRuleCase("DRAFT, start and sale ahead",
+						createEventWith(Status.DRAFT, DEFAULT_STARTS_AT, DEFAULT_SALE_STARTS_AT),
+						createStatusOptions(
+								StatusOption.allowed(),
+								StatusOption.allowed(),
+								StatusOption.blocked(DRAFT_CANCEL_BLOCKED_WHY))),
+
+				new StatusRuleCase("DRAFT, already started",
+						createEventWith(Status.DRAFT, PAST_STARTS_AT, PAST_SALE_STARTS_AT),
+						createStatusOptions(
+								StatusOption.allowed(),
+								StatusOption.blocked(STARTED_PUBLISH_BLOCKED_WHY),
+								StatusOption.blocked(DRAFT_CANCEL_BLOCKED_WHY))),
+
+				new StatusRuleCase("PUBLISHED, start and sale ahead",
+						createEventWith(Status.PUBLISHED, DEFAULT_STARTS_AT, DEFAULT_SALE_STARTS_AT),
+						createStatusOptions(
+								StatusOption.allowed(),
+								StatusOption.allowed(),
+								StatusOption.allowed())),
+
+				new StatusRuleCase("PUBLISHED, sale open, start ahead",
+						createEventWith(Status.PUBLISHED, DEFAULT_STARTS_AT, PAST_SALE_STARTS_AT),
+						createStatusOptions(
+								StatusOption.blocked(SALE_STARTED_DRAFT_BLOCKED_WHY),
+								StatusOption.allowed(),
+								StatusOption.allowed())),
+
+				new StatusRuleCase("PUBLISHED, already started",
+						createEventWith(Status.PUBLISHED, PAST_STARTS_AT, PAST_SALE_STARTS_AT),
+						createStatusOptions(
+								StatusOption.blocked(SALE_STARTED_DRAFT_BLOCKED_WHY),
+								StatusOption.allowed(),
+								StatusOption.blocked(STARTED_CANCEL_BLOCKED_WHY))),
+
+				new StatusRuleCase("CANCELED, start and sale ahead",
+						createEventWith(Status.CANCELED, DEFAULT_STARTS_AT, DEFAULT_SALE_STARTS_AT),
+						createStatusOptions(
+								StatusOption.blocked(CANCELED_DRAFT_BLOCKED_WHY),
+								StatusOption.blocked(CANCELED_PUBLISH_BLOCKED_WHY),
+								StatusOption.allowed())),
+
+				new StatusRuleCase("CANCELED, already started",
+						createEventWith(Status.CANCELED, PAST_STARTS_AT, PAST_SALE_STARTS_AT),
+						createStatusOptions(
+								StatusOption.blocked(CANCELED_DRAFT_BLOCKED_WHY),
+								StatusOption.blocked(CANCELED_PUBLISH_BLOCKED_WHY),
+								StatusOption.allowed())));
+	}
+
+	private static Event createEventWith(Status status, Instant startsAt, Instant saleStartsAt) {
+		Event event = createDefaultEvent();
+		event.setStatus(status);
+		event.setStartsAt(startsAt);
+		event.setSaleStartsAt(saleStartsAt);
 		return event;
 	}
 
-	/**
-	 * Same as {@link #createDefaultEvent()} but its start lies in the past, so it
-	 * can't be updated anymore.
-	 */
-	public static Event createStartedEvent() {
-		Event event = createDefaultEvent();
-		event.setStartsAt(PAST_STARTS_AT);
-		event.setSaleStartsAt(PAST_SALE_STARTS_AT);
-		return event;
+	private static Map<Status, StatusOption> createStatusOptions(StatusOption toDraft, StatusOption toPublished,
+			StatusOption toCanceled) {
+		Map<Status, StatusOption> statusOptions = new EnumMap<>(Status.class);
+		statusOptions.put(Status.DRAFT, toDraft);
+		statusOptions.put(Status.PUBLISHED, toPublished);
+		statusOptions.put(Status.CANCELED, toCanceled);
+		return statusOptions;
 	}
 
-	/** A valid create payload matching {@link #createDefaultEvent()}. */
+	public static Page<EventResponseDto> createEventResponsePage() {
+		return createEventResponsePage(null, createDefaultPageable());
+	}
+
+	public static Page<EventResponseDto> createFestivalEventResponsePage() {
+		return createEventResponsePage(DEFAULT_CATEGORY_ID, createDefaultPageable());
+	}
+
+	public static Page<EventResponseDto> createEventResponsePage(UUID categoryId, Pageable pageable) {
+		return createEventPage(categoryId, pageable).map(EventTestDataFactory::toEventResponseDto);
+	}
+
+	// ---------------------------------------------------------------------------
+	// My events (GET /me/events and /me/events/counts)
+	// ---------------------------------------------------------------------------
+
+	// What getMyEvents must pass to findMyEvents for one tab (see MyEventCriteria#of).
+	// The service uses Instant.now(), so the flags only say "set" (notNull) or "null".
+	public record MyEventsFilterCase(MyEventsFilter filter, Status status, boolean startsAfterNow,
+			boolean startsBeforeOrAtNow, long expectedCount) {
+	}
+
+	public static List<MyEventsFilterCase> createMyEventsFilterCases() {
+		return List.of(
+				new MyEventsFilterCase(MyEventsFilter.ALL, null, false, false, 4),
+				new MyEventsFilterCase(MyEventsFilter.DRAFT, Status.DRAFT, false, false, 1),
+				new MyEventsFilterCase(MyEventsFilter.PUBLISHED, Status.PUBLISHED, true, false, 1),
+				new MyEventsFilterCase(MyEventsFilter.CANCELED, Status.CANCELED, false, false, 1),
+				new MyEventsFilterCase(MyEventsFilter.FINISHED, Status.PUBLISHED, false, true, 1));
+	}
+
+	public static Event createFinishedEvent() {
+		return Event.builder()
+				.id(FINISHED_EVENT_ID)
+				.version(DEFAULT_VERSION)
+				.category(createConcertCategory())
+				.title(FINISHED_TITLE)
+				.description(FINISHED_DESCRIPTION)
+				.venue(FINISHED_VENUE)
+				.city(FINISHED_CITY)
+				.startsAt(PAST_STARTS_AT)
+				.saleStartsAt(PAST_SALE_STARTS_AT)
+				.imageUrl(FINISHED_IMAGE_URL)
+				.status(Status.PUBLISHED)
+				.createdAt(DEFAULT_CREATED_AT)
+				.updatedAt(DEFAULT_CREATED_AT)
+				.build();
+	}
+
+	public static List<Event> createMyEventList() {
+		List<Event> events = new ArrayList<>(createEventList());
+		events.add(createFinishedEvent());
+		return events;
+	}
+
+	public static Page<Event> createMyEventPage() {
+		return createMyEventPage(MyEventsFilter.ALL, createDefaultPageable());
+	}
+
+	public static Page<Event> createMyEventPage(MyEventsFilter filter, Pageable pageable) {
+		Instant now = Instant.now();
+		List<Event> matching = createMyEventList().stream()
+				.filter(event -> switch (filter) {
+					case ALL -> true;
+					case DRAFT -> event.getStatus() == Status.DRAFT;
+					case CANCELED -> event.getStatus() == Status.CANCELED;
+					case PUBLISHED -> event.getStatus() == Status.PUBLISHED && event.getStartsAt().isAfter(now);
+					case FINISHED -> event.getStatus() == Status.PUBLISHED && !event.getStartsAt().isAfter(now);
+				})
+				.sorted(Comparator.comparing(Event::getStartsAt))
+				.toList();
+
+		int from = (int) Math.min(pageable.getOffset(), matching.size());
+		int to = Math.min(from + pageable.getPageSize(), matching.size());
+
+		return new PageImpl<>(matching.subList(from, to), pageable, matching.size());
+	}
+
+	public static Page<EventResponseDto> createMyEventResponsePage() {
+		return createMyEventResponsePage(MyEventsFilter.ALL, createDefaultPageable());
+	}
+
+	public static Page<EventResponseDto> createMyEventResponsePage(MyEventsFilter filter, Pageable pageable) {
+		return createMyEventPage(filter, pageable).map(EventTestDataFactory::toEventResponseDto);
+	}
+
+	// Same as EventService#count: no sort, because eq(...) compares the sort too.
+	public static Pageable createCountPageable() {
+		return PageRequest.of(0, 1);
+	}
+
+	public static CountsOfEventsDto createCountsOfEventsDto() {
+		return CountsOfEventsDto.builder()
+				.countOfAllEvents(4)
+				.countOfDraftEvents(1)
+				.countOfPublishedEvents(1)
+				.countOfCanceledEvents(1)
+				.countOfFinishedEvents(1)
+				.build();
+	}
+
+	// ---------------------------------------------------------------------------
+	// Create payloads
+	// ---------------------------------------------------------------------------
+
 	public static CreateEventDto createCreateEventDto() {
 		return createCreateEventDto(DEFAULT_CATEGORY_ID);
 	}
 
-	/**
-	 * Same as {@link #createCreateEventDto()} but refers to the given category,
-	 * e.g. one an integration test has stored and whose id the database generated.
-	 */
 	public static CreateEventDto createCreateEventDto(UUID categoryId) {
 		return new CreateEventDto(
 				DEFAULT_TITLE,
@@ -362,10 +492,6 @@ public final class EventTestDataFactory {
 				DEFAULT_IMAGE_URL);
 	}
 
-	/**
-	 * One create payload per event of {@link #createEventList()}, all referring to
-	 * the given category, e.g. one an integration test has stored.
-	 */
 	public static List<CreateEventDto> createCreateEventDtoList(UUID categoryId) {
 		return createEventList().stream()
 				.map(event -> new CreateEventDto(
@@ -380,10 +506,6 @@ public final class EventTestDataFactory {
 				.toList();
 	}
 
-	/**
-	 * Same as {@link #createCreateEventDto()} but its start lies in the past, so
-	 * {@code @Future} rejects it.
-	 */
 	public static CreateEventDto createCreatePastEventDto() {
 		return new CreateEventDto(
 				DEFAULT_TITLE,
@@ -396,10 +518,6 @@ public final class EventTestDataFactory {
 				DEFAULT_IMAGE_URL);
 	}
 
-	/**
-	 * Breaks every bean-validation rule of {@link CreateEventDto}, so
-	 * {@code @Valid} rejects it.
-	 */
 	public static CreateEventDto createInvalidCreateEventDto() {
 		return new CreateEventDto(
 				"",
@@ -412,48 +530,40 @@ public final class EventTestDataFactory {
 				"not-a-url");
 	}
 
-	/**
-	 * A valid update payload that changes every field of
-	 * {@link #createDefaultEvent()} except the category.
-	 */
+	// ---------------------------------------------------------------------------
+	// Update payloads
+	// ---------------------------------------------------------------------------
+
 	public static UpdateEventDto createUpdateEventDto() {
 		return createUpdateEventDto(DEFAULT_CATEGORY_ID);
 	}
 
-	/** Same as {@link #createUpdateEventDto()} but refers to the given category. */
 	public static UpdateEventDto createUpdateEventDto(UUID categoryId) {
-		return updateEventDto(categoryId, UPDATED_STARTS_AT, UPDATED_SALE_STARTS_AT);
+		return updateEventDto(categoryId, UPDATED_STARTS_AT, UPDATED_SALE_STARTS_AT, Status.DRAFT, DEFAULT_VERSION);
 	}
 
-	/**
-	 * Keeps the start time of {@link #createDefaultEvent()}, so the "moved to the
-	 * past" check is skipped.
-	 */
+	public static UpdateEventDto createUpdateEventDtoWithStatus(Status status) {
+		return updateEventDto(DEFAULT_CATEGORY_ID, UPDATED_STARTS_AT, UPDATED_SALE_STARTS_AT, status, DEFAULT_VERSION);
+	}
+
 	public static UpdateEventDto createUpdateEventDtoWithUnchangedStartsAt() {
-		return updateEventDto(DEFAULT_CATEGORY_ID, DEFAULT_STARTS_AT, DEFAULT_SALE_STARTS_AT);
+		return updateEventDto(DEFAULT_CATEGORY_ID, DEFAULT_STARTS_AT, DEFAULT_SALE_STARTS_AT, Status.DRAFT,
+				DEFAULT_VERSION);
 	}
 
-	/** Moves the start time into the past. */
 	public static UpdateEventDto createUpdateEventDtoWithPastStartsAt() {
-		return updateEventDto(DEFAULT_CATEGORY_ID, PAST_STARTS_AT, PAST_SALE_STARTS_AT);
+		return updateEventDto(DEFAULT_CATEGORY_ID, PAST_STARTS_AT, PAST_SALE_STARTS_AT, Status.DRAFT, DEFAULT_VERSION);
 	}
 
-	/**
-	 * The sale opens exactly when the event starts (boundary: must be rejected).
-	 */
 	public static UpdateEventDto createUpdateEventDtoWithSaleAtStart() {
-		return updateEventDto(DEFAULT_CATEGORY_ID, UPDATED_STARTS_AT, UPDATED_STARTS_AT);
+		return updateEventDto(DEFAULT_CATEGORY_ID, UPDATED_STARTS_AT, UPDATED_STARTS_AT, Status.DRAFT, DEFAULT_VERSION);
 	}
 
-	/** The sale opens after the event starts. */
 	public static UpdateEventDto createUpdateEventDtoWithSaleAfterStart() {
-		return updateEventDto(DEFAULT_CATEGORY_ID, UPDATED_STARTS_AT, UPDATED_STARTS_AT.plusSeconds(14 * 24 * 60 * 60));
+		return updateEventDto(DEFAULT_CATEGORY_ID, UPDATED_STARTS_AT, UPDATED_STARTS_AT.plusSeconds(14 * 24 * 60 * 60),
+				Status.DRAFT, DEFAULT_VERSION);
 	}
 
-	/**
-	 * Breaks every bean-validation rule of {@link UpdateEventDto}, so
-	 * {@code @Valid} rejects it.
-	 */
 	public static UpdateEventDto createInvalidUpdateEventDto() {
 		return new UpdateEventDto(
 				"",
@@ -463,14 +573,17 @@ public final class EventTestDataFactory {
 				"",
 				null,
 				null,
-				"not-a-url");
+				"not-a-url",
+				null,
+				null);
 	}
 
-	/**
-	 * The update payload with the {@code UPDATED_} texts; only the category and
-	 * the two timestamps vary between the update variants above.
-	 */
-	private static UpdateEventDto updateEventDto(UUID categoryId, Instant startsAt, Instant saleStartsAt) {
+	// ---------------------------------------------------------------------------
+	// Helpers
+	// ---------------------------------------------------------------------------
+
+	private static UpdateEventDto updateEventDto(UUID categoryId, Instant startsAt, Instant saleStartsAt,
+			Status status, Long version) {
 		return new UpdateEventDto(
 				UPDATED_TITLE,
 				UPDATED_DESCRIPTION,
@@ -479,6 +592,29 @@ public final class EventTestDataFactory {
 				UPDATED_CITY,
 				startsAt,
 				saleStartsAt,
-				UPDATED_IMAGE_URL);
+				UPDATED_IMAGE_URL,
+				status,
+				version);
+	}
+
+	// Mapped by hand on purpose: with the real EventMapper a mapper bug would end
+	// up in the expected values too, and the tests would still pass.
+	private static EventResponseDto toEventResponseDto(Event event) {
+		Category category = event.getCategory();
+		return EventResponseDto.builder()
+				.id(event.getId())
+				.version(event.getVersion())
+				.category(new CategoryResponseDto(category.getId(), category.getTitle()))
+				.title(event.getTitle())
+				.description(event.getDescription())
+				.venue(event.getVenue())
+				.city(event.getCity())
+				.startsAt(event.getStartsAt())
+				.saleStartsAt(event.getSaleStartsAt())
+				.imageUrl(event.getImageUrl())
+				.status(event.getStatus())
+				.createdAt(event.getCreatedAt())
+				.updatedAt(event.getUpdatedAt())
+				.build();
 	}
 }

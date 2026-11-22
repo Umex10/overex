@@ -96,7 +96,6 @@ public class UserControllerTest {
 		mockMvc.perform(get("/me").with(AuthTestClient.authenticatedAs(user)))
 				.andExpect(status().isNotFound())
 				.andExpect(jsonPath("$.status").value(404))
-				.andExpect(jsonPath("$.error").value("Not Found"))
 				.andExpect(jsonPath("$.message").value("User " + user.getId() + " no longer exists."))
 				.andExpect(jsonPath("$.path").value("/me"));
 	}

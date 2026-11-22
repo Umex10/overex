@@ -57,6 +57,7 @@ public class CustomUserDetailsServiceTest {
 		UserDetails found = customUserDetailsService.loadUserByUsername(user.getEmail());
 
 		CustomUserDetails details = assertInstanceOf(CustomUserDetails.class, found);
+
 		assertEquals(user.getEmail(), details.getUsername());
 		assertEquals(user.getEmail(), details.getEmail());
 		assertEquals(user.getPassword(), details.getPassword());

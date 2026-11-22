@@ -73,6 +73,7 @@ public class JwtServiceTest {
 	@Test
 	void shouldCreateAccessTk() throws ParseException {
 		String tk = jwtService.createAccessTk(user);
+
 		assertNotNull(tk);
 
 		JWTClaimsSet claims = SignedJWT.parse(tk).getJWTClaimsSet();
@@ -86,6 +87,7 @@ public class JwtServiceTest {
 	@Test
 	void shouldCreateRefreshTk() throws ParseException {
 		String tk = jwtService.createRefreshTk(user);
+
 		assertNotNull(tk);
 
 		JWTClaimsSet claims = SignedJWT.parse(tk).getJWTClaimsSet();
@@ -168,6 +170,7 @@ public class JwtServiceTest {
 	@Test
 	void shouldExtractRefreshTk() {
 		MockHttpServletRequest request = new MockHttpServletRequest();
+
 		request.setCookies(new Cookie("refresh_tk", "New-refresh-tk"));
 
 		assertEquals("New-refresh-tk", jwtService.extractRefreshTk(request));

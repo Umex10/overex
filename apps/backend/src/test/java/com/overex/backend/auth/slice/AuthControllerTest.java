@@ -166,7 +166,7 @@ public class AuthControllerTest {
 				.andExpect(status().isUnauthorized())
 				.andExpect(jsonPath("$.status").value(401))
 				// no field errors: the response must not reveal whether the email exists
-				.andExpect(jsonPath("$.errors").doesNotExist());
+				.andExpect(jsonPath("$.errors").isEmpty());
 	}
 
 	/**
@@ -187,7 +187,8 @@ public class AuthControllerTest {
 				.content(jsonRequest))
 				.andExpect(status().isInternalServerError())
 				.andExpect(jsonPath("$.status").value(500))
-				.andExpect(jsonPath("$.error").value("Internal Server Error"))
+				// a fixed text, never the internal exception message
+				.andExpect(jsonPath("$.message").value("Something went wrong. Please try again later."))
 				.andExpect(jsonPath("$.path").value("/auth/sign-in"));
 	}
 

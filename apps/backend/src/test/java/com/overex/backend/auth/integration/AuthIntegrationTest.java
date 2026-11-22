@@ -165,6 +165,7 @@ class AuthIntegrationTest {
 	void shouldIgnoreRoleSentWithSignUp() throws Exception {
 		String json = objectMapper.writeValueAsString(AuthTestDataFactory.createSignUpDto())
 				.replaceFirst("\\{", "{\"role\":\"ADMIN\",");
+
 		mockMvc.perform(post("/auth/sign-up").contentType(MediaType.APPLICATION_JSON).content(json))
 				.andExpect(status().isCreated());
 

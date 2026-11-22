@@ -51,6 +51,7 @@ public class CategoryServiceTest {
         when(categoryRepository.findById(category.getId())).thenReturn(Optional.of(category));
 
         Category foundCategory = categoryService.getCategory(category.getId());
+
         assertSame(category, foundCategory);
     }
 

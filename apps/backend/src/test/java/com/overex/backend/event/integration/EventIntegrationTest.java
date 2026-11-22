@@ -263,17 +263,17 @@ public class EventIntegrationTest {
                 mockMvc.perform(get("/events/{eventId}", event.getId())
                                 .header("Authorization", "Bearer " + accessTk))
                                 .andExpect(status().isOk())
-                                .andExpect(jsonPath("$.id").value(event.getId().toString()))
-                                .andExpect(jsonPath("$.title").value(event.getTitle()))
-                                .andExpect(jsonPath("$.description").value(event.getDescription()))
-                                .andExpect(jsonPath("$.venue").value(event.getVenue()))
-                                .andExpect(jsonPath("$.city").value(event.getCity()))
-                                .andExpect(jsonPath("$.startsAt").value(event.getStartsAt().toString()))
-                                .andExpect(jsonPath("$.saleStartsAt").value(event.getSaleStartsAt().toString()))
-                                .andExpect(jsonPath("$.imageUrl").value(event.getImageUrl()))
-                                .andExpect(jsonPath("$.status").value(event.getStatus().name()))
-                                .andExpect(jsonPath("$.createdAt").value(event.getCreatedAt().toString()))
-                                .andExpect(jsonPath("$.updatedAt").value(event.getUpdatedAt().toString()));
+                                .andExpect(jsonPath("$.event.id").value(event.getId().toString()))
+                                .andExpect(jsonPath("$.event.title").value(event.getTitle()))
+                                .andExpect(jsonPath("$.event.description").value(event.getDescription()))
+                                .andExpect(jsonPath("$.event.venue").value(event.getVenue()))
+                                .andExpect(jsonPath("$.event.city").value(event.getCity()))
+                                .andExpect(jsonPath("$.event.startsAt").value(event.getStartsAt().toString()))
+                                .andExpect(jsonPath("$.event.saleStartsAt").value(event.getSaleStartsAt().toString()))
+                                .andExpect(jsonPath("$.event.imageUrl").value(event.getImageUrl()))
+                                .andExpect(jsonPath("$.event.status").value(event.getStatus().name()))
+                                .andExpect(jsonPath("$.event.createdAt").value(event.getCreatedAt().toString()))
+                                .andExpect(jsonPath("$.event.updatedAt").value(event.getUpdatedAt().toString()));
         }
 
         @Test
@@ -287,17 +287,17 @@ public class EventIntegrationTest {
                 mockMvc.perform(get("/events/{eventId}", event.getId())
                                 .header("Authorization", "Bearer " + accessTk))
                                 .andExpect(status().isOk())
-                                .andExpect(jsonPath("$.id").value(event.getId().toString()))
-                                .andExpect(jsonPath("$.title").value(event.getTitle()))
-                                .andExpect(jsonPath("$.description").value(event.getDescription()))
-                                .andExpect(jsonPath("$.venue").value(event.getVenue()))
-                                .andExpect(jsonPath("$.city").value(event.getCity()))
-                                .andExpect(jsonPath("$.startsAt").value(event.getStartsAt().toString()))
-                                .andExpect(jsonPath("$.saleStartsAt").value(event.getSaleStartsAt().toString()))
-                                .andExpect(jsonPath("$.imageUrl").value(event.getImageUrl()))
-                                .andExpect(jsonPath("$.status").value(event.getStatus().name()))
-                                .andExpect(jsonPath("$.createdAt").value(event.getCreatedAt().toString()))
-                                .andExpect(jsonPath("$.updatedAt").value(event.getUpdatedAt().toString()));
+                                .andExpect(jsonPath("$.event.id").value(event.getId().toString()))
+                                .andExpect(jsonPath("$.event.title").value(event.getTitle()))
+                                .andExpect(jsonPath("$.event.description").value(event.getDescription()))
+                                .andExpect(jsonPath("$.event.venue").value(event.getVenue()))
+                                .andExpect(jsonPath("$.event.city").value(event.getCity()))
+                                .andExpect(jsonPath("$.event.startsAt").value(event.getStartsAt().toString()))
+                                .andExpect(jsonPath("$.event.saleStartsAt").value(event.getSaleStartsAt().toString()))
+                                .andExpect(jsonPath("$.event.imageUrl").value(event.getImageUrl()))
+                                .andExpect(jsonPath("$.event.status").value(event.getStatus().name()))
+                                .andExpect(jsonPath("$.event.createdAt").value(event.getCreatedAt().toString()))
+                                .andExpect(jsonPath("$.event.updatedAt").value(event.getUpdatedAt().toString()));
         }
 
         @Test
@@ -346,7 +346,10 @@ public class EventIntegrationTest {
                                 .andExpect(jsonPath("$.imageUrl").value(updatedEvent.getImageUrl()))
                                 .andExpect(jsonPath("$.status").value(updatedEvent.getStatus().name()))
                                 .andExpect(jsonPath("$.createdAt").value(event.getCreatedAt().toString()))
-                                .andExpect(jsonPath("$.updatedAt").value(not(event.getUpdatedAt().toString())));
+                                // saveAndFlush writes before the response is built, so the new
+                                // updatedAt and version are already in the PATCH response
+                                .andExpect(jsonPath("$.updatedAt").value(not(event.getUpdatedAt().toString())))
+                                .andExpect(jsonPath("$.version").value(event.getVersion() + 1));
         }
 
         @Test

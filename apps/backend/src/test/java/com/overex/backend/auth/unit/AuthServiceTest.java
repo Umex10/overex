@@ -84,6 +84,7 @@ public class AuthServiceTest {
 	@Test
 	void shouldNormalizeEmailOnSignUp() {
 		SignUpAccountRequestDto defaults = AuthTestDataFactory.createSignUpDto();
+
 		SignUpAccountRequestDto dto = new SignUpAccountRequestDto(defaults.name(), "  Test@MAIL.com ",
 				defaults.phone(), defaults.password());
 
