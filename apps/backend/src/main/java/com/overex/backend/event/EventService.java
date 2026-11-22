@@ -150,7 +150,11 @@ public class EventService {
         eventMapper.updateEntity(updateEventDto, event);
         event.setCategory(category);
 
-        return eventMapper.toEventResponseDto(eventRepository.save(event));
+        // saveAndFlush, not save: Hibernate raises the version and sets updatedAt
+        // only when it writes to the database. With save() that happens at the
+        // commit, after the response below was built, so the client would get the
+        // old version back and its next save would fail with a false 409.
+        return eventMapper.toEventResponseDto(eventRepository.saveAndFlush(event));
     }
 
     public void deleteEvent(UUID eventId) {
