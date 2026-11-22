@@ -39,26 +39,33 @@ public class RsaKeyFilesTest {
 	/** The PEM private key is parsed into exactly the key it was built from. */
 	@Test
 	void shouldReadPrivateKey() {
+		// Arrange
 		Resource pem = pem("PRIVATE", TestRsaKeys.privateKey().getEncoded());
 
+		// Act
 		RSAPrivateKey key = RsaKeyFiles.readPrivateKey(pem);
 
+		// Assert
 		assertArrayEquals(TestRsaKeys.privateKey().getEncoded(), key.getEncoded());
 	}
 
 	/** The PEM public key is parsed into exactly the key it was built from. */
 	@Test
 	void shouldReadPublicKey() {
+		// Arrange
 		Resource pem = pem("PUBLIC", TestRsaKeys.publicKey().getEncoded());
 
+		// Act
 		RSAPublicKey key = RsaKeyFiles.readPublicKey(pem);
 
+		// Assert
 		assertArrayEquals(TestRsaKeys.publicKey().getEncoded(), key.getEncoded());
 	}
 
 	/** Text that is not Base64 is rejected with a clear start-up error. */
 	@Test
 	void shouldRejectPrivateKeyThatIsNotBase64() {
+		// Act + Assert
 		IllegalStateException ex = assertThrows(IllegalStateException.class,
 				() -> RsaKeyFiles.readPrivateKey(text("this is no key!!")));
 
@@ -69,6 +76,7 @@ public class RsaKeyFilesTest {
 	/** Valid Base64 that is not a key structure is rejected. */
 	@Test
 	void shouldRejectPrivateKeyWithInvalidKeyBytes() {
+		// Act + Assert
 		IllegalStateException ex = assertThrows(IllegalStateException.class,
 				() -> RsaKeyFiles.readPrivateKey(pem("PRIVATE", new byte[] { 1, 2, 3 })));
 
@@ -79,6 +87,7 @@ public class RsaKeyFilesTest {
 	/** A key file that cannot be read (missing, no permission) is rejected. */
 	@Test
 	void shouldRejectUnreadablePrivateKey() {
+		// Act + Assert
 		IllegalStateException ex = assertThrows(IllegalStateException.class,
 				() -> RsaKeyFiles.readPrivateKey(unreadable()));
 
@@ -89,6 +98,7 @@ public class RsaKeyFilesTest {
 	/** Text that is not Base64 is rejected with a clear start-up error. */
 	@Test
 	void shouldRejectPublicKeyThatIsNotBase64() {
+		// Act + Assert
 		IllegalStateException ex = assertThrows(IllegalStateException.class,
 				() -> RsaKeyFiles.readPublicKey(text("this is no key!!")));
 
@@ -99,6 +109,7 @@ public class RsaKeyFilesTest {
 	/** Valid Base64 that is not a key structure is rejected. */
 	@Test
 	void shouldRejectPublicKeyWithInvalidKeyBytes() {
+		// Act + Assert
 		IllegalStateException ex = assertThrows(IllegalStateException.class,
 				() -> RsaKeyFiles.readPublicKey(pem("PUBLIC", new byte[] { 1, 2, 3 })));
 
@@ -109,6 +120,7 @@ public class RsaKeyFilesTest {
 	/** A key file that cannot be read (missing, no permission) is rejected. */
 	@Test
 	void shouldRejectUnreadablePublicKey() {
+		// Act + Assert
 		IllegalStateException ex = assertThrows(IllegalStateException.class,
 				() -> RsaKeyFiles.readPublicKey(unreadable()));
 
@@ -119,8 +131,10 @@ public class RsaKeyFilesTest {
 	/** The error message names the resource, so the broken path is easy to find. */
 	@Test
 	void shouldNameTheResourceInTheErrorMessage() {
+		// Arrange
 		Resource broken = new ByteArrayResource("x".getBytes(StandardCharsets.UTF_8), "classpath:keys/public.pem");
 
+		// Act + Assert
 		IllegalStateException ex = assertThrows(IllegalStateException.class, () -> RsaKeyFiles.readPublicKey(broken));
 
 		assertTrue(ex.getMessage().contains("classpath:keys/public.pem"));
@@ -132,11 +146,14 @@ public class RsaKeyFilesTest {
 	 */
 	@Test
 	void shouldReadBackTheKeysItWrote(@TempDir Path dir) {
+		// Arrange
 		Path privateFile = dir.resolve("keys/private.pem");
 		Path publicFile = dir.resolve("keys/public.pem");
 
+		// Act
 		RsaKeyFiles.write(TestRsaKeys.PAIR, privateFile, publicFile);
 
+		// Assert
 		assertArrayEquals(TestRsaKeys.privateKey().getEncoded(),
 				RsaKeyFiles.readPrivateKey(new FileSystemResource(privateFile)).getEncoded());
 		assertArrayEquals(TestRsaKeys.publicKey().getEncoded(),

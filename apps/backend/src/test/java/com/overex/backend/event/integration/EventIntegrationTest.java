@@ -149,6 +149,7 @@ public class EventIntegrationTest {
 
         @Test
         void shouldGetEventsWithDefaultPageableAndWithoutCategory() throws Exception {
+                // Arrange
                 String accessTk = AuthTestClient.signUpAndReturnAccessTk(mockMvc, objectMapper);
                 List<Event> events = new ArrayList<>();
 
@@ -158,6 +159,7 @@ public class EventIntegrationTest {
 
                 events.sort(Comparator.comparing(Event::getStartsAt));
 
+                // Act + Assert
                 // @PageableDefault sorts by startsAt ascending, so title and startsAt are
                 // compared in order (contains), the other fields as a set.
                 mockMvc.perform(get("/events").header("Authorization", "Bearer " + accessTk))
@@ -196,6 +198,7 @@ public class EventIntegrationTest {
 
         @Test
         void shouldGetEventsWithDefaultPageableAndWithCategory() throws Exception {
+                // Arrange
                 String accessTk = AuthTestClient.signUpAndReturnAccessTk(mockMvc, objectMapper);
                 List<Event> eventsNotToAssert = new ArrayList<>();
                 List<Event> eventsToAssert = new ArrayList<>();
@@ -210,6 +213,7 @@ public class EventIntegrationTest {
 
                 eventsToAssert.sort(Comparator.comparing(Event::getStartsAt));
 
+                // Act + Assert
                 // @PageableDefault sorts by startsAt ascending, so title and startsAt are
                 // compared in order (contains), the other fields as a set.
                 mockMvc.perform(get(String.format("/events?categoryId=%s", categoryConcertId))
@@ -254,12 +258,14 @@ public class EventIntegrationTest {
 
         @Test
         void shouldGetEvent() throws Exception {
+                // Arrange
                 String accessTk = AuthTestClient.signUpAndReturnAccessTk(mockMvc, objectMapper);
 
                 CreateEventDto createEventDto = EventTestDataFactory.createCreateEventDto(categoryDefaultId);
 
                 Event event = createEvent(accessTk, createEventDto);
 
+                // Act + Assert
                 mockMvc.perform(get("/events/{eventId}", event.getId())
                                 .header("Authorization", "Bearer " + accessTk))
                                 .andExpect(status().isOk())
@@ -278,12 +284,14 @@ public class EventIntegrationTest {
 
         @Test
         void shouldCreateEvent() throws Exception {
+                // Arrange
                 String accessTk = AuthTestClient.signUpAndReturnAccessTk(mockMvc, objectMapper);
 
                 CreateEventDto createEventDto = EventTestDataFactory.createCreateEventDto(categoryDefaultId);
 
                 Event event = createEvent(accessTk, createEventDto);
 
+                // Act + Assert
                 mockMvc.perform(get("/events/{eventId}", event.getId())
                                 .header("Authorization", "Bearer " + accessTk))
                                 .andExpect(status().isOk())
@@ -302,12 +310,14 @@ public class EventIntegrationTest {
 
         @Test
         void shouldDeleteEvent() throws Exception {
+                // Arrange
                 String accessTk = AuthTestClient.signUpAndReturnAccessTk(mockMvc, objectMapper);
 
                 CreateEventDto createEventDto = EventTestDataFactory.createCreateEventDto(categoryDefaultId);
 
                 Event event = createEvent(accessTk, createEventDto);
 
+                // Act + Assert
                 mockMvc.perform(delete("/events/{eventId}", event.getId())
                                 .header("Authorization", "Bearer " + accessTk))
                                 .andExpect(status().isNoContent())
@@ -320,6 +330,7 @@ public class EventIntegrationTest {
 
         @Test
         void shouldUpdateEvent() throws Exception {
+                // Arrange
                 String accessTk = AuthTestClient.signUpAndReturnAccessTk(mockMvc, objectMapper);
 
                 CreateEventDto createEventDto = EventTestDataFactory.createCreateEventDto(categoryDefaultId);
@@ -331,6 +342,7 @@ public class EventIntegrationTest {
 
                 String jsonRequest = objectMapper.writeValueAsString(updateEventDto);
 
+                // Act + Assert
                 mockMvc.perform(patch("/events/{eventId}", event.getId())
                                 .header("Authorization", "Bearer " + accessTk)
                                 .contentType(MediaType.APPLICATION_JSON)
@@ -354,12 +366,14 @@ public class EventIntegrationTest {
 
         @Test
         void shouldNotCreateEventWithPastStartsAt() throws Exception {
+                // Arrange
                 String accessTk = AuthTestClient.signUpAndReturnAccessTk(mockMvc, objectMapper);
 
                 CreateEventDto createEventDto = EventTestDataFactory.createCreatePastEventDto();
 
                 String jsonRequest = objectMapper.writeValueAsString(createEventDto);
 
+                // Act + Assert
                 // @Future on startsAt in CreateEventDto rejects the payload
                 mockMvc.perform(post("/events")
                                 .header("Authorization", "Bearer " + accessTk)
@@ -374,9 +388,11 @@ public class EventIntegrationTest {
          */
         @Test
         void shouldNotCreateEventWithInvalidAccessTk() throws Exception {
+                // Arrange
                 String jsonRequest = objectMapper
                                 .writeValueAsString(EventTestDataFactory.createCreateEventDto(categoryDefaultId));
 
+                // Act + Assert
                 mockMvc.perform(post("/events")
                                 .header("Authorization", "Bearer not-a-valid-token")
                                 .contentType(MediaType.APPLICATION_JSON)
@@ -388,6 +404,7 @@ public class EventIntegrationTest {
 
         @Test
         void shouldNotUpdateEventWithPastStartsAt() throws Exception {
+                // Arrange
                 String accessTk = AuthTestClient.signUpAndReturnAccessTk(mockMvc, objectMapper);
 
                 CreateEventDto createEventDto = EventTestDataFactory.createCreateEventDto(categoryDefaultId);
@@ -398,6 +415,7 @@ public class EventIntegrationTest {
 
                 String jsonRequest = objectMapper.writeValueAsString(updateEventDto);
 
+                // Act + Assert
                 mockMvc.perform(patch("/events/{eventId}", event.getId())
                                 .header("Authorization", "Bearer " + accessTk)
                                 .contentType(MediaType.APPLICATION_JSON)
@@ -412,6 +430,7 @@ public class EventIntegrationTest {
 
         @Test
         void shouldNotUpdateEventWithSaleStartingAfterEventStart() throws Exception {
+                // Arrange
                 String accessTk = AuthTestClient.signUpAndReturnAccessTk(mockMvc, objectMapper);
 
                 CreateEventDto createEventDto = EventTestDataFactory.createCreateEventDto(categoryDefaultId);
@@ -422,6 +441,7 @@ public class EventIntegrationTest {
 
                 String jsonRequest = objectMapper.writeValueAsString(updateEventDto);
 
+                // Act + Assert
                 mockMvc.perform(patch("/events/{eventId}", event.getId())
                                 .header("Authorization", "Bearer " + accessTk)
                                 .contentType(MediaType.APPLICATION_JSON)

@@ -94,11 +94,13 @@ public class EventControllerTest {
         @Test
         void shouldGetEventsWithDefaultPageableAndWithoutCategory() throws Exception {
 
+                // Arrange
                 Pageable pageable = EventTestDataFactory.createDefaultPageable();
                 Page<EventResponseDto> page = EventTestDataFactory.createEventResponsePage();
                 List<EventResponseDto> events = page.getContent();
                 when(eventService.getEvents(null, pageable)).thenReturn(page);
 
+                // Act + Assert
                 // the mocked service returns the factory page as it is, so id and
                 // timestamps are fixed values and compared exactly
                 mockMvc.perform(get("/events"))
@@ -138,12 +140,14 @@ public class EventControllerTest {
         @Test
         void shouldGetEventsWithDefaultPageableAndWithCategory() throws Exception {
 
+                // Arrange
                 Pageable pageable = EventTestDataFactory.createDefaultPageable();
                 Page<EventResponseDto> page = EventTestDataFactory.createFestivalEventResponsePage();
                 List<EventResponseDto> events = page.getContent();
 
                 when(eventService.getEvents(EventTestDataFactory.DEFAULT_CATEGORY_ID, pageable)).thenReturn(page);
 
+                // Act + Assert
                 // the mocked service returns the factory page as it is, so id and
                 // timestamps are fixed values and compared exactly
                 mockMvc.perform(get(String.format("/events?categoryId=%s", EventTestDataFactory.DEFAULT_CATEGORY_ID)))
@@ -184,12 +188,14 @@ public class EventControllerTest {
 
         @Test
         void shouldGetEvent() throws Exception {
+                // Arrange
                 Event event = EventTestDataFactory.createDefaultEvent();
 
                 EventDetailsResponseDto eventDetailsResponseDto = EventTestDataFactory.createEventDetailsResponseDto();
                 EventResponseDto eventResponseDto = eventDetailsResponseDto.event();
                 when(eventService.getEvent(any())).thenReturn(eventDetailsResponseDto);
 
+                // Act + Assert
                 mockMvc.perform(get("/events/{eventId}", event.getId()))
                                 .andExpect(status().isOk())
                                 .andExpect(jsonPath("$.event.id").value(eventResponseDto.id().toString()))
@@ -214,11 +220,13 @@ public class EventControllerTest {
 
         @Test
         void shouldNotGetMissingEvent() throws Exception {
+                // Arrange
                 Event event = EventTestDataFactory.createDefaultEvent();
 
                 when(eventService.getEvent(any()))
                                 .thenThrow(new EntityNotFoundException("The Event with the given id was not found"));
 
+                // Act + Assert
                 mockMvc.perform(get("/events/{eventId}", event.getId()))
                                 .andExpect(status().isNotFound())
                                 .andExpect(jsonPath("$.status").value(404))
@@ -229,6 +237,7 @@ public class EventControllerTest {
         /** An id that is no UUID is a client error (400), not the catch-all 500. */
         @Test
         void shouldRejectEventIdThatIsNoUuid() throws Exception {
+                // Act + Assert
                 mockMvc.perform(get("/events/{eventId}", "abc"))
                                 .andExpect(status().isBadRequest())
                                 .andExpect(jsonPath("$.status").value(400))
@@ -240,6 +249,7 @@ public class EventControllerTest {
 
         @Test
         void shouldCreateEvent() throws Exception {
+                // Arrange
                 User user = AuthTestDataFactory.createDefaultUser();
                 CreateEventDto createEventDto = EventTestDataFactory.createCreateEventDto();
                 EventResponseDto event = EventTestDataFactory.createDefaultEventResponseDto();
@@ -248,6 +258,7 @@ public class EventControllerTest {
 
                 when(eventService.createEvent(user.getId(), createEventDto)).thenReturn(event);
 
+                // Act + Assert
                 mockMvc.perform(post("/events")
                                 .with(AuthTestClient.authenticatedAs(user))
                                 .contentType(MediaType.APPLICATION_JSON)
@@ -268,11 +279,13 @@ public class EventControllerTest {
 
         @Test
         void shouldRejectInvalidCreatePayload() throws Exception {
+                // Arrange
                 User user = AuthTestDataFactory.createDefaultUser();
                 CreateEventDto createEventDto = EventTestDataFactory.createInvalidCreateEventDto();
 
                 String jsonRequest = objectMapper.writeValueAsString(createEventDto);
 
+                // Act + Assert
                 mockMvc.perform(post("/events")
                                 .with(AuthTestClient.authenticatedAs(user))
                                 .contentType(MediaType.APPLICATION_JSON)
@@ -290,11 +303,13 @@ public class EventControllerTest {
 
         @Test
         void shouldDeleteEvent() throws Exception {
+                // Arrange
                 User user = AuthTestDataFactory.createDefaultUser();
                 Event event = EventTestDataFactory.createDefaultEvent();
 
                 doNothing().when(eventService).deleteEvent(any());
 
+                // Act + Assert
                 mockMvc.perform(delete("/events/{eventId}", event.getId())
                                 .with(AuthTestClient.authenticatedAs(user)))
                                 .andExpect(status().isNoContent())
@@ -303,12 +318,14 @@ public class EventControllerTest {
 
         @Test
         void shouldNotDeleteMissingEvent() throws Exception {
+                // Arrange
                 User user = AuthTestDataFactory.createDefaultUser();
                 Event event = EventTestDataFactory.createDefaultEvent();
 
                 doThrow(new EntityNotFoundException("The Event with the given id was not found")).when(eventService)
                                 .deleteEvent(any());
 
+                // Act + Assert
                 mockMvc.perform(delete("/events/{eventId}", event.getId())
                                 .with(AuthTestClient.authenticatedAs(user)))
                                 .andExpect(status().isNotFound())
@@ -319,6 +336,7 @@ public class EventControllerTest {
 
         @Test
         void shouldUpdateEvent() throws Exception {
+                // Arrange
                 User user = AuthTestDataFactory.createDefaultUser();
                 Event event = EventTestDataFactory.createDefaultEvent();
 
@@ -329,6 +347,7 @@ public class EventControllerTest {
 
                 when(eventService.updateEvent(updateEventDto, event.getId())).thenReturn(updatedEvent);
 
+                // Act + Assert
                 mockMvc.perform(patch("/events/{eventId}", event.getId())
                                 .with(AuthTestClient.authenticatedAs(user))
                                 .contentType(MediaType.APPLICATION_JSON)
@@ -349,12 +368,14 @@ public class EventControllerTest {
 
         @Test
         void shouldRejectInvalidUpdatePayload() throws Exception {
+                // Arrange
                 User user = AuthTestDataFactory.createDefaultUser();
                 Event event = EventTestDataFactory.createDefaultEvent();
 
                 String jsonRequest = objectMapper
                                 .writeValueAsString(EventTestDataFactory.createInvalidUpdateEventDto());
 
+                // Act + Assert
                 mockMvc.perform(patch("/events/{eventId}", event.getId())
                                 .with(AuthTestClient.authenticatedAs(user))
                                 .contentType(MediaType.APPLICATION_JSON)
@@ -372,6 +393,7 @@ public class EventControllerTest {
 
         @Test
         void shouldNotUpdateMissingEvent() throws Exception {
+                // Arrange
                 User user = AuthTestDataFactory.createDefaultUser();
                 Event event = EventTestDataFactory.createDefaultEvent();
 
@@ -380,6 +402,7 @@ public class EventControllerTest {
                 when(eventService.updateEvent(any(), any()))
                                 .thenThrow(new EntityNotFoundException("The Event with the given id was not found"));
 
+                // Act + Assert
                 mockMvc.perform(patch("/events/{eventId}", event.getId())
                                 .with(AuthTestClient.authenticatedAs(user))
                                 .contentType(MediaType.APPLICATION_JSON)
@@ -396,6 +419,7 @@ public class EventControllerTest {
          */
         @Test
         void shouldNotUpdateEventRejectedByService() throws Exception {
+                // Arrange
                 User user = AuthTestDataFactory.createDefaultUser();
                 Event event = EventTestDataFactory.createDefaultEvent();
 
@@ -407,6 +431,7 @@ public class EventControllerTest {
                                                 new ApiError.FieldError("saleStartsAt",
                                                                 "The sale must start before the event starts."))));
 
+                // Act + Assert
                 mockMvc.perform(patch("/events/{eventId}", event.getId())
                                 .with(AuthTestClient.authenticatedAs(user))
                                 .contentType(MediaType.APPLICATION_JSON)
@@ -425,6 +450,7 @@ public class EventControllerTest {
          */
         @Test
         void shouldNotUpdateEventChangedInTheMeantime() throws Exception {
+                // Arrange
                 User user = AuthTestDataFactory.createDefaultUser();
                 Event event = EventTestDataFactory.createDefaultEvent();
 
@@ -433,6 +459,7 @@ public class EventControllerTest {
                 when(eventService.updateEvent(any(), any()))
                                 .thenThrow(new ObjectOptimisticLockingFailureException(Event.class, event.getId()));
 
+                // Act + Assert
                 mockMvc.perform(patch("/events/{eventId}", event.getId())
                                 .with(AuthTestClient.authenticatedAs(user))
                                 .contentType(MediaType.APPLICATION_JSON)
@@ -451,11 +478,13 @@ public class EventControllerTest {
          */
         @Test
         void shouldNotDeleteEventWhenAccessIsDenied() throws Exception {
+                // Arrange
                 User user = AuthTestDataFactory.createDefaultUser();
                 Event event = EventTestDataFactory.createDefaultEvent();
 
                 doThrow(new AccessDeniedException("internal reason")).when(eventService).deleteEvent(any());
 
+                // Act + Assert
                 mockMvc.perform(delete("/events/{eventId}", event.getId())
                                 .with(AuthTestClient.authenticatedAs(user)))
                                 .andExpect(status().isForbidden())

@@ -70,6 +70,7 @@ public class MyEventsControllerTest {
 
 	@Test
 	void shouldGetMyEventsWithDefaultPageableAndAllTab() throws Exception {
+		// Arrange
 		User user = AuthTestDataFactory.createDefaultUser();
 		Pageable pageable = EventTestDataFactory.createDefaultPageable();
 		Page<EventResponseDto> page = EventTestDataFactory.createMyEventResponsePage();
@@ -78,6 +79,7 @@ public class MyEventsControllerTest {
 		// no ?filter in the URL → the controller's default ALL
 		when(eventService.getMyEvents(user.getId(), null, MyEventsFilter.ALL, pageable)).thenReturn(page);
 
+		// Act + Assert
 		mockMvc.perform(get("/me/events").with(AuthTestClient.authenticatedAs(user)))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.content", hasSize(events.size())))
@@ -100,15 +102,18 @@ public class MyEventsControllerTest {
 	/** ?filter=… reaches the service as the matching {@link MyEventsFilter}. */
 	@Test
 	void shouldGetMyEventsForEveryTab() throws Exception {
+		// Arrange (shared by every tab)
 		User user = AuthTestDataFactory.createDefaultUser();
 		Pageable pageable = EventTestDataFactory.createDefaultPageable();
 
 		for (MyEventsFilterCase tab : EventTestDataFactory.createMyEventsFilterCases()) {
+			// Arrange
 			Page<EventResponseDto> page = EventTestDataFactory.createMyEventResponsePage(tab.filter(), pageable);
 			List<EventResponseDto> events = page.getContent();
 
 			when(eventService.getMyEvents(user.getId(), null, tab.filter(), pageable)).thenReturn(page);
 
+			// Act + Assert
 			mockMvc.perform(get("/me/events")
 					.param("filter", tab.filter().name())
 					.with(AuthTestClient.authenticatedAs(user)))
@@ -121,6 +126,7 @@ public class MyEventsControllerTest {
 
 	@Test
 	void shouldGetMyEventsWithCategory() throws Exception {
+		// Arrange
 		User user = AuthTestDataFactory.createDefaultUser();
 		Pageable pageable = EventTestDataFactory.createDefaultPageable();
 		Page<EventResponseDto> page = EventTestDataFactory.createMyEventResponsePage();
@@ -128,6 +134,7 @@ public class MyEventsControllerTest {
 		when(eventService.getMyEvents(user.getId(), EventTestDataFactory.DEFAULT_CATEGORY_ID, MyEventsFilter.ALL,
 				pageable)).thenReturn(page);
 
+		// Act + Assert
 		mockMvc.perform(get("/me/events")
 				.param("categoryId", EventTestDataFactory.DEFAULT_CATEGORY_ID.toString())
 				.with(AuthTestClient.authenticatedAs(user)))
@@ -138,8 +145,10 @@ public class MyEventsControllerTest {
 	/** A tab that does not exist is a client error (400), not the catch-all 500. */
 	@Test
 	void shouldRejectUnknownFilter() throws Exception {
+		// Arrange
 		User user = AuthTestDataFactory.createDefaultUser();
 
+		// Act + Assert
 		mockMvc.perform(get("/me/events")
 				.param("filter", "SOLD_OUT")
 				.with(AuthTestClient.authenticatedAs(user)))
@@ -158,12 +167,14 @@ public class MyEventsControllerTest {
 	 */
 	@Test
 	void shouldNotGetMyEventsWhenUserNoLongerExists() throws Exception {
+		// Arrange
 		User user = AuthTestDataFactory.createDefaultUser();
 		Pageable pageable = EventTestDataFactory.createDefaultPageable();
 
 		when(eventService.getMyEvents(user.getId(), null, MyEventsFilter.ALL, pageable))
 				.thenThrow(new EntityNotFoundException("User " + user.getId() + " no longer exists."));
 
+		// Act + Assert
 		mockMvc.perform(get("/me/events").with(AuthTestClient.authenticatedAs(user)))
 				.andExpect(status().isNotFound())
 				.andExpect(jsonPath("$.status").value(404))
@@ -174,6 +185,7 @@ public class MyEventsControllerTest {
 	/** Without a token the request is rejected before the controller runs. */
 	@Test
 	void shouldRejectAnonymousAccessToMyEvents() throws Exception {
+		// Act + Assert
 		mockMvc.perform(get("/me/events"))
 				.andExpect(status().isUnauthorized());
 
@@ -182,11 +194,13 @@ public class MyEventsControllerTest {
 
 	@Test
 	void shouldGetCountsOfEvents() throws Exception {
+		// Arrange
 		User user = AuthTestDataFactory.createDefaultUser();
 		CountsOfEventsDto counts = EventTestDataFactory.createCountsOfEventsDto();
 
 		when(eventService.getCountsOfEvents(user.getId())).thenReturn(counts);
 
+		// Act + Assert
 		mockMvc.perform(get("/me/events/counts").with(AuthTestClient.authenticatedAs(user)))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.countOfAllEvents").value(counts.countOfAllEvents()))
@@ -199,11 +213,13 @@ public class MyEventsControllerTest {
 	/** Same as for the list: a deleted user gets 404, not counts of zero. */
 	@Test
 	void shouldNotGetCountsWhenUserNoLongerExists() throws Exception {
+		// Arrange
 		User user = AuthTestDataFactory.createDefaultUser();
 
 		when(eventService.getCountsOfEvents(user.getId()))
 				.thenThrow(new EntityNotFoundException("User " + user.getId() + " no longer exists."));
 
+		// Act + Assert
 		mockMvc.perform(get("/me/events/counts").with(AuthTestClient.authenticatedAs(user)))
 				.andExpect(status().isNotFound())
 				.andExpect(jsonPath("$.status").value(404))
@@ -213,6 +229,7 @@ public class MyEventsControllerTest {
 
 	@Test
 	void shouldRejectAnonymousAccessToCounts() throws Exception {
+		// Act + Assert
 		mockMvc.perform(get("/me/events/counts"))
 				.andExpect(status().isUnauthorized());
 

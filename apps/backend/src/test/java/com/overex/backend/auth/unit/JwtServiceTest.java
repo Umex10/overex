@@ -72,8 +72,10 @@ public class JwtServiceTest {
 	/** An access token carries the user id as {@code sub} plus the {@code email} and {@code roles} claims. */
 	@Test
 	void shouldCreateAccessTk() throws ParseException {
+		// Act
 		String tk = jwtService.createAccessTk(user);
 
+		// Assert
 		assertNotNull(tk);
 
 		JWTClaimsSet claims = SignedJWT.parse(tk).getJWTClaimsSet();
@@ -86,8 +88,10 @@ public class JwtServiceTest {
 	/** A refresh token carries only the user id; email and roles are re-read from the database on refresh. */
 	@Test
 	void shouldCreateRefreshTk() throws ParseException {
+		// Act
 		String tk = jwtService.createRefreshTk(user);
 
+		// Assert
 		assertNotNull(tk);
 
 		JWTClaimsSet claims = SignedJWT.parse(tk).getJWTClaimsSet();
@@ -100,11 +104,14 @@ public class JwtServiceTest {
 	/** A valid refresh token resolves to the user behind its subject, loaded by id. */
 	@Test
 	void shouldValidateRefreshTk() {
+		// Arrange
 		String tk = jwtService.createRefreshTk(user);
 		when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
 
+		// Act
 		User result = jwtService.validateRefreshTk(tk);
 
+		// Assert
 		assertEquals(user, result);
 		verify(userRepository).findById(user.getId());
 	}
@@ -112,6 +119,7 @@ public class JwtServiceTest {
 	/** A refresh token signed with an unrelated private key fails the signature check. */
 	@Test
 	void shouldRejectRefreshTkSignedWithAnotherKey() {
+		// Arrange
 		KeyPair otherPair = RsaKeyFiles.generateKeyPair();
 		JwtService otherService = new JwtService(
 				(RSAPrivateKey) otherPair.getPrivate(),
@@ -120,6 +128,7 @@ public class JwtServiceTest {
 
 		String forgedTk = otherService.createRefreshTk(user);
 
+		// Act + Assert
 		BadCredentialsException ex = assertThrows(BadCredentialsException.class,
 				() -> jwtService.validateRefreshTk(forgedTk));
 		// translated into a Spring AuthenticationException (-> 401); the JJWT cause stays visible
@@ -129,6 +138,7 @@ public class JwtServiceTest {
 	/** A correctly signed refresh token whose {@code exp} lies in the past is rejected. */
 	@Test
 	void shouldRejectExpiredRefreshTk() {
+		// Arrange
 		// JwtService always sets an expiry in the future, so the expired token is
 		// built directly with jjwt.
 		String expiredTk = Jwts.builder()
@@ -138,6 +148,7 @@ public class JwtServiceTest {
 				.signWith(TestRsaKeys.privateKey(), SignatureAlgorithm.RS256) // right key: only the expiry is wrong
 				.compact();
 
+		// Act + Assert
 		BadCredentialsException ex = assertThrows(BadCredentialsException.class,
 				() -> jwtService.validateRefreshTk(expiredTk));
 		assertInstanceOf(ExpiredJwtException.class, ex.getCause());
@@ -146,41 +157,51 @@ public class JwtServiceTest {
 	/** Something that is no JWT at all (e.g. a tampered cookie) is rejected the same way. */
 	@Test
 	void shouldRejectMalformedRefreshTk() {
+		// Act + Assert
 		assertThrows(BadCredentialsException.class, () -> jwtService.validateRefreshTk("not-a-jwt"));
 	}
 
 	/** An access token sent as refresh token fails the {@code type_tk == REFRESH} check. */
 	@Test
 	void shouldRejectAccessTkUsedAsRefreshTk() {
+		// Arrange
 		String accessTk = jwtService.createAccessTk(user);
 
+		// Act + Assert
 		assertThrows(BadCredentialsException.class, () -> jwtService.validateRefreshTk(accessTk));
 	}
 
 	/** A refresh token of a user that no longer exists is rejected. */
 	@Test
 	void shouldThrowExceptionWhenUserNotFound() {
+		// Arrange
 		String tk = jwtService.createRefreshTk(user);
 		when(userRepository.findById(user.getId())).thenReturn(Optional.empty());
 
+		// Act + Assert
 		assertThrows(EntityNotFoundException.class, () -> jwtService.validateRefreshTk(tk));
 	}
 
 	/** The refresh token is read from the {@code refresh_tk} cookie. */
 	@Test
 	void shouldExtractRefreshTk() {
+		// Arrange
 		MockHttpServletRequest request = new MockHttpServletRequest();
 
+		// Act
 		request.setCookies(new Cookie("refresh_tk", "New-refresh-tk"));
 
+		// Assert
 		assertEquals("New-refresh-tk", jwtService.extractRefreshTk(request));
 	}
 
 	/** Without the cookie there is no refresh token. */
 	@Test
 	void shouldNotExtractRefreshTk() {
+		// Act
 		MockHttpServletRequest request = new MockHttpServletRequest();
 
+		// Assert
 		assertNull(jwtService.extractRefreshTk(request));
 	}
 }

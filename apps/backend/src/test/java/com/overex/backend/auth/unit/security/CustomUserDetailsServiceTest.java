@@ -52,12 +52,15 @@ public class CustomUserDetailsServiceTest {
 	 */
 	@Test
 	void shouldLoadUserByUsername() {
+		// Arrange
 		when(userRepository.findByEmail(any())).thenReturn(Optional.of(user));
 
 		UserDetails found = customUserDetailsService.loadUserByUsername(user.getEmail());
 
+		// Act
 		CustomUserDetails details = assertInstanceOf(CustomUserDetails.class, found);
 
+		// Assert
 		assertEquals(user.getEmail(), details.getUsername());
 		assertEquals(user.getEmail(), details.getEmail());
 		assertEquals(user.getPassword(), details.getPassword());
@@ -69,8 +72,10 @@ public class CustomUserDetailsServiceTest {
 	/** An unknown email throws {@link UsernameNotFoundException}, naming the email. */
 	@Test
 	void shouldNotLoadUserByUsername() {
+		// Arrange
 		when(userRepository.findByEmail(any())).thenReturn(Optional.empty());
 
+		// Act + Assert
 		UsernameNotFoundException ex = assertThrows(UsernameNotFoundException.class,
 				() -> customUserDetailsService.loadUserByUsername(user.getEmail()));
 

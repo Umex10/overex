@@ -81,8 +81,10 @@ public class CategoryIntegrationTest {
     @Test
     void shouldGetCategories() throws Exception {
 
+        // Arrange
         String accessTk = AuthTestClient.signUpAndReturnAccessTk(mockMvc, objectMapper);
 
+        // Act + Assert
         mockMvc.perform(get("/categories").header("Authorization", "Bearer " + accessTk))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(categories.size())))

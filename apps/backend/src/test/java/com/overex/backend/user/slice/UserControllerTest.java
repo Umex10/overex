@@ -75,8 +75,10 @@ public class UserControllerTest {
 	 */
 	@Test
 	void shouldReturnCurrentUser() throws Exception {
+		// Arrange
 		when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
 
+		// Act + Assert
 		mockMvc.perform(get("/me").with(AuthTestClient.authenticatedAs(user)))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.email").value(user.getEmail()))
@@ -91,8 +93,10 @@ public class UserControllerTest {
 	 */
 	@Test
 	void shouldReturn404WhenUserNoLongerExists() throws Exception {
+		// Arrange
 		when(userRepository.findById(user.getId())).thenReturn(Optional.empty());
 
+		// Act + Assert
 		mockMvc.perform(get("/me").with(AuthTestClient.authenticatedAs(user)))
 				.andExpect(status().isNotFound())
 				.andExpect(jsonPath("$.status").value(404))
@@ -103,6 +107,7 @@ public class UserControllerTest {
 	/** Without a token the request is rejected. */
 	@Test
 	void shouldRejectAnonymousAccessToMe() throws Exception {
+		// Act + Assert
 		mockMvc.perform(get("/me"))
 				.andExpect(status().isUnauthorized());
 	}
@@ -114,8 +119,10 @@ public class UserControllerTest {
 	 */
 	@Test
 	void shouldRejectRefreshTkUsedAsAccessTk() throws Exception {
+		// Arrange
 		String refreshTk = jwtService.createRefreshTk(user);
 
+		// Act + Assert
 		mockMvc.perform(get("/me")
 				.header("Authorization", "Bearer " + refreshTk))
 				.andExpect(status().isUnauthorized())

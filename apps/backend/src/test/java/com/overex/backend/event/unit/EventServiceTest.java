@@ -88,6 +88,7 @@ public class EventServiceTest {
 	/** The payload is mapped to an entity, gets its category and is saved. */
 	@Test
 	void shouldCreateEvent() {
+		// Arrange
 		Event event = EventTestDataFactory.createDefaultEvent();
 		Category category = EventTestDataFactory.createDefaultCategory();
 		CreateEventDto dto = EventTestDataFactory.createCreateEventDto();
@@ -97,8 +98,10 @@ public class EventServiceTest {
 		when(eventMapper.toEntity(dto)).thenReturn(event);
 		when(eventRepository.save(event)).thenReturn(event);
 
+		// Act
 		EventResponseDto createdEvent = eventService.createEvent(null, dto);
 
+		// Assert
 		assertEquals(eventResponseDto, createdEvent);
 		assertSame(category.getId(), createdEvent.category().id());
 		verify(eventMapper).toEntity(dto);
@@ -108,28 +111,34 @@ public class EventServiceTest {
 	/** All stored events are returned as they come from the repository. */
 	@Test
 	void shouldGetAllEvents() {
+		// Arrange
 		Pageable pageable = EventTestDataFactory.createDefaultPageable();
 		Page<Event> page = EventTestDataFactory.createEventPage();
 		Page<EventResponseDto> pageToAssert = EventTestDataFactory.createEventResponsePage();
 
 		when(eventRepository.findAll(pageable)).thenReturn(page);
 
+		// Act
 		Page<EventResponseDto> foundPage = eventService.getEvents(null, pageable);
 
+		// Assert
 		assertEquals(pageToAssert, foundPage);
 		verify(eventRepository, never()).findByCategoryId(any(), any());
 	}
 
 	@Test
 	void shouldGetEventsWithCategory() {
+		// Arrange
 		Pageable pageable = EventTestDataFactory.createDefaultPageable();
 		Page<Event> page = EventTestDataFactory.createFestivalEventPage();
 		Page<EventResponseDto> pageToAssert = EventTestDataFactory.createFestivalEventResponsePage();
 
 		when(eventRepository.findByCategoryId(EventTestDataFactory.DEFAULT_CATEGORY_ID, pageable)).thenReturn(page);
 
+		// Act
 		Page<EventResponseDto> foundPage = eventService.getEvents(EventTestDataFactory.DEFAULT_CATEGORY_ID, pageable);
 
+		// Assert
 		assertEquals(pageToAssert.getContent(), foundPage.getContent());
 		verify(eventRepository, never()).findAll(any(Pageable.class));
 	}
@@ -140,10 +149,12 @@ public class EventServiceTest {
 	 */
 	@Test
 	void shouldGetMyEventsForEveryTab() {
+		// Arrange (shared by every tab)
 		Pageable pageable = EventTestDataFactory.createDefaultPageable();
 		UUID userId = EventTestDataFactory.DEFAULT_USER_ID;
 
 		for (MyEventsFilterCase tab : EventTestDataFactory.createMyEventsFilterCases()) {
+			// Arrange
 			Page<Event> page = EventTestDataFactory.createMyEventPage(tab.filter(), pageable);
 			Page<EventResponseDto> pageToAssert = EventTestDataFactory.createMyEventResponsePage(tab.filter(),
 					pageable);
@@ -157,8 +168,10 @@ public class EventServiceTest {
 					eq(pageable)))
 					.thenReturn(page);
 
+			// Act
 			Page<EventResponseDto> foundPage = eventService.getMyEvents(userId, null, tab.filter(), pageable);
 
+			// Assert
 			assertEquals(pageToAssert, foundPage, "Tab " + tab.filter());
 		}
 	}
@@ -169,11 +182,13 @@ public class EventServiceTest {
 	 */
 	@Test
 	void shouldGetMyEventsCountsForEveryTab() {
+		// Arrange (shared by every tab)
 		Pageable pageable = EventTestDataFactory.createCountPageable();
 		UUID userId = EventTestDataFactory.DEFAULT_USER_ID;
 		CountsOfEventsDto countsOfEventsDto = EventTestDataFactory.createCountsOfEventsDto();
 
 		for (MyEventsFilterCase tab : EventTestDataFactory.createMyEventsFilterCases()) {
+			// Arrange
 			Page<Event> page = EventTestDataFactory.createMyEventPage(tab.filter(), pageable);
 
 			when(eventRepository.findMyEvents(
@@ -186,29 +201,36 @@ public class EventServiceTest {
 					.thenReturn(page);
 		}
 
+		// Act
 		CountsOfEventsDto foundCounts = eventService.getCountsOfEvents(userId);
 
+		// Assert
 		assertEquals(countsOfEventsDto, foundCounts);
 	}
 
 	@Test
 	void shouldGetEvent() {
+		// Arrange
 		Event event = EventTestDataFactory.createDefaultEvent();
 		EventDetailsResponseDto eventDetailsResponseDto = EventTestDataFactory.createEventDetailsResponseDto();
 
 		when(eventRepository.findById(event.getId())).thenReturn(Optional.of(event));
 
+		// Act
 		EventDetailsResponseDto foundEventDetailsResponseDto = eventService.getEvent(event.getId());
 
+		// Assert
 		assertEquals(eventDetailsResponseDto, foundEventDetailsResponseDto);
 	}
 
 
 	@Test
 	void shouldNotGetMissingEvent() {
+		// Arrange
 		Event event = EventTestDataFactory.createDefaultEvent();
 		when(eventRepository.findById(event.getId())).thenReturn(Optional.empty());
 
+		// Act + Assert (assertThrows runs the call and checks the exception)
 		EntityNotFoundException ex = assertThrows(EntityNotFoundException.class,
 				() -> eventService.getEvent(event.getId()));
 
@@ -218,6 +240,7 @@ public class EventServiceTest {
 	/** A valid update of an upcoming event is mapped onto the entity and saved. */
 	@Test
 	void shouldUpdateEvent() {
+		// Arrange
 		Event event = EventTestDataFactory.createDefaultEvent();
 		Category category = EventTestDataFactory.createDefaultCategory();
 		UpdateEventDto dto = EventTestDataFactory.createUpdateEventDto();
@@ -227,8 +250,10 @@ public class EventServiceTest {
 		when(categoryService.getCategory(dto.categoryId())).thenReturn(category);
 		when(eventRepository.saveAndFlush(event)).thenReturn(event);
 
+		// Act
 		EventResponseDto updatedEvent = eventService.updateEvent(dto, event.getId());
 
+		// Assert
 		assertEquals(dtoToAssert, updatedEvent);
 		assertSame(category.getId(), updatedEvent.category().id());
 		verify(eventMapper).updateEntity(dto, event);
@@ -238,6 +263,7 @@ public class EventServiceTest {
 	/** An unchanged start time is not checked against "now" again. */
 	@Test
 	void shouldUpdateEventWithUnchangedStartsAt() {
+		// Arrange
 		Event event = EventTestDataFactory.createDefaultEvent();
 		Category category = EventTestDataFactory.createDefaultCategory();
 		UpdateEventDto dto = EventTestDataFactory.createUpdateEventDtoWithUnchangedStartsAt();
@@ -246,17 +272,21 @@ public class EventServiceTest {
 		when(categoryService.getCategory(dto.categoryId())).thenReturn(category);
 		when(eventRepository.saveAndFlush(event)).thenReturn(event);
 
+		// Act
 		eventService.updateEvent(dto, event.getId());
 
+		// Assert
 		verify(eventMapper).updateEntity(dto, event);
 		verify(eventRepository).saveAndFlush(event);
 	}
 
 	@Test
 	void shouldNotUpdateMissingEvent() {
+		// Arrange
 		Event event = EventTestDataFactory.createDefaultEvent();
 		when(eventRepository.findById(event.getId())).thenReturn(Optional.empty());
 
+		// Act + Assert (assertThrows runs the call and checks the exception)
 		assertThrows(EntityNotFoundException.class,
 				() -> eventService.updateEvent(EventTestDataFactory.createUpdateEventDto(), event.getId()));
 
@@ -266,12 +296,14 @@ public class EventServiceTest {
 
 	@Test
 	void shouldNotUpdateEventBecauseVersionMismatch() {
+		// Arrange
 		// someone else saved the event after the client loaded DEFAULT_VERSION
 		Event eventWithOtherVersion = EventTestDataFactory.createDefaultEvent();
 		eventWithOtherVersion.setVersion(EventTestDataFactory.OTHER_VERSION);
 
 		when(eventRepository.findById(eventWithOtherVersion.getId())).thenReturn(Optional.of(eventWithOtherVersion));
 
+		// Act + Assert (assertThrows runs the call and checks the exception)
 		assertThrows(ObjectOptimisticLockingFailureException.class,
 				() -> eventService.updateEvent(EventTestDataFactory.createUpdateEventDto(), eventWithOtherVersion.getId()));
 
@@ -283,12 +315,15 @@ public class EventServiceTest {
 	@Test
 	void shouldGetStatusOptionsForEveryRuleCase() {
 		for (StatusRuleCase ruleCase : EventTestDataFactory.createStatusRuleCases()) {
+			// Arrange
 			Event event = ruleCase.event();
 
 			when(eventRepository.findById(event.getId())).thenReturn(Optional.of(event));
 
+			// Act
 			EventDetailsResponseDto foundEvent = eventService.getEvent(event.getId());
 
+			// Assert
 			assertEquals(ruleCase.expectedOptions(), foundEvent.statusOptions(), ruleCase.name());
 		}
 	}
@@ -305,11 +340,13 @@ public class EventServiceTest {
 					.toList();
 
 			for (Map.Entry<Status, StatusOption> blockedChange : blockedChanges) {
+				// Arrange
 				Event event = ruleCase.event();
 				UpdateEventDto dto = EventTestDataFactory.createUpdateEventDtoWithStatus(blockedChange.getKey());
 
 				when(eventRepository.findById(event.getId())).thenReturn(Optional.of(event));
 
+				// Act + Assert (assertThrows runs the call and checks the exception)
 				OwnException ex = assertThrows(OwnException.class,
 						() -> eventService.updateEvent(dto, event.getId()),
 						ruleCase.name() + " → " + blockedChange.getKey());
@@ -325,6 +362,7 @@ public class EventServiceTest {
 	/** An allowed status change goes through the update and is saved. */
 	@Test
 	void shouldUpdateEventStatusWhenRuleAllowsIt() {
+		// Arrange
 		Event event = EventTestDataFactory.createDefaultEvent();
 		Category category = EventTestDataFactory.createDefaultCategory();
 		UpdateEventDto dto = EventTestDataFactory.createUpdateEventDtoWithStatus(Status.PUBLISHED);
@@ -333,8 +371,10 @@ public class EventServiceTest {
 		when(categoryService.getCategory(dto.categoryId())).thenReturn(category);
 		when(eventRepository.saveAndFlush(event)).thenReturn(event);
 
+		// Act
 		EventResponseDto updatedEvent = eventService.updateEvent(dto, event.getId());
 
+		// Assert
 		assertEquals(Status.PUBLISHED, updatedEvent.status());
 		verify(eventRepository).saveAndFlush(event);
 	}
@@ -342,12 +382,14 @@ public class EventServiceTest {
 	/** An event whose stored start lies in the past can't be changed anymore. */
 	@Test
 	void shouldNotUpdateStartedEvent() {
+		// Arrange
 		Event startedEvent = EventTestDataFactory.createDefaultEvent();
 		startedEvent.setStartsAt(EventTestDataFactory.PAST_STARTS_AT);
 		startedEvent.setSaleStartsAt(EventTestDataFactory.PAST_SALE_STARTS_AT);
 
 		when(eventRepository.findById(startedEvent.getId())).thenReturn(Optional.of(startedEvent));
 
+		// Act + Assert (assertThrows runs the call and checks the exception)
 		OwnException ex = assertThrows(OwnException.class,
 				() -> eventService.updateEvent(EventTestDataFactory.createUpdateEventDto(), startedEvent.getId()));
 
@@ -358,9 +400,11 @@ public class EventServiceTest {
 
 	@Test
 	void shouldNotUpdateEventWithStartsAtMovedToPast() {
+		// Arrange
 		Event event = EventTestDataFactory.createDefaultEvent();
 		when(eventRepository.findById(event.getId())).thenReturn(Optional.of(event));
 
+		// Act + Assert (assertThrows runs the call and checks the exception)
 		OwnException ex = assertThrows(OwnException.class,
 				() -> eventService.updateEvent(EventTestDataFactory.createUpdateEventDtoWithPastStartsAt(),
 						event.getId()));
@@ -375,9 +419,11 @@ public class EventServiceTest {
 	 */
 	@Test
 	void shouldNotUpdateEventWithSaleStartingAtEventStart() {
+		// Arrange
 		Event event = EventTestDataFactory.createDefaultEvent();
 		when(eventRepository.findById(event.getId())).thenReturn(Optional.of(event));
 
+		// Act + Assert (assertThrows runs the call and checks the exception)
 		OwnException ex = assertThrows(OwnException.class,
 				() -> eventService.updateEvent(EventTestDataFactory.createUpdateEventDtoWithSaleAtStart(),
 						event.getId()));
@@ -389,9 +435,11 @@ public class EventServiceTest {
 
 	@Test
 	void shouldNotUpdateEventWithSaleStartingAfterEventStart() {
+		// Arrange
 		Event event = EventTestDataFactory.createDefaultEvent();
 		when(eventRepository.findById(event.getId())).thenReturn(Optional.of(event));
 
+		// Act + Assert (assertThrows runs the call and checks the exception)
 		OwnException ex = assertThrows(OwnException.class,
 				() -> eventService.updateEvent(EventTestDataFactory.createUpdateEventDtoWithSaleAfterStart(),
 						event.getId()));
@@ -403,19 +451,24 @@ public class EventServiceTest {
 
 	@Test
 	void shouldDeleteEvent() {
+		// Arrange
 		Event event = EventTestDataFactory.createDefaultEvent();
 		when(eventRepository.findById(event.getId())).thenReturn(Optional.of(event));
 
+		// Act
 		eventService.deleteEvent(event.getId());
 
+		// Assert
 		verify(eventRepository).delete(event);
 	}
 
 	@Test
 	void shouldNotDeleteMissingEvent() {
+		// Arrange
 		Event event = EventTestDataFactory.createDefaultEvent();
 		when(eventRepository.findById(event.getId())).thenReturn(Optional.empty());
 
+		// Act + Assert (assertThrows runs the call and checks the exception)
 		EntityNotFoundException ex = assertThrows(EntityNotFoundException.class,
 				() -> eventService.deleteEvent(event.getId()));
 

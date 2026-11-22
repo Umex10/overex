@@ -62,6 +62,7 @@ public class AuthServiceTest {
 	/** A new user with a free email and phone is saved with the hashed password. */
 	@Test
 	void shouldSignUpAccount() {
+		// Arrange
 		SignUpAccountRequestDto dto = AuthTestDataFactory.createSignUpDto();
 
 		when(userRepository.findByEmail(user.getEmail())).thenReturn(Optional.empty());
@@ -72,8 +73,10 @@ public class AuthServiceTest {
 		// assert proves the hash is stored, not the clear text.
 		when(encoder.encode(dto.password())).thenReturn(user.getPassword());
 
+		// Act
 		User savedUser = authService.signUp(dto);
 
+		// Assert
 		assertNotNull(savedUser);
 		assertEquals(user.getEmail(), savedUser.getEmail());
 		assertEquals(user.getPassword(), savedUser.getPassword());
@@ -83,8 +86,10 @@ public class AuthServiceTest {
 	/** The email is stored trimmed and in lower case, and checked for duplicates that way. */
 	@Test
 	void shouldNormalizeEmailOnSignUp() {
+		// Arrange
 		SignUpAccountRequestDto defaults = AuthTestDataFactory.createSignUpDto();
 
+		// Act
 		SignUpAccountRequestDto dto = new SignUpAccountRequestDto(defaults.name(), "  Test@MAIL.com ",
 				defaults.phone(), defaults.password());
 
@@ -92,16 +97,20 @@ public class AuthServiceTest {
 		when(userRepository.findByPhone(user.getPhone())).thenReturn(Optional.empty());
 		when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
+		// Assert
 		assertEquals("test@mail.com", authService.signUp(dto).getEmail());
 	}
 
 	/** Sign-in normalizes the email the same way before checking the credentials. */
 	@Test
 	void shouldNormalizeEmailOnSignIn() {
+		// Arrange
 		when(userRepository.findByEmail("test@mail.com")).thenReturn(Optional.of(user));
 
+		// Act
 		authService.authenticate(" TEST@mail.com", user.getPassword());
 
+		// Assert
 		verify(authenticationManager)
 				.authenticate(new UsernamePasswordAuthenticationToken("test@mail.com", user.getPassword()));
 	}
@@ -112,10 +121,13 @@ public class AuthServiceTest {
 	 */
 	@Test
 	void shouldPassNullEmailThroughNormalization() {
+		// Arrange
 		when(userRepository.findByEmail(null)).thenReturn(Optional.of(user));
 
+		// Act
 		authService.authenticate(null, user.getPassword());
 
+		// Assert
 		verify(authenticationManager)
 				.authenticate(new UsernamePasswordAuthenticationToken(null, user.getPassword()));
 	}
@@ -123,11 +135,13 @@ public class AuthServiceTest {
 	/** Taken email and phone are both reported at once. */
 	@Test
 	void shouldNotSignUpAccount() {
+		// Arrange
 		SignUpAccountRequestDto dto = AuthTestDataFactory.createSignUpDto();
 
 		when(userRepository.findByEmail(user.getEmail())).thenReturn(Optional.of(user));
 		when(userRepository.findByPhone(user.getPhone())).thenReturn(Optional.of(user));
 
+		// Act + Assert
 		OwnException exception = assertThrows(OwnException.class, () -> authService.signUp(dto));
 
 		List<ApiError.FieldError> errors = exception.getErrors();
@@ -142,10 +156,13 @@ public class AuthServiceTest {
 	 */
 	@Test
 	void shouldAuthenticate() {
+		// Arrange
 		when(userRepository.findByEmail(user.getEmail())).thenReturn(Optional.of(user));
 
+		// Act
 		User returnedUser = authService.authenticate(user.getEmail(), user.getPassword());
 
+		// Assert
 		assertEquals(user.getId(), returnedUser.getId());
 		assertEquals(user.getEmail(), returnedUser.getEmail());
 	}
@@ -156,10 +173,12 @@ public class AuthServiceTest {
 	 */
 	@Test
 	void shouldNotAuthenticate() {
+		// Arrange
 		when(authenticationManager
 				.authenticate(new UsernamePasswordAuthenticationToken(user.getEmail(), user.getPassword())))
 				.thenThrow(new BadCredentialsException("Bad credentials"));
 
+		// Act + Assert
 		assertThrows(org.springframework.security.core.AuthenticationException.class,
 				() -> authService.authenticate(user.getEmail(), user.getPassword()));
 	}
@@ -171,8 +190,10 @@ public class AuthServiceTest {
 	 */
 	@Test
 	void shouldNotFindUserByEmailAfterSuccessfullAuthentication() {
+		// Arrange
 		when(userRepository.findByEmail(user.getEmail())).thenReturn(Optional.empty());
 
+		// Act + Assert
 		assertThrows(EntityNotFoundException.class,
 				() -> authService.authenticate(user.getEmail(), user.getPassword()));
 	}

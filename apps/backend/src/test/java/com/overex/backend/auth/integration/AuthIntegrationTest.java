@@ -116,11 +116,13 @@ class AuthIntegrationTest {
 	 */
 	@Test
 	void shouldReturnOwnAccountWithTokenFromSignIn() throws Exception {
+		// Arrange
 		SignUpAccountRequestDto signUp = AuthTestDataFactory.createSignUpDto();
 		AuthTestClient.signUp(mockMvc, objectMapper, signUp);
 
 		String accessTk = AuthTestClient.signInAndReturnAccessTk(mockMvc, objectMapper);
 
+		// Act + Assert
 		mockMvc.perform(get("/me").header("Authorization", "Bearer " + accessTk))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.email").value(signUp.email()))
@@ -135,9 +137,11 @@ class AuthIntegrationTest {
 	 */
 	@Test
 	void shouldIssueWorkingAccessTkFromRefreshCookie() throws Exception {
+		// Arrange
 		AuthTestClient.signUp(mockMvc, objectMapper, AuthTestDataFactory.createSignUpDto());
 		Cookie refreshCookie = AuthTestClient.signIn(mockMvc, objectMapper, AuthTestDataFactory.createSignInDto()).getResponse().getCookie("refresh_tk");
 
+		// Act + Assert
 		MvcResult refreshed = mockMvc.perform(get("/auth/access-tk").cookie(refreshCookie))
 				.andExpect(status().isOk())
 				.andReturn();
@@ -153,6 +157,7 @@ class AuthIntegrationTest {
 	 */
 	@Test
 	void shouldRejectInvalidRefreshCookie() throws Exception {
+		// Act + Assert
 		mockMvc.perform(get("/auth/access-tk").cookie(new Cookie("refresh_tk", "not-a-jwt")))
 				.andExpect(status().isUnauthorized());
 	}
@@ -163,9 +168,11 @@ class AuthIntegrationTest {
 	 */
 	@Test
 	void shouldIgnoreRoleSentWithSignUp() throws Exception {
+		// Arrange
 		String json = objectMapper.writeValueAsString(AuthTestDataFactory.createSignUpDto())
 				.replaceFirst("\\{", "{\"role\":\"ADMIN\",");
 
+		// Act + Assert
 		mockMvc.perform(post("/auth/sign-up").contentType(MediaType.APPLICATION_JSON).content(json))
 				.andExpect(status().isCreated());
 
@@ -183,12 +190,14 @@ class AuthIntegrationTest {
 	 */
 	@Test
 	void shouldSignInWithDifferentlyCasedEmail() throws Exception {
+		// Arrange
 		AuthTestClient.signUp(mockMvc, objectMapper, AuthTestDataFactory.createSignUpDto());
 
 		SignInAccountRequestDto defaults = AuthTestDataFactory.createSignInDto();
 		SignInAccountRequestDto shouted = new SignInAccountRequestDto(defaults.email().toUpperCase(),
 				defaults.password());
 
+		// Act
 		AuthTestClient.signIn(mockMvc, objectMapper, shouted);
 	}
 
@@ -198,8 +207,10 @@ class AuthIntegrationTest {
 	 */
 	@Test
 	void shouldRejectSecondSignUpWithSameEmailAndPhone() throws Exception {
+		// Arrange
 		AuthTestClient.signUp(mockMvc, objectMapper, AuthTestDataFactory.createSignUpDto());
 
+		// Act + Assert
 		mockMvc.perform(post("/auth/sign-up")
 				.contentType(MediaType.APPLICATION_JSON)
 				.content(objectMapper.writeValueAsString(AuthTestDataFactory.createSignUpDto())))
@@ -215,6 +226,7 @@ class AuthIntegrationTest {
 	 */
 	@Test
 	void shouldPublishPublicKeyAsJwks() throws Exception {
+		// Act + Assert
 		mockMvc.perform(get("/.well-known/jwks.json"))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.keys").isArray())
@@ -240,13 +252,16 @@ class AuthIntegrationTest {
 	 */
 	@Test
 	void shouldVerifyAccessTkWithPublishedJwks() throws Exception {
+		// Arrange
 		SignUpAccountRequestDto signUp = AuthTestDataFactory.createSignUpDto();
 		AuthTestClient.signUp(mockMvc, objectMapper, signUp);
 		String accessTk = AuthTestClient.signInAndReturnAccessTk(mockMvc, objectMapper);
 
+		// Act
 		// decode() throws if the signature does not match the published key
 		Jwt jwt = decoderFromJwks().decode(accessTk);
 
+		// Assert
 		assertEquals(signUp.email(), jwt.getClaimAsString("email"));
 	}
 
@@ -257,9 +272,11 @@ class AuthIntegrationTest {
 	 */
 	@Test
 	void shouldRejectRefreshTkWithPublishedJwks() throws Exception {
+		// Arrange
 		AuthTestClient.signUp(mockMvc, objectMapper, AuthTestDataFactory.createSignUpDto());
 		String refreshTk = AuthTestClient.signIn(mockMvc, objectMapper, AuthTestDataFactory.createSignInDto()).getResponse().getCookie("refresh_tk").getValue();
 
+		// Act + Assert
 		assertThrows(JwtValidationException.class, () -> decoderFromJwks().decode(refreshTk));
 	}
 

@@ -105,14 +105,17 @@ public class MyEventsIntegrationTest {
         /** Every tab shows exactly the events that belong to it, sorted by start. */
         @Test
         void shouldGetMyEventsForEveryTab() throws Exception {
+                // Arrange (shared by every tab)
                 String accessTk = AuthTestClient.signUpAndReturnAccessTk(mockMvc, objectMapper);
                 storeMyEventList(findUser(AuthTestDataFactory.createSignUpDto()));
                 Pageable pageable = EventTestDataFactory.createDefaultPageable();
 
                 for (MyEventsFilterCase tab : EventTestDataFactory.createMyEventsFilterCases()) {
+                        // Arrange
                         List<String> expectedTitles = EventTestDataFactory.createMyEventPage(tab.filter(), pageable)
                                         .getContent().stream().map(Event::getTitle).toList();
 
+                        // Act + Assert
                         mockMvc.perform(get("/me/events")
                                         .param("filter", tab.filter().name())
                                         .header("Authorization", "Bearer " + accessTk))
@@ -126,6 +129,7 @@ public class MyEventsIntegrationTest {
         /** The list only holds events the signed-in user created, never others'. */
         @Test
         void shouldGetOnlyOwnEvents() throws Exception {
+                // Arrange
                 String ownerAccessTk = AuthTestClient.signUpAndReturnAccessTk(mockMvc, objectMapper);
                 storeMyEventList(findUser(AuthTestDataFactory.createSignUpDto()));
 
@@ -133,10 +137,12 @@ public class MyEventsIntegrationTest {
                 String otherAccessTk = AuthTestClient
                                 .accessTkOf(AuthTestClient.signUp(mockMvc, objectMapper, otherSignUpDto));
 
+                // Act + Assert: the owner sees the four events
                 mockMvc.perform(get("/me/events").header("Authorization", "Bearer " + ownerAccessTk))
                                 .andExpect(status().isOk())
                                 .andExpect(jsonPath("$.page.totalElements").value(4));
 
+                // Act + Assert: the other user has created nothing, so the list is empty
                 mockMvc.perform(get("/me/events").header("Authorization", "Bearer " + otherAccessTk))
                                 .andExpect(status().isOk())
                                 .andExpect(jsonPath("$.content", hasSize(0)))
@@ -146,9 +152,11 @@ public class MyEventsIntegrationTest {
         /** ?categoryId narrows the tab down to that category. */
         @Test
         void shouldGetMyEventsWithCategory() throws Exception {
+                // Arrange
                 String accessTk = AuthTestClient.signUpAndReturnAccessTk(mockMvc, objectMapper);
                 storeMyEventList(findUser(AuthTestDataFactory.createSignUpDto()));
 
+                // Act + Assert: the concert category holds the finished event (2020) and
                 // Jazz Night (2099), sorted by start
                 mockMvc.perform(get("/me/events")
                                 .param("categoryId", categoryConcertId.toString())
@@ -162,10 +170,12 @@ public class MyEventsIntegrationTest {
 
         @Test
         void shouldGetCountsOfEvents() throws Exception {
+                // Arrange
                 String accessTk = AuthTestClient.signUpAndReturnAccessTk(mockMvc, objectMapper);
                 storeMyEventList(findUser(AuthTestDataFactory.createSignUpDto()));
                 CountsOfEventsDto counts = EventTestDataFactory.createCountsOfEventsDto();
 
+                // Act + Assert
                 mockMvc.perform(get("/me/events/counts").header("Authorization", "Bearer " + accessTk))
                                 .andExpect(status().isOk())
                                 .andExpect(jsonPath("$.countOfAllEvents").value(counts.countOfAllEvents()))
@@ -181,10 +191,12 @@ public class MyEventsIntegrationTest {
          */
         @Test
         void shouldNotGetMyEventsWhenUserNoLongerExists() throws Exception {
+                // Arrange
                 String accessTk = AuthTestClient.signUpAndReturnAccessTk(mockMvc, objectMapper);
                 UUID userId = findUser(AuthTestDataFactory.createSignUpDto()).getId();
                 userRepository.deleteAll();
 
+                // Act + Assert
                 mockMvc.perform(get("/me/events").header("Authorization", "Bearer " + accessTk))
                                 .andExpect(status().isNotFound())
                                 .andExpect(jsonPath("$.status").value(404))
@@ -198,6 +210,7 @@ public class MyEventsIntegrationTest {
         /** Without a token both routes are rejected by the security filter chain. */
         @Test
         void shouldRejectAnonymousAccess() throws Exception {
+                // Act + Assert
                 mockMvc.perform(get("/me/events"))
                                 .andExpect(status().isUnauthorized());
 
