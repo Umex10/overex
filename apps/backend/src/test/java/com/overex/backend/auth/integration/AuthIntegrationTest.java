@@ -34,7 +34,6 @@ import org.springframework.test.web.servlet.MvcResult;
 import com.overex.backend.auth.dto.TkName;
 import com.overex.backend.auth.dto.requests.SignInAccountRequestDto;
 import com.overex.backend.auth.dto.requests.SignUpAccountRequestDto;
-import com.overex.backend.user.User;
 import com.overex.backend.user.UserRepository;
 import com.overex.backend.auth.utils.AuthTestClient;
 import com.overex.backend.auth.utils.AuthTestDataFactory;
