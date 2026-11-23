@@ -1,10 +1,11 @@
 "use client"
 
 import Image from "next/image";
-import { CalendarIcon, MapPinIcon, PencilIcon, Trash2Icon } from "lucide-react";
+import { CalendarIcon, MapPinIcon, PencilIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { EventDto } from "@/features/event/event-types";
 import DateFormat from "./date-format";
+import { DeleteEventDialog } from "./delete-event-dialog";
 import EventMetaItem from "./event-meta-item";
 import { EventStatusBadge } from "./event-status-badge";
 import TimeFormat from "./time-format";
@@ -80,23 +81,11 @@ export function MyEventItem({
               <PencilIcon />
               Bearbeiten
             </Button>
-            <Button
-              type="button"
-              variant="outline"
-              size="icon-sm"
-              aria-label={`Event „${event.title}“ löschen`}
-              title="Löschen"
-              // The whole row is a link: preventDefault stops it from opening
-              // the editor of the event that is being deleted.
-              onClick={(e) => {
-                e.preventDefault();
-                onDelete(event.id);
-              }}
-              disabled={isDeleting}
-              className="text-destructive hover:cursor-pointer hover:text-destructive"
-            >
-              <Trash2Icon />
-            </Button>
+            <DeleteEventDialog
+              title={event.title}
+              onConfirm={() => onDelete(event.id)}
+              isDeleting={isDeleting}
+            />
           </div>
         </div>
       </article>
