@@ -13,14 +13,15 @@ import {
 
 import type { ApiErrorBody } from "@/types/api-error";
 import type {
-  EventDto,
   EventStatus,
   StatusOptionMap,
 } from "@/features/event/event-types";
 import {
   combineDateAndTime,
-  eventSchema,
   uncombineDateAndTime,
+} from "@/features/event/date-time";
+import {
+  eventSchema,
   type EventFormInput,
   type EventFormValues,
 } from "@/features/event/event-validation";
@@ -41,8 +42,6 @@ type DefaultFormValues = {
   saleTime: string;
   status: EventStatus;
 };
-
-type Status = "DRAFT" | "PUBLISHED" | "CANCELED";
 
 /** Backend field names that differ from the form's field names. */
 const BACKEND_TO_FORM_FIELD: Record<string, keyof EventFormInput> = {
@@ -99,16 +98,20 @@ export function useEventEditor(props: EventEditorProps) {
     const { date: saleDate, time: saleTime } = uncombineDateAndTime(
       event.saleStartsAt,
     );
-    // `version` isn't a form field: the submit takes it from props.formData directly.
-    const { id, createdAt, updatedAt, version, ...rest } = event;
 
+    // `version` isn't a form field: the submit takes it from props.formData directly.
     defaultValues = {
+      title: event.title,
+      categoryId: event.category.id,
+      description: event.description,
+      imageUrl: event.imageUrl,
       startDate,
       startTime,
+      venue: event.venue,
+      city: event.city,
       saleDate,
       saleTime,
-      categoryId: rest.category.id,
-      ...rest,
+      status: event.status,
     };
   }
 
@@ -238,8 +241,6 @@ export function useEventEditor(props: EventEditorProps) {
     // narrows `props`, so the stored event's id and version need no `!`.
     if (props.mode !== "EDIT") return;
     const { id, version } = props.formData.event;
-
-    console.log(values.status);
 
     const toastId = toast.loading("Die Änderungen werden gespeichert", {
       className: "toast-loading",

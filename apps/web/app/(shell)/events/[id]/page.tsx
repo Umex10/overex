@@ -1,9 +1,9 @@
 "use client";
 import { useGetEventQuery } from "@/features/event/event-api";
-import { setBreadcrumbs, setShowSearch } from "@/features/shell/route-context-slice";
+import { setShowSearch } from "@/features/shell/route-context-slice";
 import { useAppDispatch } from "@/redux/hooks";
-import { useParams, usePathname } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useParams } from "next/navigation";
+import { useEffect, useState } from "react";
 
 import { useIsMobile } from "@/hooks/use-mobile";
 import BreadcrumbsContainer from "@/features/shell/components/breadcrumbs-container";

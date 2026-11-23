@@ -29,7 +29,7 @@ import {
   SECTION_CLASS,
   SIDE_COLUMN_CLASS,
 } from "@/components/event-editor-layout";
-import type { EventDetailsDto, EventDto } from "@/features/event/event-types";
+import type { EventDetailsDto } from "@/features/event/event-types";
 import { EventEditorButtons } from "@/features/event/components/event-editor-buttons";
 import { DateTimeFields } from "@/features/event/components/date-time-fields";
 

@@ -75,7 +75,7 @@ export function AppSidebar() {
   const { state, isMobile, setOpenMobile } = useSidebar();
   const collapsed = state === "collapsed";
 
-  const { data: me, isLoading: isLoadingMe } = useGetMeQuery();
+  const { data: me } = useGetMeQuery();
 
   return (
     <Sidebar
