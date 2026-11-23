@@ -25,6 +25,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
+import org.springframework.security.access.AccessDeniedException;
 
 import com.overex.backend.common.exception.ApiError;
 import com.overex.backend.common.exception.OwnException;
@@ -51,7 +52,7 @@ import jakarta.persistence.EntityNotFoundException;
  *
  * <p>
  * Pure Mockito tests: no Spring context. Covers listing, create, get and
- * delete (including a missing event), and gives every business rule of the
+ * delete (including a missing event and a stranger), and gives every business rule of the
  * update one payload that triggers it; a rejected update must neither map nor
  * save the event.
  *
@@ -288,6 +289,22 @@ public class EventServiceTest {
 		verify(eventRepository, never()).saveAndFlush(any());
 	}
 
+	/** Only the creator may change the event, everyone else gets 403. */
+	@Test
+	void shouldNotUpdateEventOfAnotherUser() {
+		// Arrange
+		Event event = EventTestDataFactory.createDefaultEvent();
+		UpdateEventDto dto = EventTestDataFactory.createUpdateEventDto();
+		when(eventRepository.findById(event.getId())).thenReturn(Optional.of(event));
+
+		// Act + Assert (assertThrows runs the call and checks the exception)
+		assertThrows(AccessDeniedException.class,
+				() -> eventService.updateEvent(EventTestDataFactory.OTHER_USER_ID, dto, event.getId()));
+
+		verifyNoInteractions(eventMapper);
+		verify(eventRepository, never()).saveAndFlush(any());
+	}
+
 	@Test
 	void shouldNotUpdateEventBecauseVersionMismatch() {
 		// Arrange
@@ -440,6 +457,20 @@ public class EventServiceTest {
 				() -> eventService.deleteEvent(EventTestDataFactory.DEFAULT_USER_ID, event.getId()));
 
 		assertEquals(String.format("Event '%s' was not found", event.getId()), ex.getMessage());
+		verify(eventRepository, never()).delete(any());
+	}
+
+	/** Only the creator may delete the event, everyone else gets 403. */
+	@Test
+	void shouldNotDeleteEventOfAnotherUser() {
+		// Arrange
+		Event event = EventTestDataFactory.createDefaultEvent();
+		when(eventRepository.findById(event.getId())).thenReturn(Optional.of(event));
+
+		// Act + Assert (assertThrows runs the call and checks the exception)
+		assertThrows(AccessDeniedException.class,
+				() -> eventService.deleteEvent(EventTestDataFactory.OTHER_USER_ID, event.getId()));
+
 		verify(eventRepository, never()).delete(any());
 	}
 

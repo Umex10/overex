@@ -105,6 +105,8 @@ public final class EventTestDataFactory {
 	public static final String FINISHED_IMAGE_URL = "https://example.com/images/herbstkonzert.png";
 
 	public static final UUID DEFAULT_USER_ID = AuthTestDataFactory.DEFAULT_USER_ID;
+	/** A user who did not create the default event. */
+	public static final UUID OTHER_USER_ID = UUID.fromString("99999999-9999-9999-9999-999999999999");
 
 	// Reasons of EventStatusRules for the changes that are blocked even far before
 	// the start (the default event starts in 2099).
