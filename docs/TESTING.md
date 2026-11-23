@@ -120,7 +120,7 @@ npm run test:e2e
 ```
 
 What that command does:
-1. `docker compose -f docker-compose.test.yml up -d` — starts the throwaway DB on port **5433**.
+1. `docker compose -f docker-compose.test.yml up -d --wait` — starts the throwaway DB on port **5433** and waits until it accepts connections (healthcheck).
 2. Playwright starts **both** servers (backend via `./mvnw`, frontend via
    `next build` + `next start` into its own `.next-e2e` folder) and waits until
    each answers. Servers are never reused, so every run starts with an empty
