@@ -43,8 +43,12 @@ public class EventController {
     }
 
     @GetMapping("/{eventId}")
-    public ResponseEntity<EventDetailsResponseDto> getEvent(@PathVariable UUID eventId) {
-        EventDetailsResponseDto event = eventService.getEvent(eventId);
+    public ResponseEntity<EventDetailsResponseDto> getEvent(@AuthenticationPrincipal Jwt jwt,
+            @PathVariable UUID eventId) {
+        // Public route: a guest has no token.
+        UUID userId = jwt == null ? null : UUID.fromString(jwt.getSubject());
+
+        EventDetailsResponseDto event = eventService.getEvent(userId, eventId);
         return new ResponseEntity<EventDetailsResponseDto>(event, HttpStatus.OK);
     }
 
@@ -61,16 +65,21 @@ public class EventController {
     }
 
     @PatchMapping("/{eventId}")
-    public ResponseEntity<EventResponseDto> updateEvent(@Valid @RequestBody UpdateEventDto updateEventDto,
+    public ResponseEntity<EventResponseDto> updateEvent(@AuthenticationPrincipal Jwt jwt,
+            @Valid @RequestBody UpdateEventDto updateEventDto,
             @PathVariable UUID eventId) {
-        EventResponseDto event = eventService.updateEvent(updateEventDto, eventId);
+        UUID userId = UUID.fromString(jwt.getSubject());
+
+        EventResponseDto event = eventService.updateEvent(userId, updateEventDto, eventId);
 
         return new ResponseEntity<EventResponseDto>(event, HttpStatus.OK);
     }
 
     @DeleteMapping("/{eventId}")
-    public ResponseEntity<Void> deleteEvent(@PathVariable UUID eventId) {
-        eventService.deleteEvent(eventId);
+    public ResponseEntity<Void> deleteEvent(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID eventId) {
+        UUID userId = UUID.fromString(jwt.getSubject());
+
+        eventService.deleteEvent(userId, eventId);
         return new ResponseEntity<Void>(HttpStatus.NO_CONTENT);
     }
 

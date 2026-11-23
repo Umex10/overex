@@ -10,6 +10,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -38,9 +39,13 @@ public class EventService {
 
     public Page<EventResponseDto> getEvents(UUID categoryId, Pageable pageable) {
 
+        Instant now = Instant.now();
+
+        // Public list: no drafts, no canceled events, nothing that already started.
         Page<Event> events = categoryId == null
-                ? eventRepository.findAll(pageable)
-                : eventRepository.findByCategoryId(categoryId, pageable);
+                ? eventRepository.findByStatusAndStartsAtAfter(Status.PUBLISHED, now, pageable)
+                : eventRepository.findByCategoryIdAndStatusAndStartsAtAfter(categoryId, Status.PUBLISHED, now,
+                        pageable);
 
         // Converts every event on the page; page number, size and total stay.
         return events.map(eventMapper::toEventResponseDto);
@@ -59,9 +64,15 @@ public class EventService {
                 .map(eventMapper::toEventResponseDto);
     }
 
-    public EventDetailsResponseDto getEvent(UUID eventId) {
+    public EventDetailsResponseDto getEvent(UUID userId, UUID eventId) {
         Event event = eventRepository.findById(eventId)
                 .orElseThrow(() -> new EntityNotFoundException(String.format("Event '%s' was not found", eventId)));
+
+        // A draft only exists for its owner: 404 instead of 403, so nobody else
+        // learns that there is one. userId is null for a guest.
+        if (event.getStatus() == Status.DRAFT && !event.getCreatedBy().getId().equals(userId)) {
+            throw new EntityNotFoundException(String.format("Event '%s' was not found", eventId));
+        }
 
         Map<Status, StatusOption> statusOptions = EventStatusRules.statusOptions(event, Instant.now());
 
@@ -85,6 +96,12 @@ public class EventService {
 
     public EventResponseDto createEvent(UUID userId, CreateEventDto createEventDto) {
         userService.ensureUserExists(userId);
+
+        if (createEventDto.status() == Status.CANCELED) {
+            throw fieldError("status", "A new event can't be canceled.");
+        }
+        ensureSaleStartsBeforeEvent(createEventDto.saleStartsAt(), createEventDto.startsAt());
+
         User user = userService.getReference(userId);
         Category category = categoryService.getCategory(createEventDto.categoryId());
 
@@ -96,10 +113,12 @@ public class EventService {
     }
 
     @Transactional
-    public EventResponseDto updateEvent(UpdateEventDto updateEventDto, UUID eventId) {
+    public EventResponseDto updateEvent(UUID userId, UpdateEventDto updateEventDto, UUID eventId) {
 
         Event event = eventRepository.findById(eventId)
                 .orElseThrow(() -> new EntityNotFoundException(String.format("Event '%s' was not found", eventId)));
+
+        ensureOwner(event, userId);
 
         // Optimistic locking: findById loads the current version, so Hibernate's
         // own "WHERE version = ?" check would always pass. The version the
@@ -141,9 +160,7 @@ public class EventService {
         // new saleStartsAt Jul 1 → ok, sale opens before the event
         // new saleStartsAt Aug 12 → rejected, sale would open as the event starts
         // new saleStartsAt Aug 15 → rejected, sale would open after the event
-        if (!updateEventDto.saleStartsAt().isBefore(updateEventDto.startsAt())) {
-            throw fieldError("saleStartsAt", "The sale must start before the event starts.");
-        }
+        ensureSaleStartsBeforeEvent(updateEventDto.saleStartsAt(), updateEventDto.startsAt());
 
         Category category = categoryService.getCategory(updateEventDto.categoryId());
 
@@ -157,12 +174,32 @@ public class EventService {
         return eventMapper.toEventResponseDto(eventRepository.saveAndFlush(event));
     }
 
-    public void deleteEvent(UUID eventId) {
+    public void deleteEvent(UUID userId, UUID eventId) {
 
         Event event = eventRepository.findById(eventId)
                 .orElseThrow(() -> new EntityNotFoundException(String.format("Event '%s' was not found", eventId)));
+
+        ensureOwner(event, userId);
+
         eventRepository.delete(event);
 
+    }
+
+    /**
+     * Only the user who created the event may change or delete it; everyone else
+     * gets 403. Runs before all other checks, so a stranger learns nothing about
+     * the event's version or status.
+     */
+    private static void ensureOwner(Event event, UUID userId) {
+        if (!event.getCreatedBy().getId().equals(userId)) {
+            throw new AccessDeniedException("Event " + event.getId() + " belongs to another user.");
+        }
+    }
+
+    private static void ensureSaleStartsBeforeEvent(Instant saleStartsAt, Instant startsAt) {
+        if (!saleStartsAt.isBefore(startsAt)) {
+            throw fieldError("saleStartsAt", "The sale must start before the event starts.");
+        }
     }
 
     private static OwnException fieldError(String field, String message) {

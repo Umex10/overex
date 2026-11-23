@@ -12,7 +12,6 @@ import com.overex.backend.event.dto.responses.EventResponseDto;
 public interface EventMapper {
 
         @Mapping(target = "id", ignore = true)
-        @Mapping(target = "status", constant = "DRAFT")
         @Mapping(target = "createdAt", ignore = true)
         @Mapping(target = "updatedAt", ignore = true)
         @Mapping(target = "category", ignore = true)

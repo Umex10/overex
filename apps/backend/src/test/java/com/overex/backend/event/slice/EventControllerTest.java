@@ -72,7 +72,6 @@ import jakarta.persistence.EntityNotFoundException;
                 TestRsaKeys.PublicKeyConfig.class })
 public class EventControllerTest {
 
-
         @Autowired
         private MockMvc mockMvc;
 
@@ -193,7 +192,7 @@ public class EventControllerTest {
 
                 EventDetailsResponseDto eventDetailsResponseDto = EventTestDataFactory.createEventDetailsResponseDto();
                 EventResponseDto eventResponseDto = eventDetailsResponseDto.event();
-                when(eventService.getEvent(any())).thenReturn(eventDetailsResponseDto);
+                when(eventService.getEvent(any(), any())).thenReturn(eventDetailsResponseDto);
 
                 // Act + Assert
                 mockMvc.perform(get("/events/{eventId}", event.getId()))
@@ -223,7 +222,7 @@ public class EventControllerTest {
                 // Arrange
                 Event event = EventTestDataFactory.createDefaultEvent();
 
-                when(eventService.getEvent(any()))
+                when(eventService.getEvent(any(), any()))
                                 .thenThrow(new EntityNotFoundException("The Event with the given id was not found"));
 
                 // Act + Assert
@@ -244,7 +243,7 @@ public class EventControllerTest {
                                 .andExpect(jsonPath("$.message").value("Validation failed"))
                                 .andExpect(jsonPath("$.errors[0].field").value("eventId"));
 
-                verify(eventService, never()).getEvent(any());
+                verify(eventService, never()).getEvent(any(), any());
         }
 
         @Test
@@ -295,7 +294,7 @@ public class EventControllerTest {
                                 .andExpect(jsonPath("$.message").value("Validation failed"))
                                 .andExpect(jsonPath("$.errors[*].field").value(hasItems(
                                                 "title", "description", "categoryId", "venue", "city", "startsAt",
-                                                "saleStartsAt", "imageUrl")));
+                                                "saleStartsAt", "imageUrl", "status")));
 
                 // @Valid rejects the request before the controller method runs
                 verify(eventService, never()).createEvent(any(), any());
@@ -307,7 +306,7 @@ public class EventControllerTest {
                 User user = AuthTestDataFactory.createDefaultUser();
                 Event event = EventTestDataFactory.createDefaultEvent();
 
-                doNothing().when(eventService).deleteEvent(any());
+                doNothing().when(eventService).deleteEvent(any(), any());
 
                 // Act + Assert
                 mockMvc.perform(delete("/events/{eventId}", event.getId())
@@ -323,7 +322,7 @@ public class EventControllerTest {
                 Event event = EventTestDataFactory.createDefaultEvent();
 
                 doThrow(new EntityNotFoundException("The Event with the given id was not found")).when(eventService)
-                                .deleteEvent(any());
+                                .deleteEvent(any(), any());
 
                 // Act + Assert
                 mockMvc.perform(delete("/events/{eventId}", event.getId())
@@ -345,7 +344,7 @@ public class EventControllerTest {
 
                 String jsonRequest = objectMapper.writeValueAsString(updateEventDto);
 
-                when(eventService.updateEvent(updateEventDto, event.getId())).thenReturn(updatedEvent);
+                when(eventService.updateEvent(user.getId(), updateEventDto, event.getId())).thenReturn(updatedEvent);
 
                 // Act + Assert
                 mockMvc.perform(patch("/events/{eventId}", event.getId())
@@ -388,7 +387,7 @@ public class EventControllerTest {
                                                 "saleStartsAt", "imageUrl")));
 
                 // @Valid rejects the request before the controller method runs
-                verify(eventService, never()).updateEvent(any(), any());
+                verify(eventService, never()).updateEvent(any(), any(), any());
         }
 
         @Test
@@ -399,7 +398,7 @@ public class EventControllerTest {
 
                 String jsonRequest = objectMapper.writeValueAsString(EventTestDataFactory.createUpdateEventDto());
 
-                when(eventService.updateEvent(any(), any()))
+                when(eventService.updateEvent(any(), any(), any()))
                                 .thenThrow(new EntityNotFoundException("The Event with the given id was not found"));
 
                 // Act + Assert
@@ -426,7 +425,7 @@ public class EventControllerTest {
                 String jsonRequest = objectMapper
                                 .writeValueAsString(EventTestDataFactory.createUpdateEventDtoWithSaleAfterStart());
 
-                when(eventService.updateEvent(any(), any()))
+                when(eventService.updateEvent(any(), any(), any()))
                                 .thenThrow(new OwnException(List.of(
                                                 new ApiError.FieldError("saleStartsAt",
                                                                 "The sale must start before the event starts."))));
@@ -456,7 +455,7 @@ public class EventControllerTest {
 
                 String jsonRequest = objectMapper.writeValueAsString(EventTestDataFactory.createUpdateEventDto());
 
-                when(eventService.updateEvent(any(), any()))
+                when(eventService.updateEvent(any(), any(), any()))
                                 .thenThrow(new ObjectOptimisticLockingFailureException(Event.class, event.getId()));
 
                 // Act + Assert
@@ -482,7 +481,7 @@ public class EventControllerTest {
                 User user = AuthTestDataFactory.createDefaultUser();
                 Event event = EventTestDataFactory.createDefaultEvent();
 
-                doThrow(new AccessDeniedException("internal reason")).when(eventService).deleteEvent(any());
+                doThrow(new AccessDeniedException("internal reason")).when(eventService).deleteEvent(any(), any());
 
                 // Act + Assert
                 mockMvc.perform(delete("/events/{eventId}", event.getId())

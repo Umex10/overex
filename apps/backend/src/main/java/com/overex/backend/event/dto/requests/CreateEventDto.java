@@ -3,6 +3,8 @@ package com.overex.backend.event.dto.requests;
 import java.time.Instant;
 import java.util.UUID;
 
+import com.overex.backend.event.Status;
+
 import org.hibernate.validator.constraints.URL;
 
 import jakarta.validation.constraints.Future;
@@ -26,5 +28,8 @@ public record CreateEventDto(
 
 		@NotNull(message = "Sale start is required") Instant saleStartsAt,
 
-		@NotBlank(message = "Image URL is required") @Size(max = 500, message = "Image URL must be at most {max} characters.") @URL(message = "Please enter a valid image URL.") String imageUrl) {
+		@NotBlank(message = "Image URL is required") @Size(max = 500, message = "Image URL must be at most {max} characters.") @URL(message = "Please enter a valid image URL.") String imageUrl,
+
+		// DRAFT or PUBLISHED; EventService rejects CANCELED.
+		@NotNull(message = "Status is required") Status status) {
 }

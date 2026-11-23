@@ -141,6 +141,7 @@ public final class EventTestDataFactory {
 				.id(DEFAULT_EVENT_ID)
 				.version(DEFAULT_VERSION)
 				.category(createDefaultCategory())
+				.createdBy(AuthTestDataFactory.createDefaultUser())
 				.title(DEFAULT_TITLE)
 				.description(DEFAULT_DESCRIPTION)
 				.venue(DEFAULT_VENUE)
@@ -292,12 +293,11 @@ public final class EventTestDataFactory {
 	}
 
 	// ---------------------------------------------------------------------------
-	// Status rules (EventStatusRules, reached through getEvent and updateEvent)
+	// Status rules (EventStatusRules)
 	// ---------------------------------------------------------------------------
 
 	// One stored event and the status options it must get. The dates lie in 2020
-	// (over) or 2099 (ahead), so EventService's real Instant.now() always decides
-	// the same way.
+	// (over) or 2099 (ahead), so any "now" in between decides the same way.
 	public record StatusRuleCase(String name, Event event, Map<Status, StatusOption> expectedOptions) {
 	}
 
@@ -489,7 +489,8 @@ public final class EventTestDataFactory {
 				DEFAULT_CITY,
 				DEFAULT_STARTS_AT,
 				DEFAULT_SALE_STARTS_AT,
-				DEFAULT_IMAGE_URL);
+				DEFAULT_IMAGE_URL,
+				Status.DRAFT);
 	}
 
 	public static List<CreateEventDto> createCreateEventDtoList(UUID categoryId) {
@@ -502,7 +503,9 @@ public final class EventTestDataFactory {
 						event.getCity(),
 						event.getStartsAt(),
 						event.getSaleStartsAt(),
-						event.getImageUrl()))
+						event.getImageUrl(),
+						// published, so the public list shows them
+						Status.PUBLISHED))
 				.toList();
 	}
 
@@ -515,7 +518,8 @@ public final class EventTestDataFactory {
 				DEFAULT_CITY,
 				PAST_STARTS_AT,
 				DEFAULT_SALE_STARTS_AT,
-				DEFAULT_IMAGE_URL);
+				DEFAULT_IMAGE_URL,
+				Status.DRAFT);
 	}
 
 	public static CreateEventDto createInvalidCreateEventDto() {
@@ -527,7 +531,8 @@ public final class EventTestDataFactory {
 				"",
 				null,
 				null,
-				"not-a-url");
+				"not-a-url",
+				null);
 	}
 
 	// ---------------------------------------------------------------------------

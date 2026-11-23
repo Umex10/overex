@@ -12,8 +12,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
-import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -31,24 +29,19 @@ import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import com.overex.backend.common.exception.ApiError;
 import com.overex.backend.common.exception.OwnException;
 import com.overex.backend.event.Category;
-import com.overex.backend.event.CategoryRepository;
 import com.overex.backend.event.CategoryService;
 import com.overex.backend.event.Event;
 import com.overex.backend.event.EventMapper;
 import com.overex.backend.event.EventRepository;
 import com.overex.backend.event.EventService;
-import com.overex.backend.event.EventStatusRules;
 import com.overex.backend.event.Status;
 import com.overex.backend.event.dto.requests.CreateEventDto;
 import com.overex.backend.event.dto.requests.UpdateEventDto;
 import com.overex.backend.event.dto.responses.CountsOfEventsDto;
 import com.overex.backend.event.dto.responses.EventDetailsResponseDto;
 import com.overex.backend.event.dto.responses.EventResponseDto;
-import com.overex.backend.event.dto.responses.StatusOption;
 import com.overex.backend.event.utils.EventTestDataFactory;
 import com.overex.backend.event.utils.EventTestDataFactory.MyEventsFilterCase;
-import com.overex.backend.event.utils.EventTestDataFactory.StatusRuleCase;
-import com.overex.backend.user.UserRepository;
 import com.overex.backend.user.UserService;
 
 import jakarta.persistence.EntityNotFoundException;
@@ -108,7 +101,7 @@ public class EventServiceTest {
 		verify(eventRepository).save(event);
 	}
 
-	/** All stored events are returned as they come from the repository. */
+	/** The published, upcoming events are returned as they come from the repository. */
 	@Test
 	void shouldGetAllEvents() {
 		// Arrange
@@ -116,14 +109,15 @@ public class EventServiceTest {
 		Page<Event> page = EventTestDataFactory.createEventPage();
 		Page<EventResponseDto> pageToAssert = EventTestDataFactory.createEventResponsePage();
 
-		when(eventRepository.findAll(pageable)).thenReturn(page);
+		when(eventRepository.findByStatusAndStartsAtAfter(eq(Status.PUBLISHED), notNull(), eq(pageable)))
+				.thenReturn(page);
 
 		// Act
 		Page<EventResponseDto> foundPage = eventService.getEvents(null, pageable);
 
 		// Assert
 		assertEquals(pageToAssert, foundPage);
-		verify(eventRepository, never()).findByCategoryId(any(), any());
+		verify(eventRepository, never()).findByCategoryIdAndStatusAndStartsAtAfter(any(), any(), any(), any());
 	}
 
 	@Test
@@ -133,14 +127,15 @@ public class EventServiceTest {
 		Page<Event> page = EventTestDataFactory.createFestivalEventPage();
 		Page<EventResponseDto> pageToAssert = EventTestDataFactory.createFestivalEventResponsePage();
 
-		when(eventRepository.findByCategoryId(EventTestDataFactory.DEFAULT_CATEGORY_ID, pageable)).thenReturn(page);
+		when(eventRepository.findByCategoryIdAndStatusAndStartsAtAfter(eq(EventTestDataFactory.DEFAULT_CATEGORY_ID),
+				eq(Status.PUBLISHED), notNull(), eq(pageable))).thenReturn(page);
 
 		// Act
 		Page<EventResponseDto> foundPage = eventService.getEvents(EventTestDataFactory.DEFAULT_CATEGORY_ID, pageable);
 
 		// Assert
 		assertEquals(pageToAssert.getContent(), foundPage.getContent());
-		verify(eventRepository, never()).findAll(any(Pageable.class));
+		verify(eventRepository, never()).findByStatusAndStartsAtAfter(any(), any(), any());
 	}
 
 	/**
@@ -217,12 +212,11 @@ public class EventServiceTest {
 		when(eventRepository.findById(event.getId())).thenReturn(Optional.of(event));
 
 		// Act
-		EventDetailsResponseDto foundEventDetailsResponseDto = eventService.getEvent(event.getId());
+		EventDetailsResponseDto foundEventDetailsResponseDto = eventService.getEvent(EventTestDataFactory.DEFAULT_USER_ID, event.getId());
 
 		// Assert
 		assertEquals(eventDetailsResponseDto, foundEventDetailsResponseDto);
 	}
-
 
 	@Test
 	void shouldNotGetMissingEvent() {
@@ -232,7 +226,7 @@ public class EventServiceTest {
 
 		// Act + Assert (assertThrows runs the call and checks the exception)
 		EntityNotFoundException ex = assertThrows(EntityNotFoundException.class,
-				() -> eventService.getEvent(event.getId()));
+				() -> eventService.getEvent(EventTestDataFactory.DEFAULT_USER_ID, event.getId()));
 
 		assertEquals(String.format("Event '%s' was not found", event.getId()), ex.getMessage());
 	}
@@ -251,7 +245,7 @@ public class EventServiceTest {
 		when(eventRepository.saveAndFlush(event)).thenReturn(event);
 
 		// Act
-		EventResponseDto updatedEvent = eventService.updateEvent(dto, event.getId());
+		EventResponseDto updatedEvent = eventService.updateEvent(EventTestDataFactory.DEFAULT_USER_ID, dto, event.getId());
 
 		// Assert
 		assertEquals(dtoToAssert, updatedEvent);
@@ -273,7 +267,7 @@ public class EventServiceTest {
 		when(eventRepository.saveAndFlush(event)).thenReturn(event);
 
 		// Act
-		eventService.updateEvent(dto, event.getId());
+		eventService.updateEvent(EventTestDataFactory.DEFAULT_USER_ID, dto, event.getId());
 
 		// Assert
 		verify(eventMapper).updateEntity(dto, event);
@@ -288,7 +282,7 @@ public class EventServiceTest {
 
 		// Act + Assert (assertThrows runs the call and checks the exception)
 		assertThrows(EntityNotFoundException.class,
-				() -> eventService.updateEvent(EventTestDataFactory.createUpdateEventDto(), event.getId()));
+				() -> eventService.updateEvent(EventTestDataFactory.DEFAULT_USER_ID, EventTestDataFactory.createUpdateEventDto(), event.getId()));
 
 		verifyNoInteractions(eventMapper);
 		verify(eventRepository, never()).saveAndFlush(any());
@@ -305,56 +299,29 @@ public class EventServiceTest {
 
 		// Act + Assert (assertThrows runs the call and checks the exception)
 		assertThrows(ObjectOptimisticLockingFailureException.class,
-				() -> eventService.updateEvent(EventTestDataFactory.createUpdateEventDto(), eventWithOtherVersion.getId()));
+				() -> eventService.updateEvent(EventTestDataFactory.DEFAULT_USER_ID, EventTestDataFactory.createUpdateEventDto(), eventWithOtherVersion.getId()));
 
 		verifyNoInteractions(eventMapper);
 		verify(eventRepository, never()).saveAndFlush(any());
 	}
 
-	/** Every stored status and point in time gets the status options of the rules. */
-	@Test
-	void shouldGetStatusOptionsForEveryRuleCase() {
-		for (StatusRuleCase ruleCase : EventTestDataFactory.createStatusRuleCases()) {
-			// Arrange
-			Event event = ruleCase.event();
-
-			when(eventRepository.findById(event.getId())).thenReturn(Optional.of(event));
-
-			// Act
-			EventDetailsResponseDto foundEvent = eventService.getEvent(event.getId());
-
-			// Assert
-			assertEquals(ruleCase.expectedOptions(), foundEvent.statusOptions(), ruleCase.name());
-		}
-	}
-
 	/**
-	 * Every status change the rules block is rejected on the field "status" with
-	 * the reason of the rule, and nothing is saved.
+	 * A status change the rules block is rejected on the field "status" with the
+	 * reason of the rule, and nothing is saved. All rule cases are covered by
+	 * {@link EventStatusRulesTest}.
 	 */
 	@Test
 	void shouldNotUpdateEventWhenStatusRuleBlocksIt() {
-		for (StatusRuleCase ruleCase : EventTestDataFactory.createStatusRuleCases()) {
-			List<Map.Entry<Status, StatusOption>> blockedChanges = ruleCase.expectedOptions().entrySet().stream()
-					.filter(option -> option.getValue().disabled())
-					.toList();
+		// Arrange
+		Event draft = EventTestDataFactory.createDefaultEvent();
+		UpdateEventDto dto = EventTestDataFactory.createUpdateEventDtoWithStatus(Status.CANCELED);
 
-			for (Map.Entry<Status, StatusOption> blockedChange : blockedChanges) {
-				// Arrange
-				Event event = ruleCase.event();
-				UpdateEventDto dto = EventTestDataFactory.createUpdateEventDtoWithStatus(blockedChange.getKey());
+		when(eventRepository.findById(draft.getId())).thenReturn(Optional.of(draft));
 
-				when(eventRepository.findById(event.getId())).thenReturn(Optional.of(event));
+		// Act + Assert (assertThrows runs the call and checks the exception)
+		OwnException ex = assertThrows(OwnException.class, () -> eventService.updateEvent(EventTestDataFactory.DEFAULT_USER_ID, dto, draft.getId()));
 
-				// Act + Assert (assertThrows runs the call and checks the exception)
-				OwnException ex = assertThrows(OwnException.class,
-						() -> eventService.updateEvent(dto, event.getId()),
-						ruleCase.name() + " → " + blockedChange.getKey());
-
-				assertFieldError(ex, "status", blockedChange.getValue().why());
-			}
-		}
-
+		assertFieldError(ex, "status", EventTestDataFactory.DRAFT_CANCEL_BLOCKED_WHY);
 		verifyNoInteractions(eventMapper);
 		verify(eventRepository, never()).saveAndFlush(any());
 	}
@@ -372,7 +339,7 @@ public class EventServiceTest {
 		when(eventRepository.saveAndFlush(event)).thenReturn(event);
 
 		// Act
-		EventResponseDto updatedEvent = eventService.updateEvent(dto, event.getId());
+		EventResponseDto updatedEvent = eventService.updateEvent(EventTestDataFactory.DEFAULT_USER_ID, dto, event.getId());
 
 		// Assert
 		assertEquals(Status.PUBLISHED, updatedEvent.status());
@@ -391,7 +358,7 @@ public class EventServiceTest {
 
 		// Act + Assert (assertThrows runs the call and checks the exception)
 		OwnException ex = assertThrows(OwnException.class,
-				() -> eventService.updateEvent(EventTestDataFactory.createUpdateEventDto(), startedEvent.getId()));
+				() -> eventService.updateEvent(EventTestDataFactory.DEFAULT_USER_ID, EventTestDataFactory.createUpdateEventDto(), startedEvent.getId()));
 
 		assertFieldError(ex, "startsAt", "This event has already started and can't be updated anymore.");
 		verifyNoInteractions(eventMapper);
@@ -406,7 +373,7 @@ public class EventServiceTest {
 
 		// Act + Assert (assertThrows runs the call and checks the exception)
 		OwnException ex = assertThrows(OwnException.class,
-				() -> eventService.updateEvent(EventTestDataFactory.createUpdateEventDtoWithPastStartsAt(),
+				() -> eventService.updateEvent(EventTestDataFactory.DEFAULT_USER_ID, EventTestDataFactory.createUpdateEventDtoWithPastStartsAt(),
 						event.getId()));
 
 		assertFieldError(ex, "startsAt", "The new start time must be in the future.");
@@ -425,7 +392,7 @@ public class EventServiceTest {
 
 		// Act + Assert (assertThrows runs the call and checks the exception)
 		OwnException ex = assertThrows(OwnException.class,
-				() -> eventService.updateEvent(EventTestDataFactory.createUpdateEventDtoWithSaleAtStart(),
+				() -> eventService.updateEvent(EventTestDataFactory.DEFAULT_USER_ID, EventTestDataFactory.createUpdateEventDtoWithSaleAtStart(),
 						event.getId()));
 
 		assertFieldError(ex, "saleStartsAt", "The sale must start before the event starts.");
@@ -441,7 +408,7 @@ public class EventServiceTest {
 
 		// Act + Assert (assertThrows runs the call and checks the exception)
 		OwnException ex = assertThrows(OwnException.class,
-				() -> eventService.updateEvent(EventTestDataFactory.createUpdateEventDtoWithSaleAfterStart(),
+				() -> eventService.updateEvent(EventTestDataFactory.DEFAULT_USER_ID, EventTestDataFactory.createUpdateEventDtoWithSaleAfterStart(),
 						event.getId()));
 
 		assertFieldError(ex, "saleStartsAt", "The sale must start before the event starts.");
@@ -456,7 +423,7 @@ public class EventServiceTest {
 		when(eventRepository.findById(event.getId())).thenReturn(Optional.of(event));
 
 		// Act
-		eventService.deleteEvent(event.getId());
+		eventService.deleteEvent(EventTestDataFactory.DEFAULT_USER_ID, event.getId());
 
 		// Assert
 		verify(eventRepository).delete(event);
@@ -470,7 +437,7 @@ public class EventServiceTest {
 
 		// Act + Assert (assertThrows runs the call and checks the exception)
 		EntityNotFoundException ex = assertThrows(EntityNotFoundException.class,
-				() -> eventService.deleteEvent(event.getId()));
+				() -> eventService.deleteEvent(EventTestDataFactory.DEFAULT_USER_ID, event.getId()));
 
 		assertEquals(String.format("Event '%s' was not found", event.getId()), ex.getMessage());
 		verify(eventRepository, never()).delete(any());

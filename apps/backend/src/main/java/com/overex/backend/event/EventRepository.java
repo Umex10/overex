@@ -11,7 +11,10 @@ import org.springframework.data.repository.query.Param;
 
 public interface EventRepository extends JpaRepository<Event, UUID> {
 
-  Page<Event> findByCategoryId(UUID categoryId, Pageable pageable);
+  Page<Event> findByStatusAndStartsAtAfter(Status status, Instant startsAfter, Pageable pageable);
+
+  Page<Event> findByCategoryIdAndStatusAndStartsAtAfter(UUID categoryId, Status status, Instant startsAfter,
+      Pageable pageable);
 
   Page<Event> findByCreatedByIdAndStatus(UUID userId, Status status, Pageable pageable);
 
