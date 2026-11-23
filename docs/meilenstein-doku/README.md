@@ -13,7 +13,8 @@
 | M09 | Overex: Umbau nach Feature und Frontend-Unit-Tests | 2026-10-26 – 2026-11-02 | overex (Backend, Web-Client, Bruno, Doku) | ca. 7,5 h | `6a6ea24` | [Meilenstein 09](Meilenstein-09-umbau-frontend-unit-tests.md) |
 | M10 | Overex: E2E-Tests für Events und ein gemeinsamer Workflow `web-checks` | 2026-11-02 – 2026-11-02 | overex (Web-Client, Seed, CI) | ca. 4 h | `65f6308` | [Meilenstein 10](Meilenstein-10-e2e-tests-web-checks.md) |
 | M11 | Overex: CI-Ausbau, Branch-Schutz und Dependabot | 2026-11-03 – 2026-11-03 | overex (CI, GitHub-Einstellungen, Abhängigkeiten) | ca. 7 h (geschätzt) | `5ee44be` | [Meilenstein 11](Meilenstein-11-ci-ausbau-dependabot.md) |
+| M12 | Overex: Event-Editor, Statusregeln und „Meine Events“ | 2026-11-07 – 2026-11-23 | overex (Backend, Web-Client, Bruno) | nicht erfasst | `b943b74` | [Meilenstein 12](Meilenstein-12-event-editor-statusregeln.md) |
 
-**Gesamtaufwand bisher:** ca. 42 h (M01 und M07–M11; davon ca. 12 h geschätzt: 17.10, 20.10, 03.11; Zeiten erst ab 18.10 notiert; M02 bis M06 nicht erfasst)
+**Gesamtaufwand bisher:** ca. 42 h (M01 und M07–M11; davon ca. 12 h geschätzt: 17.10, 20.10, 03.11; Zeiten erst ab 18.10 notiert; M02 bis M06 und M12 nicht erfasst)
 
 **Übersicht auf einen Blick:** [Uebersicht.md](Uebersicht.md) (als PDF: `pdf/Overex-Meilensteine-Uebersicht.pdf`)
