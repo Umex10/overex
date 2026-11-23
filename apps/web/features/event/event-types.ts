@@ -7,13 +7,11 @@
 /** Lifecycle of an event, like the backend's `Status` enum. */
 export type EventStatus = "DRAFT" | "PUBLISHED" | "CANCELED";
 
-export type MyEventFilter = EventStatus | "FINISHED" | "";
-
 /**
- * Selected status tab on "Meine Events": one status, or "" for all of them.
- * Only for the UI; the query gets `undefined` instead of "".
+ * Selected tab on "Meine Events": one filter, or "" for all events. Only for
+ * the UI; the query gets `undefined` instead of "".
  */
-export type StatusFilter = EventStatus | "";
+export type MyEventFilter = EventStatus | "FINISHED" | "";
 
 /** One category as returned by `GET /categories`. */
 export interface CategoryDto {

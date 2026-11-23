@@ -13,7 +13,9 @@ import Link from "next/link";
 interface MyEventItemProps {
   event: EventDto;
   onEdit?: (eventId: string) => void;
-  onDelete?: (eventId: string) => void;
+  onDelete: (eventId: string) => void;
+  /** While the delete request runs, so nobody sends it twice. */
+  isDeleting?: boolean;
 }
 
 /**
@@ -23,7 +25,12 @@ interface MyEventItemProps {
  * Phones: image and text side by side, status and buttons in their own row
  * below. From sm on everything sits in one row, status and buttons on the right.
  */
-export function MyEventItem({ event, onEdit, onDelete }: MyEventItemProps) {
+export function MyEventItem({
+  event,
+  onEdit,
+  onDelete,
+  isDeleting,
+}: MyEventItemProps) {
   return (
     <Link href={`/my-events/${event.id}`}>
       <article
@@ -79,7 +86,13 @@ export function MyEventItem({ event, onEdit, onDelete }: MyEventItemProps) {
               size="icon-sm"
               aria-label={`Event „${event.title}“ löschen`}
               title="Löschen"
-              onClick={() => onDelete?.(event.id)}
+              // The whole row is a link: preventDefault stops it from opening
+              // the editor of the event that is being deleted.
+              onClick={(e) => {
+                e.preventDefault();
+                onDelete(event.id);
+              }}
+              disabled={isDeleting}
               className="text-destructive hover:cursor-pointer hover:text-destructive"
             >
               <Trash2Icon />

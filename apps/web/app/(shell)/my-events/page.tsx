@@ -1,15 +1,20 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef } from "react";
 import Link from "next/link";
 import { PlusIcon } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useIsMobile } from "@/hooks/use-mobile";
 import BreadcrumbsContainer from "@/features/shell/components/breadcrumbs-container";
 import { MyEventItem } from "@/features/event/components/my-event-item";
-import { useGetCountsOfEventsQuery } from "@/features/event/event-api";
-import type { EventDto, MyEventFilter, StatusFilter } from "@/features/event/event-types";
+import {
+  useDeleteEventMutation,
+  useGetCountsOfEventsQuery,
+} from "@/features/event/event-api";
+import type { ApiErrorBody } from "@/types/api-error";
+import type { MyEventFilter } from "@/features/event/event-types";
 import { EventPagination } from "@/features/event/components/event-pagination";
 import { useMyEventList } from "@/features/event/hooks/use-my-event-list";
 import { EventListFilters } from "@/features/event/components/event-list-filters";
@@ -35,8 +40,10 @@ export default function MyEventsPage() {
     changeCategory,
     changeSort,
     filter,
-    setFilter,
+    changeFilter,
   } = useMyEventList();
+
+  const [deleteEvent, { isLoading: isDeleting }] = useDeleteEventMutation();
 
   const listStartRef = useRef<HTMLDivElement>(null);
 
@@ -76,6 +83,28 @@ export default function MyEventsPage() {
     });
   }
 
+  // The list and the counts refetch on their own (invalidatesTags).
+  async function handleDelete(eventId: string) {
+    const toastId = toast.loading("Event wird gelöscht …", {
+      className: "toast-loading",
+    });
+    try {
+      await deleteEvent(eventId).unwrap();
+      toast.success("Event gelöscht!", {
+        id: toastId,
+        className: "toast-success",
+      });
+      // The last event of a page is gone: that page no longer exists.
+      if (events?.content.length === 1 && page > 0) setPage(page - 1);
+    } catch (error) {
+      const apiError = (error as { data?: ApiErrorBody }).data;
+      toast.error(
+        apiError?.message || "Das Event konnte nicht gelöscht werden.",
+        { id: toastId, className: "toast-error" },
+      );
+    }
+  }
+
   return (
     <div className="flex w-full flex-col gap-6">
       {/* On desktop the crumbs sit in the header bar. */}
@@ -104,7 +133,7 @@ export default function MyEventsPage() {
       <div className="flex flex-col gap-2">
         <Tabs
           value={filter}
-          onValueChange={(value) => setFilter(value as StatusFilter)}
+          onValueChange={(value) => changeFilter(value as MyEventFilter)}
         >
           {/* Phones: the tabs keep their width and the row scrolls sideways
             (like the category filter on /events). justify-start, otherwise
@@ -139,7 +168,12 @@ export default function MyEventsPage() {
       {!isLoading && events && events.content.length > 0 ? (
         <div className="flex w-full flex-col gap-3">
           {events.content.map((event) => (
-            <MyEventItem key={event.id} event={event} />
+            <MyEventItem
+              key={event.id}
+              event={event}
+              onDelete={handleDelete}
+              isDeleting={isDeleting}
+            />
           ))}
         </div>
       ) : (
