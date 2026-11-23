@@ -1,0 +1,41 @@
+info:
+  name: ok - get event details signed in (200)
+  type: http
+  seq: 2
+
+http:
+  method: GET
+  url: "{{baseUrl}}/events/{{eventId}}"
+  auth:
+    type: bearer
+    token: "{{accessTk}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("returns the requested event with every field the frontend reads", function () {
+          const { event } = res.getBody();
+          expect(event.id).to.equal(bru.getVar("eventId"));
+          expect(event).to.include.all.keys(
+            "id", "version", "title", "description", "venue", "city", "startsAt",
+            "saleStartsAt", "imageUrl", "status", "category"
+          );
+        });
+
+        test("tells which status changes are allowed", function () {
+          const { statusOptions } = res.getBody();
+          expect(statusOptions.DRAFT.disabled).to.equal(false);
+          expect(statusOptions.PUBLISHED.disabled).to.equal(false);
+          expect(statusOptions.CANCELED.disabled).to.equal(true);
+        });
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "200"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

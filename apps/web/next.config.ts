@@ -14,6 +14,10 @@ const nextConfig: NextConfig = {
         hostname: "images.unsplash.com",
         pathname: "/photo-**",
       },
+      // Placeholder photos for testing. picsum.photos answers with a redirect
+      // to fastly.picsum.photos, so both hosts must be allowed.
+      { protocol: "https", hostname: "picsum.photos" },
+      { protocol: "https", hostname: "fastly.picsum.photos" },
     ],
   },
 };

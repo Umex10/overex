@@ -1,9 +1,6 @@
 package com.overex.backend.auth.dto.responses;
 
-import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 
 /**
  * Response payload returned by every successful auth endpoint.
@@ -11,16 +8,11 @@ import lombok.NoArgsConstructor;
  * <p>Exposes only the short-lived access token (the refresh token travels in a
  * separate HTTP-only cookie) and its remaining lifetime in seconds so the
  * client can schedule a silent refresh before expiry.
+ *
+ * @param accessTk  the signed, short-lived JWT the client sends as
+ *                  {@code Authorization: Bearer ...}
+ * @param expiresIn remaining access-token lifetime in seconds (900 = 15 minutes)
  */
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
 @Builder
-public class AuthResponseDto {
-
-	/** The signed, short-lived JWT the client sends as {@code Authorization: Bearer ...}. */
-	private String accessTk;
-
-	/** Remaining access-token lifetime in seconds (900 = 15 minutes). */
-	private Long expiresIn;
+public record AuthResponseDto(String accessTk, Long expiresIn) {
 }

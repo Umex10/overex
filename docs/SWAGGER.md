@@ -38,5 +38,5 @@ protected route.
   `@SecurityScheme` — that single annotation is what makes the Authorize button
   appear.
 - Controllers opt a route into the lock icon with
-  `@SecurityRequirement(name = "bearerAuth")` (see `MeController`). The public
+  `@SecurityRequirement(name = "bearerAuth")` (see `UserController`). The public
   `/auth/**` routes deliberately leave it off.

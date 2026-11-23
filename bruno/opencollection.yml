@@ -34,7 +34,7 @@ request:
             });
           } catch (err) {
             // 401: the test user does not exist yet in this database.
-            if (err.response?.status !== 401) throw err;
+            if ((err.status ?? err.response?.status) !== 401) throw err;
             res = await bru.sendRequest({ method: "POST", url: `${baseUrl}/auth/sign-up`, data: user });
           }
           bru.setVar("accessTk", res.data.accessTk);

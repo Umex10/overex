@@ -55,7 +55,7 @@ export function AuthTips({
         ))}
       </ul>
 
-      <div className="rounded-lg bg-white/10 px-4 py-3 text-xs leading-relaxed opacity-90">
+      <div className="rounded-lg bg-white/10 px-4 py-3 text-sm leading-relaxed opacity-90">
         <p className="font-semibold">Developer tip</p>
         <p className="mt-1">
           Explore the API routes live at{" "}

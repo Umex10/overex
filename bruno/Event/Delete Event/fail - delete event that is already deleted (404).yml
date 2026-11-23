@@ -1,0 +1,37 @@
+info:
+  name: fail - delete event that is already deleted (404)
+  type: http
+  seq: 2
+
+http:
+  method: DELETE
+  url: "{{baseUrl}}/events/{{eventId}}"
+  auth:
+    type: bearer
+    token: "{{accessTk}}"
+
+runtime:
+  scripts:
+    - type: before-request
+      code: |-
+        // Arrange: delete the event first.
+        await bru.sendRequest({
+          method: "DELETE",
+          url: `${bru.getEnvVar("baseUrl")}/events/${bru.getVar("eventId")}`,
+          headers: { Authorization: `Bearer ${bru.getVar("accessTk")}` },
+        });
+    - type: tests
+      code: |-
+        test("names the missing event", function () {
+          expect(res.getBody().message).to.include(bru.getVar("eventId"));
+        });
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "404"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

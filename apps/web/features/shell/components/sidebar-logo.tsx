@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { TicketIcon } from "@phosphor-icons/react";
+import { TicketIcon } from "lucide-react";
 import { useSidebar } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
 
@@ -38,10 +38,10 @@ export function SidebarLogo({
         }
       }}
     >
-      <span className="flex aspect-square size-8 shrink-0 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
-        <TicketIcon weight="fill" className="size-6! -rotate-12" />
+      <span className="flex aspect-square size-10 shrink-0 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
+        <TicketIcon fill="currentColor" className="size-8! -rotate-12" />
       </span>
-      <span className="text-base font-semibold tracking-tight">Overex</span>
+      <span className="text-lg font-semibold tracking-tight">Overex</span>
     </Link>
   );
 }

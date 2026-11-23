@@ -37,3 +37,7 @@ Thumbs.db
 keys/
 *.pem
 coverage/
+
+# ===== Personal working notes (not committed) =====
+docs/EVENT_STATUS_RULES.md
+docs/DOCKER_ABLAUF.md

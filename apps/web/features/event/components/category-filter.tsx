@@ -11,6 +11,13 @@ import type { CategoryDto } from "@/features/event/event-types";
 const ALL = "all";
 
 /**
+ * Each category is its own round chip; the active one is filled in the brand
+ * colour so it stands out from the outlined rest.
+ */
+const CHIP_CLASS =
+  "rounded-full px-4 hover:cursor-pointer data-[state=on]:border-primary data-[state=on]:bg-primary data-[state=on]:text-primary-foreground data-[state=on]:hover:bg-primary/90";
+
+/**
  * Category chips above the event list: "All" first, then one per category.
  *
  * `categoryId` "" stands for all categories, the toggle group uses {@link ALL}
@@ -35,7 +42,7 @@ export function CategoryFilter({
   return (
     <div
       className={cn(
-        "min-w-0 overflow-x-auto max-md:[scrollbar-width:none]",
+        "min-w-0 overflow-x-auto py-1 max-md:[scrollbar-width:none]",
         className,
       )} data-testid="categories-toggle-group"
     >
@@ -43,11 +50,13 @@ export function CategoryFilter({
         type="single"
         value={categoryId || ALL}
         onValueChange={(value) => onChange(value === ALL ? "" : value)}
-        className="w-max bg-gray-800 rounded-lg p-0.5 gap-0.5"
+        variant="outline"
+        spacing={1}
+        className="w-max"
       >
         <ToggleGroupItem
           value={ALL}
-          className="rounded-lg hover:cursor-pointer"
+          className={CHIP_CLASS}
         >
           All
         </ToggleGroupItem>
@@ -55,7 +64,7 @@ export function CategoryFilter({
           <ToggleGroupItem
             key={c.id}
             value={c.id}
-            className="rounded-lg hover:cursor-pointer"
+            className={CHIP_CLASS}
           >
             {c.title}
           </ToggleGroupItem>

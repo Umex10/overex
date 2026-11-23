@@ -50,7 +50,7 @@
 - **Roles** travel in the access token's `roles` claim. The
   `JwtAuthenticationConverter` in `SecurityConfig` maps them to Spring
   authorities (`USER` → `ROLE_USER`), enforced with `@PreAuthorize` (see
-  `MeController#adminPing`).
+  `UserController#adminPing`).
 
 ## Two subtle bugs this codebase already fixes
 

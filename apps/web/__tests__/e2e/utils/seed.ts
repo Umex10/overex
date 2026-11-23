@@ -9,9 +9,7 @@
 
 export const seedCategories = {
   concert: { id: "00000000-0000-0000-0000-000000000001", title: "Concert" },
-  festival: { id: "00000000-0000-0000-0000-000000000002", title: "Festival" },
   /** Has no events: for the "no events" state. */
-  theater: { id: "00000000-0000-0000-0000-000000000003", title: "Theater" },
   tennis: { id: "00000000-0000-0000-0000-000000000004", title: "Tennis" },
 };
 

@@ -8,11 +8,13 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * Structured error envelope returned for validation and business-rule failures.
+ * The one error body the backend sends for every failed request (400 to 500).
  *
- * <p>Contains the HTTP status code, a human-readable summary message and the
- * per-field validation errors that the frontend can map onto individual form
- * inputs.
+ * <p>Every field is always set, so the frontend can read each error the same
+ * way: {@code status} and {@code message} describe the error, {@code path} is
+ * the requested URI, and {@code errors} lists the rejected fields. When no
+ * single field is to blame (e.g. 404, 409, 500), {@code errors} is an empty
+ * list, never {@code null}.
  *
  * @see OwnException
  * @see GlobalExceptionHandler
@@ -25,6 +27,7 @@ public class ApiError {
 
 	private int status;
 	private String message;
+	private String path;
 	private List<FieldError> errors;
 
 	/**

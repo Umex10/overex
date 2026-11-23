@@ -32,10 +32,12 @@ public class CategoryControllerTest {
     @Test
     void shouldGetCategories() throws Exception {
 
+        // Arrange
         List<Category> categories = CategoryTestDataFactory.createCategoryList();
 
         when(categoryService.getCategories()).thenReturn(categories);
 
+        // Act + Assert
         mockMvc.perform(get("/categories"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(categories.size())))

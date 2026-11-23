@@ -1,0 +1,73 @@
+info:
+  name: ok - get status options of canceled event (200)
+  type: http
+  seq: 4
+
+http:
+  method: GET
+  url: "{{baseUrl}}/events/{{eventId}}"
+  auth:
+    type: bearer
+    token: "{{accessTk}}"
+
+runtime:
+  scripts:
+    - type: before-request
+      code: |-
+        // Arrange: publish the draft first.
+        const published = await bru.sendRequest({
+          method: "PATCH",
+          url: `${bru.getEnvVar("baseUrl")}/events/${bru.getVar("eventId")}`,
+          headers: { Authorization: `Bearer ${bru.getVar("accessTk")}` },
+          data: {
+            title: "Bruno Testevent",
+            description: "Created by the Bruno collection.",
+            categoryId: bru.getVar("categoryId"),
+            venue: "Green Park",
+            city: "St. Pölten",
+            startsAt: "2099-08-12T14:00:00Z",
+            saleStartsAt: "2099-03-01T10:00:00Z",
+            imageUrl: "https://images.unsplash.com/photo-1459749411175-04bf5292ceea",
+            status: "PUBLISHED",
+            version: bru.getVar("eventVersion"),
+          },
+        });
+        bru.setVar("eventVersion", published.data.version);
+
+        // Arrange: then cancel it.
+        const changed = await bru.sendRequest({
+          method: "PATCH",
+          url: `${bru.getEnvVar("baseUrl")}/events/${bru.getVar("eventId")}`,
+          headers: { Authorization: `Bearer ${bru.getVar("accessTk")}` },
+          data: {
+            title: "Bruno Testevent",
+            description: "Created by the Bruno collection.",
+            categoryId: bru.getVar("categoryId"),
+            venue: "Green Park",
+            city: "St. Pölten",
+            startsAt: "2099-08-12T14:00:00Z",
+            saleStartsAt: "2099-03-01T10:00:00Z",
+            imageUrl: "https://images.unsplash.com/photo-1459749411175-04bf5292ceea",
+            status: "CANCELED",
+            version: bru.getVar("eventVersion"),
+          },
+        });
+        bru.setVar("eventVersion", changed.data.version);
+    - type: tests
+      code: |-
+        test("tells which status changes are allowed", function () {
+          const { statusOptions } = res.getBody();
+          expect(statusOptions.DRAFT.disabled).to.equal(true);
+          expect(statusOptions.PUBLISHED.disabled).to.equal(true);
+          expect(statusOptions.CANCELED.disabled).to.equal(false);
+        });
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "200"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

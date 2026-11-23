@@ -1,0 +1,37 @@
+info:
+  name: fail - refresh access token with invalid refresh cookie (401)
+  type: http
+  seq: 3
+
+http:
+  method: GET
+  url: "{{baseUrl}}/auth/access-tk"
+  auth:
+    type: none
+
+runtime:
+  scripts:
+    - type: before-request
+      code: |-
+        // The cookie jar still holds the refresh cookie of an earlier sign-in.
+        await bru.cookies.jar().clear();
+        req.setHeader("Cookie", "refresh_tk=not-a-valid-token");
+    - type: tests
+      code: |-
+        test("answers with the common error body", function () {
+          const error = res.getBody();
+          expect(error.status).to.equal(401);
+          expect(error.message).to.include("The credentials are incorrect.");
+          expect(error.path).to.be.a("string").and.not.be.empty;
+          expect(error.errors).to.deep.equal([]);
+        });
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "401"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

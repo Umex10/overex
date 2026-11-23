@@ -1,6 +1,6 @@
 "use client" 
 
-import { setBreadcrumbs, setShowSearch } from "@/features/shell/route-context-slice";
+import { setBreadcrumbs } from "@/features/shell/route-context-slice";
 import { useAppDispatch } from "@/redux/hooks";
 import { usePathname } from "next/navigation";
 import { useEffect } from "react";

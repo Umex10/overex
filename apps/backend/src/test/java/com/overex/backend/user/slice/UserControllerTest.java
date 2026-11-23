@@ -1,0 +1,134 @@
+package com.overex.backend.user.slice;
+
+import static org.hamcrest.Matchers.containsString;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+import java.util.Optional;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.context.annotation.Import;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.web.servlet.MockMvc;
+
+import com.overex.backend.auth.JwtService;
+import com.overex.backend.auth.security.CustomUserDetailsService;
+import com.overex.backend.auth.security.config.SecurityConfig;
+import com.overex.backend.user.User;
+import com.overex.backend.user.UserRepository;
+import com.overex.backend.user.UserController;
+import com.overex.backend.user.UserService;
+import com.overex.backend.auth.utils.AuthTestClient;
+import com.overex.backend.auth.utils.AuthTestDataFactory;
+import com.overex.backend.auth.utils.TestRsaKeys;
+
+/**
+ * Web-layer test for the protected {@link UserController} routes, exercised
+ * through the real {@link SecurityConfig} filter chain.
+ *
+ * <p>
+ * Two kinds of requests are used:
+ * <ul>
+ * <li>{@code authenticatedAs(...)} puts an already verified JWT into the
+ * security context ({@code jwt()} from spring-security-test). This checks the
+ * controller without token
+ * verification.</li>
+ * <li>Real tokens from {@link JwtService}, signed with {@link TestRsaKeys}, sent
+ * in the {@code Authorization} header. They pass through the whole chain
+ * (filter, JwtDecoder, converter), so token verification is covered too.</li>
+ * </ul>
+ */
+@WebMvcTest(UserController.class)
+@Import({ SecurityConfig.class, CustomUserDetailsService.class, UserService.class, TestRsaKeys.PublicKeyConfig.class })
+public class UserControllerTest {
+
+	@Autowired
+	private MockMvc mockMvc;
+
+	/** Needed by {@link CustomUserDetailsService}, and stubbed for /me lookups. */
+	@MockitoBean
+	private UserRepository userRepository;
+
+	/** Only a tool to create real tokens; built by hand, not a Spring bean. */
+	private JwtService jwtService;
+
+	private final User user = AuthTestDataFactory.createDefaultUser();
+
+	/**
+	 * Builds the token tool with the same key pair whose public key the
+	 * JwtDecoder uses ({@link TestRsaKeys.PublicKeyConfig}).
+	 */
+	@BeforeEach
+	void setUp() {
+		jwtService = new JwtService(TestRsaKeys.privateKey(), TestRsaKeys.publicKey(), userRepository);
+	}
+
+	/**
+	 * The controller reads the user id from the token subject and returns the user.
+	 */
+	@Test
+	void shouldReturnCurrentUser() throws Exception {
+		// Arrange
+		when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
+
+		// Act + Assert
+		mockMvc.perform(get("/me").with(AuthTestClient.authenticatedAs(user)))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.email").value(user.getEmail()))
+				.andExpect(jsonPath("$.role").value("USER"))
+				.andExpect(jsonPath("$.password").doesNotExist());
+	}
+
+	/**
+	 * A valid token whose user was deleted meanwhile: the service throws
+	 * {@code EntityNotFoundException}, the global handler answers 404 in the common
+	 * error envelope.
+	 */
+	@Test
+	void shouldReturn404WhenUserNoLongerExists() throws Exception {
+		// Arrange
+		when(userRepository.findById(user.getId())).thenReturn(Optional.empty());
+
+		// Act + Assert
+		mockMvc.perform(get("/me").with(AuthTestClient.authenticatedAs(user)))
+				.andExpect(status().isNotFound())
+				.andExpect(jsonPath("$.status").value(404))
+				.andExpect(jsonPath("$.message").value("User " + user.getId() + " no longer exists."))
+				.andExpect(jsonPath("$.path").value("/me"));
+	}
+
+	/** Without a token the request is rejected. */
+	@Test
+	void shouldRejectAnonymousAccessToMe() throws Exception {
+		// Act + Assert
+		mockMvc.perform(get("/me"))
+				.andExpect(status().isUnauthorized());
+	}
+
+	/**
+	 * A correctly signed refresh token in the {@code Authorization} header fails
+	 * the {@code type_tk == ACCESS} check in the JwtDecoder; the controller is
+	 * never reached.
+	 */
+	@Test
+	void shouldRejectRefreshTkUsedAsAccessTk() throws Exception {
+		// Arrange
+		String refreshTk = jwtService.createRefreshTk(user);
+
+		// Act + Assert
+		mockMvc.perform(get("/me")
+				.header("Authorization", "Bearer " + refreshTk))
+				.andExpect(status().isUnauthorized())
+				.andExpect(header().string("WWW-Authenticate", containsString("invalid_token")));
+
+		// proves the request was stopped before the controller looked up the user
+		verifyNoInteractions(userRepository);
+	}
+}

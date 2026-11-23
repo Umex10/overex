@@ -40,6 +40,7 @@ public class JwksControllerTest {
 	/** Without a token, the JWKS contains exactly one RSA signing key (n, e) and nothing private. */
 	@Test
 	void shouldCreateJwksJson() throws Exception {
+		// Act + Assert
 		mockMvc.perform(get("/.well-known/jwks.json"))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.keys").isArray())

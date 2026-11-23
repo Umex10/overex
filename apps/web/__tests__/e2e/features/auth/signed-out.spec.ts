@@ -23,14 +23,13 @@ test.describe("Signed out", () => {
     await expect(page).toHaveURL("/events");
   });
 
-   test("redirects a guest from a protected route to sign-in", async ({ page }) => {
+  test("redirects a guest from a protected route to sign-in", async ({ page }) => {
     // Act
     await page.goto("/my-tickets");
 
     // Assert
     await expect(page).toHaveURL("/sign-in");
   });
-
 
   test("signs a new user up and in, without a field to choose a role", async ({ page }) => {
     // Arrange

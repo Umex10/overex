@@ -46,7 +46,7 @@ main packages). Inside each feature they are split into three layers, plus a
 **Slice** (`<feature>/slice/`, `@WebMvcTest`: only the web layer, services mocked):
 - `auth/slice/AuthControllerTest`: the three `/auth` endpoints, error envelopes, bean validation
 - `auth/slice/JwksControllerTest`: the public JWKS endpoint, without any private key material
-- `user/slice/MeControllerTest`: `/me` and `/admin/ping` through the real `SecurityConfig`, with real signed tokens and `@PreAuthorize`
+- `user/slice/UserControllerTest`: `/me` and `/admin/ping` through the real `SecurityConfig`, with real signed tokens and `@PreAuthorize`
 - `event/slice/EventControllerTest`: the `/events` CRUD endpoints, 404 and 400 (bean validation and business rules) error envelopes
 
 **Integration** (`<feature>/integration/`, the whole app, nothing mocked):
@@ -120,7 +120,7 @@ npm run test:e2e
 ```
 
 What that command does:
-1. `docker compose -f docker-compose.test.yml up -d` — starts the throwaway DB on port **5433**.
+1. `docker compose -f docker-compose.test.yml up -d --wait` — starts the throwaway DB on port **5433** and waits until it accepts connections (healthcheck).
 2. Playwright starts **both** servers (backend via `./mvnw`, frontend via
    `next build` + `next start` into its own `.next-e2e` folder) and waits until
    each answers. Servers are never reused, so every run starts with an empty

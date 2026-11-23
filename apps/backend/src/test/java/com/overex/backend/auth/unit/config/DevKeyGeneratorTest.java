@@ -46,11 +46,14 @@ public class DevKeyGeneratorTest {
 	 */
 	@Test
 	void shouldCreateMatchingKeyPairWhenBothFilesAreMissing() {
+		// Arrange
 		Path privateFile = dir.resolve("keys/private.pem");
 		Path publicFile = dir.resolve("keys/public.pem");
 
+		// Act
 		start(environment(true, privateFile, publicFile));
 
+		// Assert
 		assertTrue(Files.exists(privateFile));
 		assertTrue(Files.exists(publicFile));
 		// The files are readable the way KeyConfig reads them, and belong together:
@@ -67,6 +70,7 @@ public class DevKeyGeneratorTest {
 	 */
 	@Test
 	void shouldUnderstandFileLocationsInUriForm() {
+		// Arrange
 		Path privateFile = dir.resolve("private.pem");
 		Path publicFile = dir.resolve("public.pem");
 		MockEnvironment env = new MockEnvironment()
@@ -74,8 +78,10 @@ public class DevKeyGeneratorTest {
 				.withProperty("jwt.private-key-location", privateFile.toUri().toString())
 				.withProperty("jwt.public-key-location", publicFile.toUri().toString());
 
+		// Act
 		start(env);
 
+		// Assert
 		assertTrue(Files.exists(privateFile));
 		assertTrue(Files.exists(publicFile));
 	}
@@ -83,13 +89,16 @@ public class DevKeyGeneratorTest {
 	/** Existing keys are never replaced: that would invalidate every issued token. */
 	@Test
 	void shouldKeepExistingKeys() throws IOException {
+		// Arrange
 		Path privateFile = dir.resolve("private.pem");
 		Path publicFile = dir.resolve("public.pem");
 		Files.writeString(privateFile, "existing private key");
 		Files.writeString(publicFile, "existing public key");
 
+		// Act
 		start(environment(true, privateFile, publicFile));
 
+		// Assert
 		assertEquals("existing private key", Files.readString(privateFile));
 		assertEquals("existing public key", Files.readString(publicFile));
 	}
@@ -100,12 +109,15 @@ public class DevKeyGeneratorTest {
 	 */
 	@Test
 	void shouldNotCompleteAHalfPair() throws IOException {
+		// Arrange
 		Path privateFile = dir.resolve("private.pem");
 		Path publicFile = dir.resolve("public.pem");
 		Files.writeString(privateFile, "existing private key");
 
+		// Act
 		start(environment(true, privateFile, publicFile));
 
+		// Assert
 		assertFalse(Files.exists(publicFile));
 		assertEquals("existing private key", Files.readString(privateFile));
 	}
@@ -113,11 +125,14 @@ public class DevKeyGeneratorTest {
 	/** Switch off (as in the Docker image): missing keys stay missing. */
 	@Test
 	void shouldDoNothingWhenSwitchedOff() {
+		// Arrange
 		Path privateFile = dir.resolve("private.pem");
 		Path publicFile = dir.resolve("public.pem");
 
+		// Act
 		start(environment(false, privateFile, publicFile));
 
+		// Assert
 		assertFalse(Files.exists(privateFile));
 		assertFalse(Files.exists(publicFile));
 	}
@@ -128,14 +143,17 @@ public class DevKeyGeneratorTest {
 	 */
 	@Test
 	void shouldDoNothingWhenSwitchIsNotConfigured() {
+		// Arrange
 		Path privateFile = dir.resolve("private.pem");
 		Path publicFile = dir.resolve("public.pem");
 		MockEnvironment env = new MockEnvironment()
 				.withProperty("jwt.private-key-location", "file:" + privateFile)
 				.withProperty("jwt.public-key-location", "file:" + publicFile);
 
+		// Act
 		start(env);
 
+		// Assert
 		assertFalse(Files.exists(privateFile));
 		assertFalse(Files.exists(publicFile));
 	}
@@ -146,22 +164,27 @@ public class DevKeyGeneratorTest {
 	 */
 	@Test
 	void shouldIgnoreLocationsThatAreNoFiles() {
+		// Arrange
 		MockEnvironment env = new MockEnvironment()
 				.withProperty("jwt.generate-missing-keys", "true")
 				.withProperty("jwt.private-key-location", "classpath:keys/private.pem")
 				.withProperty("jwt.public-key-location", "classpath:keys/public.pem");
 
+		// Act
 		start(env);
 
+		// Assert
 		assertFalse(Files.exists(dir.resolve("keys")));
 	}
 
 	/** Without a key location the app cannot run at all, so startup stops right here. */
 	@Test
 	void shouldFailWhenKeyLocationIsMissing() {
+		// Arrange
 		MockEnvironment env = new MockEnvironment()
 				.withProperty("jwt.generate-missing-keys", "true");
 
+		// Act + Assert
 		assertThrows(IllegalStateException.class, () -> start(env));
 	}
 

@@ -3,11 +3,13 @@ import { defineConfig, devices } from "@playwright/test";
 /**
  * Playwright config for Overex's end-to-end tests.
  *
- * Two projects run in sequence:
+ * Three projects run in sequence:
  *   1. `setup` registers the bootstrap account and saves its storage state
  *      (the refresh cookie).
  *   2. `features` reuses that storage state, so its specs start signed in.
  *      Specs that need a signed-out browser reset the state themselves.
+ *   3. `my-events` creates events. They also show up in the public list, whose
+ *      exact content `features` checks, so it only starts after `features`.
  *
  * Everything runs on its own ports, next to a normal dev setup:
  *   - test database on 5433 (docker-compose.test.yml, started by `test:e2e`),
@@ -69,12 +71,18 @@ export default defineConfig({
     },
     {
       name: "features",
-      testIgnore: [/auth\.setup\.ts/],
+      testIgnore: [/auth\.setup\.ts/, /my-events\.spec\.ts/],
       use: {
         ...devices["Desktop Chrome"],
         storageState: "playwright/.auth/chromium.json",
       },
       dependencies: ["setup"],
+    },
+    {
+      name: "my-events",
+      testMatch: /my-events\.spec\.ts/,
+      use: { ...devices["Desktop Chrome"] },
+      dependencies: ["features"],
     },
   ],
   // Playwright starts BOTH servers and waits until each answers before running

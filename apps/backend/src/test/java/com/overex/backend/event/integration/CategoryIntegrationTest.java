@@ -9,7 +9,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -81,8 +80,10 @@ public class CategoryIntegrationTest {
     @Test
     void shouldGetCategories() throws Exception {
 
+        // Arrange
         String accessTk = AuthTestClient.signUpAndReturnAccessTk(mockMvc, objectMapper);
 
+        // Act + Assert
         mockMvc.perform(get("/categories").header("Authorization", "Bearer " + accessTk))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(categories.size())))

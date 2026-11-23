@@ -61,6 +61,7 @@ public class AuthControllerTest {
 	/** A successful sign-up returns 201 with an access token and its lifetime. */
 	@Test
 	void shouldSignUpAccount() throws Exception {
+		// Arrange
 		SignUpAccountRequestDto dto = AuthTestDataFactory.createSignUpDto();
 		String jsonRequest = objectMapper.writeValueAsString(dto);
 
@@ -68,6 +69,7 @@ public class AuthControllerTest {
 		when(jwtService.createAccessTk(any())).thenReturn("mock-access-token");
 		when(jwtService.createRefreshTk(any())).thenReturn("mock-refresh-token");
 
+		// Act + Assert
 		mockMvc.perform(post("/auth/sign-up")
 				.contentType(MediaType.APPLICATION_JSON)
 				.content(jsonRequest))
@@ -81,12 +83,14 @@ public class AuthControllerTest {
 	/** Only the email is taken: 400 with exactly one field error for {@code email}. */
 	@Test
 	void shouldNotSignUpAccountWithSingleWrongField() throws Exception {
+		// Arrange
 		SignUpAccountRequestDto dto = AuthTestDataFactory.createSignUpDto();
 		String jsonRequest = objectMapper.writeValueAsString(dto);
 		List<ApiError.FieldError> errors = List.of(
 				ApiError.FieldError.builder().field("email").message("The used email is already taken.").build());
 		when(authService.signUp(dto)).thenThrow(new OwnException(errors));
 
+		// Act + Assert
 		mockMvc.perform(post("/auth/sign-up")
 				.contentType(MediaType.APPLICATION_JSON)
 				.content(jsonRequest))
@@ -99,6 +103,7 @@ public class AuthControllerTest {
 	/** Taken email and phone come back as 400 with one field error each. */
 	@Test
 	void shouldNotSignUpAccountWithMultipleWrongFields() throws Exception {
+		// Arrange
 		SignUpAccountRequestDto dto = AuthTestDataFactory.createSignUpDto();
 		String jsonRequest = objectMapper.writeValueAsString(dto);
 		List<ApiError.FieldError> errors = List.of(
@@ -106,6 +111,7 @@ public class AuthControllerTest {
 				ApiError.FieldError.builder().field("phone").message("The used phone is already taken.").build());
 		when(authService.signUp(dto)).thenThrow(new OwnException(errors));
 
+		// Act + Assert
 		mockMvc.perform(post("/auth/sign-up")
 				.contentType(MediaType.APPLICATION_JSON)
 				.content(jsonRequest))
@@ -121,10 +127,12 @@ public class AuthControllerTest {
 	 */
 	@Test
 	void shouldRejectInvalidSignUpPayload() throws Exception {
+		// Arrange
 		// Missing/blank fields must be rejected by bean validation and surfaced
 		// in the same ApiError shape (errors[].field) the frontend already maps.
 		String invalidJson = "{\"name\":\"\",\"email\":\"not-an-email\",\"phone\":\"\",\"password\":\"123\"}";
 
+		// Act + Assert
 		mockMvc.perform(post("/auth/sign-up")
 				.contentType(MediaType.APPLICATION_JSON)
 				.content(invalidJson))
@@ -136,12 +144,14 @@ public class AuthControllerTest {
 	/** A successful sign-in returns 200 with an access token and its lifetime. */
 	@Test
 	void shouldSignIn() throws Exception {
+		// Arrange
 		SignInAccountRequestDto dto = AuthTestDataFactory.createSignInDto();
 		String jsonRequest = objectMapper.writeValueAsString(dto);
 		when(authService.authenticate(any(), any())).thenReturn(user);
 		when(jwtService.createAccessTk(any())).thenReturn("mock-access-token");
 		when(jwtService.createRefreshTk(any())).thenReturn("mock-refresh-token");
 
+		// Act + Assert
 		mockMvc.perform(post("/auth/sign-in")
 				.contentType(MediaType.APPLICATION_JSON)
 				.content(jsonRequest))
@@ -155,18 +165,20 @@ public class AuthControllerTest {
 	/** Wrong credentials return 401 without field errors. */
 	@Test
 	void shouldNotSignIn() throws Exception {
+		// Arrange
 		SignInAccountRequestDto dto = AuthTestDataFactory.createSignInDto();
 		String jsonRequest = objectMapper.writeValueAsString(dto);
 
 		when(authService.authenticate(any(), any())).thenThrow(new BadCredentialsException("Invalid credentials"));
 
+		// Act + Assert
 		mockMvc.perform(post("/auth/sign-in")
 				.contentType(MediaType.APPLICATION_JSON)
 				.content(jsonRequest))
 				.andExpect(status().isUnauthorized())
 				.andExpect(jsonPath("$.status").value(401))
 				// no field errors: the response must not reveal whether the email exists
-				.andExpect(jsonPath("$.errors").doesNotExist());
+				.andExpect(jsonPath("$.errors").isEmpty());
 	}
 
 	/**
@@ -176,28 +188,33 @@ public class AuthControllerTest {
 	 */
 	@Test
 	void shouldNotSignInAndTriggerLastResortExceptionHandler() throws Exception {
+		// Arrange
 		SignInAccountRequestDto dto = AuthTestDataFactory.createSignInDto();
 		String jsonRequest = objectMapper.writeValueAsString(dto);
 
 		when(authService.authenticate(any(), any()))
 				.thenThrow(new RuntimeException("Triggered last resort exception handler"));
 
+		// Act + Assert
 		mockMvc.perform(post("/auth/sign-in")
 				.contentType(MediaType.APPLICATION_JSON)
 				.content(jsonRequest))
 				.andExpect(status().isInternalServerError())
 				.andExpect(jsonPath("$.status").value(500))
-				.andExpect(jsonPath("$.error").value("Internal Server Error"))
+				// a fixed text, never the internal exception message
+				.andExpect(jsonPath("$.message").value("Something went wrong. Please try again later."))
 				.andExpect(jsonPath("$.path").value("/auth/sign-in"));
 	}
 
 	/** A valid refresh cookie is exchanged for a new access token. */
 	@Test
 	void shouldCreateAccessTk() throws Exception {
+		// Arrange
 		when(jwtService.extractRefreshTk(any())).thenReturn("Token");
 		when(jwtService.validateRefreshTk(any())).thenReturn(user);
 		when(jwtService.createAccessTk(any())).thenReturn("mock-access-token");
 
+		// Act + Assert
 		mockMvc.perform(get("/auth/access-tk"))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.accessTk").isString())
@@ -209,9 +226,11 @@ public class AuthControllerTest {
 	/** An invalid refresh cookie (wrong type, user gone, ...) returns 401. */
 	@Test
 	void shouldRejectRefreshTk() throws Exception {
+		// Arrange
 		when(jwtService.extractRefreshTk(any())).thenReturn("Token");
 		when(jwtService.validateRefreshTk(any())).thenThrow(new BadCredentialsException("Invalid refresh token"));
 
+		// Act + Assert
 		mockMvc.perform(get("/auth/access-tk"))
 				.andExpect(status().isUnauthorized());
 	}
@@ -219,8 +238,10 @@ public class AuthControllerTest {
 	/** Without a refresh cookie the request is rejected with 401. */
 	@Test
 	void shouldNotCreateAccessTkWithNullRefreshTk() throws Exception {
+		// Arrange
 		when(jwtService.extractRefreshTk(any())).thenReturn(null);
 
+		// Act + Assert
 		mockMvc.perform(get("/auth/access-tk"))
 				.andExpect(status().isUnauthorized());
 	}
@@ -228,8 +249,10 @@ public class AuthControllerTest {
 	/** A refresh cookie that is present but empty is treated like a missing one: 401. */
 	@Test
 	void shouldNotCreateAccessTkWithEmptyRefreshTk() throws Exception {
+		// Arrange
 		when(jwtService.extractRefreshTk(any())).thenReturn("");
 
+		// Act + Assert
 		mockMvc.perform(get("/auth/access-tk"))
 				.andExpect(status().isUnauthorized());
 	}

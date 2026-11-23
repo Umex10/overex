@@ -39,11 +39,11 @@ export function CountdownCards({
 
 function CountdownCard({ value, label }: { value: number; label: string }) {
   return (
-    <div className="flex flex-col items-center rounded-lg border bg-muted/40 px-2 py-2">
+    <div className="flex flex-col items-center rounded-lg border bg-muted/40 px-2 py-2.5">
       {/* tabular-nums: all digits have the same width, so the tile doesn't
           jitter while the seconds change. */}
       <span className="text-2xl font-bold tabular-nums">{zeroPad(value)}</span>
-      <span className="text-[10px] tracking-wide text-muted-foreground uppercase">
+      <span className="text-xs tracking-wide text-muted-foreground uppercase">
         {label}
       </span>
     </div>

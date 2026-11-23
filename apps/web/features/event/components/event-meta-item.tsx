@@ -1,8 +1,8 @@
-import type { Icon } from "@phosphor-icons/react";
+import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface EventMetaItemProps {
-  icon: Icon;
+  icon: LucideIcon;
   children: React.ReactNode;
   className?: string;
 }

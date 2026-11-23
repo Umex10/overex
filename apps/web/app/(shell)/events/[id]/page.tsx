@@ -1,9 +1,9 @@
 "use client";
 import { useGetEventQuery } from "@/features/event/event-api";
-import { setBreadcrumbs, setShowSearch } from "@/features/shell/route-context-slice";
+import { setShowSearch } from "@/features/shell/route-context-slice";
 import { useAppDispatch } from "@/redux/hooks";
-import { useParams, usePathname } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useParams } from "next/navigation";
+import { useEffect, useState } from "react";
 
 import { useIsMobile } from "@/hooks/use-mobile";
 import BreadcrumbsContainer from "@/features/shell/components/breadcrumbs-container";
@@ -11,14 +11,14 @@ import Image from "next/image";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
-import { CalendarBlankIcon, ClockIcon, MapPinIcon } from "@phosphor-icons/react";
+import { CalendarIcon, ClockIcon, MapPinIcon } from "lucide-react";
 import DateFormat from "@/features/event/components/date-format";
 import TimeFormat from "@/features/event/components/time-format";
 import EventMetaItem from "@/features/event/components/event-meta-item";
 
 export default function EventDetailsPage() {
   const { id } = useParams<{ id: string }>();
-  const { data: event, isLoading: isLoadingEvent } = useGetEventQuery(id);
+  const { data, isLoading: isLoadingEvent } = useGetEventQuery(id);
 
   const dispatch = useAppDispatch();
 
@@ -34,12 +34,14 @@ export default function EventDetailsPage() {
     return <p className="w-full text-center">Loading Event...</p>;
   }
 
-  if (!event) {
+  if (!data) {
     return <p className="w-full text-center">{`The Event with the id: ${id} doesn't exist.`}</p>;
   }
+  
+  const event = data.event;
 
   return (
-    <div className="w-full flex flex-col justify-start gap-3">
+    <div className="w-full flex flex-col justify-start gap-4">
       {isMobile && <BreadcrumbsContainer></BreadcrumbsContainer>}
 
       <Image
@@ -57,10 +59,10 @@ export default function EventDetailsPage() {
         Almost sold
       </Badge>
 
-      <h3 className="line-clamp-2 text-2xl font-bold">{event.title}</h3>
+      <h3 className="line-clamp-2 text-2xl font-extrabold tracking-tight md:text-3xl">{event.title}</h3>
 
-      <div className="w-full flex flex-col justify-start gap-1 text-slate-400">
-        <EventMetaItem icon={CalendarBlankIcon}>
+      <div className="w-full flex flex-col justify-start gap-2 text-muted-foreground">
+        <EventMetaItem icon={CalendarIcon}>
           <DateFormat dateToFormat={event.startsAt} weekdayType="long" />
         </EventMetaItem>
 
@@ -75,14 +77,14 @@ export default function EventDetailsPage() {
 
       <div>
         <p
-          className={`text-base text-slate-400 ${showMore ? "line-clamp-none" : "line-clamp-5"}`}
+          className={`text-base leading-relaxed text-muted-foreground ${showMore ? "line-clamp-none" : "line-clamp-5"}`}
         >
           {event.description}
         </p>
 
         <Button
           variant="ghost"
-          className="bg-transparent text-primary p-0 text-sm"
+          className="h-auto bg-transparent p-0 py-2 text-primary"
           onClick={() => setShowMore(!showMore)}
         >
           {showMore ? "Weniger anzeigen" : "Mehr Anzeigen"}
@@ -91,7 +93,7 @@ export default function EventDetailsPage() {
 
       <Badge
         variant="secondary"
-        className="w-full rounded-xl p-6 bg-emerald-400/60 text-lg"
+        className="h-auto w-full justify-start whitespace-normal rounded-xl bg-emerald-400/60 px-4 py-3 text-base"
       >
         <strong>Verkaufsstart: </strong>
         <DateFormat dateToFormat={event.saleStartsAt} weekdayType="long" />

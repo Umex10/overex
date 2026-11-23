@@ -37,18 +37,6 @@ public final class AuthTestDataFactory {
 				.build();
 	}
 
-	/** Same as {@link #createDefaultUser()} but with the {@code ADMIN} role. */
-	public static User createAdminUser() {
-		return User.builder()
-				.id(UUID.fromString("22222222-2222-2222-2222-222222222222"))
-				.name("Ada Admin")
-				.email("admin@mail.com")
-				.phone("+43987654321")
-				.password("hashed-password")
-				.role(Role.ADMIN)
-				.build();
-	}
-
 	/** A valid sign-up payload matching {@link #createDefaultUser()}. */
 	public static SignUpAccountRequestDto createSignUpDto() {
 		return SignUpAccountRequestDto.builder()
@@ -64,14 +52,6 @@ public final class AuthTestDataFactory {
 		return SignInAccountRequestDto.builder()
 				.email("test@mail.com")
 				.password("ClearPassword")
-				.build();
-	}
-
-	/** A valid sign-in payload for the admin of {@link #createAdminUser()}, with the clear password "AdminPassword". */
-	public static SignInAccountRequestDto createAdminSignInDto() {
-		return SignInAccountRequestDto.builder()
-				.email("admin@mail.com")
-				.password("AdminPassword")
 				.build();
 	}
 }

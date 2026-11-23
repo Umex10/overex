@@ -3,10 +3,7 @@ package com.overex.backend.user.dto;
 import com.overex.backend.user.Role;
 import com.overex.backend.user.User;
 
-import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 
 /**
  * Safe projection of a {@link User} returned to authenticated clients.
@@ -14,16 +11,8 @@ import lombok.NoArgsConstructor;
  * <p>Deliberately omits the password hash. This is what {@code GET /me} returns
  * so the frontend can greet the user and render role-aware UI.
  */
-@Data
 @Builder
-@AllArgsConstructor
-@NoArgsConstructor
-public class UserResponseDto {
-
-	private String name;
-	private String email;
-	private String phone;
-	private Role role;
+public record UserResponseDto(String name, String email, String phone, Role role) {
 
 	/**
 	 * Maps a persisted {@link User} onto the password-free response projection.

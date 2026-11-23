@@ -1,0 +1,35 @@
+info:
+  name: ok - get public key for token verification (200)
+  type: http
+  seq: 1
+
+http:
+  method: GET
+  url: "{{baseUrl}}/.well-known/jwks.json"
+  auth:
+    type: none
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("returns one RS256 signature key", function () {
+          const key = res.getBody().keys[0];
+          expect(key.kty).to.equal("RSA");
+          expect(key.use).to.equal("sig");
+          expect(key.alg).to.equal("RS256");
+        });
+
+        test("never exposes private key parts", function () {
+          expect(res.getBody().keys[0]).to.not.have.any.keys("d", "p", "q", "dp", "dq", "qi");
+        });
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "200"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

@@ -23,7 +23,7 @@ flowchart TB
     subgraph "Spring Boot — Overex API (/api/v1)"
         SEC["SecurityConfig<br/>OAuth2 resource server (JwtDecoder)"]
         AUTH["AuthController /auth/**"]
-        ME["MeController /me, /admin/**"]
+        ME["UserController /me, /admin/**"]
         JWKS["JwksController<br/>/.well-known/jwks.json"]
         JWT["JwtService<br/>signs with the private key"]
         KEYS["KeyConfig<br/>RSA key pair from PEM files"]
@@ -187,7 +187,7 @@ sequenceDiagram
 
 All of this is Spring Security's built-in **OAuth2 resource server**, configured
 in `SecurityConfig`; there is no custom filter. The token alone is enough: no
-database lookup happens before the controller. `MeController` reads the user id
+database lookup happens before the controller. `UserController` reads the user id
 from the token's `sub` claim. See [SECURITY.md](SECURITY.md) for the details.
 
 > Want the *fully detailed* call graph — every hop from controller through

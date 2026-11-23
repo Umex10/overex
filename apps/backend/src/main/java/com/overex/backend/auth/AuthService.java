@@ -57,7 +57,7 @@ public class AuthService {
 		// Collect every uniqueness violation first, so the client can fix all
 		// offending fields at once instead of one failed request at a time.
 		List<ApiError.FieldError> fieldErrors = new ArrayList<>();
-		String email = normalizeEmail(signUpAccountRequestDto.getEmail());
+		String email = normalizeEmail(signUpAccountRequestDto.email());
 
 		if (userRepository.findByEmail(email).isPresent()) {
 			fieldErrors.add(ApiError.FieldError.builder()
@@ -66,7 +66,7 @@ public class AuthService {
 					.build());
 		}
 
-		if (userRepository.findByPhone(signUpAccountRequestDto.getPhone()).isPresent()) {
+		if (userRepository.findByPhone(signUpAccountRequestDto.phone()).isPresent()) {
 			fieldErrors.add(ApiError.FieldError.builder()
 					.field("phone")
 					.message("The used phone is already taken.")
@@ -77,12 +77,12 @@ public class AuthService {
 			throw new OwnException(fieldErrors);
 		}
 
-		String encoded = encoder.encode(signUpAccountRequestDto.getPassword());
+		String encoded = encoder.encode(signUpAccountRequestDto.password());
 
 		User newUser = User.builder()
-				.name(signUpAccountRequestDto.getName())
+				.name(signUpAccountRequestDto.name())
 				.email(email)
-				.phone(signUpAccountRequestDto.getPhone())
+				.phone(signUpAccountRequestDto.phone())
 				.role(Role.USER)
 				.password(encoded)
 				.build();

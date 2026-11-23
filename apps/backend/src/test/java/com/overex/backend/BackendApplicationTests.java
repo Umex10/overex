@@ -44,5 +44,6 @@ class BackendApplicationTests {
 	/** Passes as soon as the context has started; JUnit fails it if the start throws. */
 	@Test
 	void contextLoads() {
+		// Act + Assert: the test passes as soon as the application context starts
 	}
 }

@@ -1,0 +1,23 @@
+info:
+  name: fail - delete event with invalid access token (401)
+  type: http
+  seq: 5
+
+http:
+  method: DELETE
+  url: "{{baseUrl}}/events/{{eventId}}"
+  auth:
+    type: bearer
+    token: "not-a-valid-token"
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "401"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

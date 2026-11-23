@@ -118,7 +118,6 @@ export default function SignUpPage() {
                       placeholder="Mario Kaya"
                       autoComplete="name"
                       aria-invalid={fieldState.invalid}
-                      className="h-auto rounded-lg px-3.5 py-2.5 text-sm"
                     />
                     {fieldState.invalid && (
                       <FieldError
@@ -144,7 +143,6 @@ export default function SignUpPage() {
                       placeholder="name@example.com"
                       autoComplete="email"
                       aria-invalid={fieldState.invalid}
-                      className="h-auto rounded-lg px-3.5 py-2.5 text-sm"
                     />
                     {fieldState.invalid && (
                       <FieldError
@@ -170,7 +168,6 @@ export default function SignUpPage() {
                       placeholder="+43 660 1234567"
                       autoComplete="tel"
                       aria-invalid={fieldState.invalid}
-                      className="h-auto rounded-lg px-3.5 py-2.5 text-sm"
                     />
                     {fieldState.invalid && (
                       <FieldError
@@ -197,13 +194,12 @@ export default function SignUpPage() {
                         placeholder="At least 8 characters"
                         autoComplete="new-password"
                         aria-invalid={fieldState.invalid}
-                        className="h-auto rounded-lg px-3.5 py-2.5 text-sm"
                       />
                       <Button
                         type="button"
                         variant="outline"
                         onClick={() => setShowPassword((p) => !p)}
-                        className="h-auto rounded-lg px-3 text-xs"
+                        className="h-auto px-3.5"
                       >
                         {showPassword ? "Hide" : "Show"}
                       </Button>

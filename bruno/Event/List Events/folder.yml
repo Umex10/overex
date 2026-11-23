@@ -1,0 +1,7 @@
+info:
+  name: List Events
+  type: folder
+  seq: 2
+
+request:
+  auth: inherit

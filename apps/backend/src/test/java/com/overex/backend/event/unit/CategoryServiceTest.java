@@ -1,6 +1,5 @@
 package com.overex.backend.event.unit;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
@@ -33,12 +32,15 @@ public class CategoryServiceTest {
     @Test
     void shouldGetCategories() {
 
+        // Arrange
         List<Category> categories = CategoryTestDataFactory.createCategoryList();
 
         when(categoryRepository.findAll()).thenReturn(categories);
 
+        // Act
         List<Category> foundCategories = categoryService.getCategories();
 
+        // Assert
         assertSame(categories, foundCategories);
 
     }
@@ -46,19 +48,25 @@ public class CategoryServiceTest {
     @Test
     void shouldGetCategory() {
 
+        // Arrange
         Category category = CategoryTestDataFactory.createDefaultCategory();
 
         when(categoryRepository.findById(category.getId())).thenReturn(Optional.of(category));
 
+        // Act
         Category foundCategory = categoryService.getCategory(category.getId());
+
+        // Assert
         assertSame(category, foundCategory);
     }
 
     @Test
     void shouldNotGetCategory() {
 
+        // Arrange
         when(categoryRepository.findById(any())).thenReturn(Optional.empty());
 
+        // Act + Assert
         assertThrows(OwnException.class,
                 () -> categoryService.getCategory(any()));
     }
