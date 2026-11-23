@@ -1,0 +1,45 @@
+info:
+  name: fail - sign up with taken email and phone (400)
+  type: http
+  seq: 2
+
+http:
+  method: POST
+  url: "{{baseUrl}}/auth/sign-up"
+  body:
+    type: json
+    data: |-
+      {
+        "name": "Bruno Test",
+        "email": "mario@overex.test",
+        "phone": "+436601234567",
+        "password": "Kennwort123!"
+      }
+  auth:
+    type: none
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("names email as the invalid field and says why", function () {
+          const error = res.getBody().errors.find((e) => e.field === "email");
+          expect(error, "error on email").to.exist;
+          expect(error.message).to.equal("The used email is already taken.");
+        });
+
+        test("names phone as the invalid field and says why", function () {
+          const error = res.getBody().errors.find((e) => e.field === "phone");
+          expect(error, "error on phone").to.exist;
+          expect(error.message).to.equal("The used phone is already taken.");
+        });
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "400"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

@@ -1,0 +1,41 @@
+info:
+  name: ok - refresh access token with refresh cookie (200)
+  type: http
+  seq: 1
+
+http:
+  method: GET
+  url: "{{baseUrl}}/auth/access-tk"
+  auth:
+    type: none
+
+runtime:
+  scripts:
+    - type: before-request
+      code: |-
+        // The cookie jar still holds the refresh cookie of an earlier sign-in.
+        await bru.cookies.jar().clear();
+        const signIn = await bru.sendRequest({
+          method: "POST",
+          url: `${bru.getEnvVar("baseUrl")}/auth/sign-in`,
+          data: { email: "mario@overex.test", password: "Kennwort123!" },
+        });
+        await bru.cookies.jar().clear();
+        const cookie = [].concat(signIn.headers["set-cookie"]).find((c) => c.startsWith("refresh_tk="));
+        req.setHeader("Cookie", cookie.split(";")[0]);
+    - type: tests
+      code: |-
+        test("returns an access token that is valid for 15 minutes", function () {
+          expect(res.getBody().accessTk.split(".")).to.have.lengthOf(3);
+          expect(res.getBody().expiresIn).to.equal(900);
+        });
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "200"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

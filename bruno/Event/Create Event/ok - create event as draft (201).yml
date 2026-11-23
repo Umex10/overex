@@ -1,0 +1,58 @@
+info:
+  name: ok - create event as draft (201)
+  type: http
+  seq: 1
+
+http:
+  method: POST
+  url: "{{baseUrl}}/events"
+  body:
+    type: json
+    data: |-
+      {
+        "title": "Bruno Testevent",
+        "description": "Created by the Bruno collection.",
+        "categoryId": "{{categoryId}}",
+        "venue": "Green Park",
+        "city": "St. Pölten",
+        "startsAt": "2099-08-12T14:00:00Z",
+        "saleStartsAt": "2099-03-01T10:00:00Z",
+        "imageUrl": "https://images.unsplash.com/photo-1459749411175-04bf5292ceea",
+        "status": "DRAFT"
+      }
+  auth:
+    type: bearer
+    token: "{{accessTk}}"
+
+runtime:
+  scripts:
+    - type: after-response
+      code: |-
+        // So the folder script removes the event again.
+        bru.setVar("eventId", res.getBody().id);
+    - type: tests
+      code: |-
+        test("returns the new event as a draft", function () {
+          const event = res.getBody();
+          expect(event.id).to.match(/^[0-9a-f-]{36}$/);
+          expect(event.status).to.equal("DRAFT");
+          expect(event.version).to.equal(0);
+        });
+
+        test("stores the sent values and the category", function () {
+          const event = res.getBody();
+          expect(event.title).to.equal("Bruno Testevent");
+          expect(event.city).to.equal("St. Pölten");
+          expect(event.startsAt).to.equal("2099-08-12T14:00:00Z");
+          expect(event.category.id).to.equal(bru.getVar("categoryId"));
+        });
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "201"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

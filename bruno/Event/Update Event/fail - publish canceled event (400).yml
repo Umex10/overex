@@ -1,0 +1,87 @@
+info:
+  name: fail - publish canceled event (400)
+  type: http
+  seq: 8
+
+http:
+  method: PATCH
+  url: "{{baseUrl}}/events/{{eventId}}"
+  body:
+    type: json
+    data: |-
+      {
+        "title": "Bruno Testevent",
+        "description": "Created by the Bruno collection.",
+        "categoryId": "{{categoryId}}",
+        "venue": "Green Park",
+        "city": "St. Pölten",
+        "startsAt": "2099-08-12T14:00:00Z",
+        "saleStartsAt": "2099-03-01T10:00:00Z",
+        "imageUrl": "https://images.unsplash.com/photo-1459749411175-04bf5292ceea",
+        "status": "PUBLISHED",
+        "version": {{eventVersion}}
+      }
+  auth:
+    type: bearer
+    token: "{{accessTk}}"
+
+runtime:
+  scripts:
+    - type: before-request
+      code: |-
+        // Arrange: publish the draft first.
+        const published = await bru.sendRequest({
+          method: "PATCH",
+          url: `${bru.getEnvVar("baseUrl")}/events/${bru.getVar("eventId")}`,
+          headers: { Authorization: `Bearer ${bru.getVar("accessTk")}` },
+          data: {
+            title: "Bruno Testevent",
+            description: "Created by the Bruno collection.",
+            categoryId: bru.getVar("categoryId"),
+            venue: "Green Park",
+            city: "St. Pölten",
+            startsAt: "2099-08-12T14:00:00Z",
+            saleStartsAt: "2099-03-01T10:00:00Z",
+            imageUrl: "https://images.unsplash.com/photo-1459749411175-04bf5292ceea",
+            status: "PUBLISHED",
+            version: bru.getVar("eventVersion"),
+          },
+        });
+        bru.setVar("eventVersion", published.data.version);
+
+        // Arrange: then cancel it.
+        const changed = await bru.sendRequest({
+          method: "PATCH",
+          url: `${bru.getEnvVar("baseUrl")}/events/${bru.getVar("eventId")}`,
+          headers: { Authorization: `Bearer ${bru.getVar("accessTk")}` },
+          data: {
+            title: "Bruno Testevent",
+            description: "Created by the Bruno collection.",
+            categoryId: bru.getVar("categoryId"),
+            venue: "Green Park",
+            city: "St. Pölten",
+            startsAt: "2099-08-12T14:00:00Z",
+            saleStartsAt: "2099-03-01T10:00:00Z",
+            imageUrl: "https://images.unsplash.com/photo-1459749411175-04bf5292ceea",
+            status: "CANCELED",
+            version: bru.getVar("eventVersion"),
+          },
+        });
+        bru.setVar("eventVersion", changed.data.version);
+    - type: tests
+      code: |-
+        test("names status as the invalid field and says why", function () {
+          const error = res.getBody().errors.find((e) => e.field === "status");
+          expect(error, "error on status").to.exist;
+          expect(error.message).to.equal("A canceled event can't be published again.");
+        });
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "400"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

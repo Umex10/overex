@@ -1,0 +1,51 @@
+info:
+  name: ok - update description and venue (200)
+  type: http
+  seq: 1
+
+http:
+  method: PATCH
+  url: "{{baseUrl}}/events/{{eventId}}"
+  body:
+    type: json
+    data: |-
+      {
+        "title": "Bruno Testevent",
+        "description": "Einlass ab 12:00 Uhr.",
+        "categoryId": "{{categoryId}}",
+        "venue": "Green Park St. Pölten",
+        "city": "St. Pölten",
+        "startsAt": "2099-08-12T14:00:00Z",
+        "saleStartsAt": "2099-03-01T10:00:00Z",
+        "imageUrl": "https://images.unsplash.com/photo-1459749411175-04bf5292ceea",
+        "status": "DRAFT",
+        "version": {{eventVersion}}
+      }
+  auth:
+    type: bearer
+    token: "{{accessTk}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("stores the new values and keeps the id", function () {
+          const event = res.getBody();
+          expect(event.id).to.equal(bru.getVar("eventId"));
+          expect(event.venue).to.equal("Green Park St. Pölten");
+          expect(event.description).to.equal("Einlass ab 12:00 Uhr.");
+        });
+
+        test("returns the new version", function () {
+          expect(res.getBody().version).to.equal(Number(bru.getVar("eventVersion")) + 1);
+        });
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "200"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

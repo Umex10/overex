@@ -1,0 +1,7 @@
+info:
+  name: Get Current User
+  type: folder
+  seq: 1
+
+request:
+  auth: inherit

@@ -1,0 +1,22 @@
+info:
+  name: fail - list my events as guest (401)
+  type: http
+  seq: 9
+
+http:
+  method: GET
+  url: "{{baseUrl}}/me/events"
+  auth:
+    type: none
+
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "401"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

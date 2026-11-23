@@ -1,0 +1,29 @@
+info:
+  name: ok - delete event (204)
+  type: http
+  seq: 1
+
+http:
+  method: DELETE
+  url: "{{baseUrl}}/events/{{eventId}}"
+  auth:
+    type: bearer
+    token: "{{accessTk}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("answers without a body", function () {
+          expect(res.getBody() || "").to.be.empty;
+        });
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "204"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

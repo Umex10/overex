@@ -1,0 +1,45 @@
+info:
+  name: fail - create event with blank title (400)
+  type: http
+  seq: 2
+
+http:
+  method: POST
+  url: "{{baseUrl}}/events"
+  body:
+    type: json
+    data: |-
+      {
+        "title": "",
+        "description": "Created by the Bruno collection.",
+        "categoryId": "{{categoryId}}",
+        "venue": "Green Park",
+        "city": "St. Pölten",
+        "startsAt": "2099-08-12T14:00:00Z",
+        "saleStartsAt": "2099-03-01T10:00:00Z",
+        "imageUrl": "https://images.unsplash.com/photo-1459749411175-04bf5292ceea",
+        "status": "DRAFT"
+      }
+  auth:
+    type: bearer
+    token: "{{accessTk}}"
+
+runtime:
+  scripts:
+    - type: tests
+      code: |-
+        test("names title as the invalid field and says why", function () {
+          const error = res.getBody().errors.find((e) => e.field === "title");
+          expect(error, "error on title").to.exist;
+          expect(error.message).to.be.a("string").and.not.be.empty;
+        });
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "400"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
