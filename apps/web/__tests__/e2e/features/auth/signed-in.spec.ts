@@ -55,7 +55,7 @@ test.describe("Signed in", () => {
     expect((await context.cookies()).some((c) => c.name === "refresh_tk")).toBe(false);
     await page.goto("/events");
     await expect(page).toHaveURL("/events"); // guest mode: no redirect to sign-in
-    await expect(page.getByTestId("header-sign-out-button")).not.toBeVisible(); 
+    await expect(page.getByTestId("header-sign-out-button")).not.toBeVisible();
   });
 
   test("keeps the refresh cookie HttpOnly and SameSite=Lax, out of reach for page scripts", async ({

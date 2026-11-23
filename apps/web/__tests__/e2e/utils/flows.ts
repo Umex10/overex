@@ -62,3 +62,31 @@ export async function openEventDetails(
   await page.getByTestId("event-card").filter({ hasText: event.title }).click();
   await expect(page).toHaveURL(`/events/${event.id}`);
 }
+
+/** Opens "Meine Events", clicks the row of `event` and waits for the editor. */
+export async function openMyEvent(
+  page: Page,
+  event: { id: string; title: string },
+) {
+  await page.goto("/my-events");
+  await page
+    .getByTestId("my-event-item")
+    .filter({ hasText: event.title })
+    .getByRole("heading")
+    .click();
+  await expect(page).toHaveURL(`/my-events/${event.id}`);
+}
+
+/**
+ * Picks a day of the next month in the date picker, so it is always in the
+ * future. Only for days from 7 to 22: others can appear twice, because the
+ * calendar also shows the edges of the neighbouring months.
+ */
+export async function pickDay(page: Page, trigger: string, day: number) {
+  await page.locator(trigger).click();
+  await page.locator(".rdp-button_next").click();
+  await page.locator(`button[data-day^="${day}."]`).click();
+  // The calendar closes with an animation: wait, so the next pickDay on the
+  // page doesn't find two of them.
+  await expect(page.locator(".rdp-button_next")).toHaveCount(0);
+}
